@@ -36,6 +36,15 @@
 <script src="{{ asset('assets/libs/simple-datatables/umd/simple-datatables.js') }}"></script>
 <script src="{{ asset('assets/js/pages/datatable.init.js') }}"></script>  
 
+<script src="{{ asset('assets/libs/fullcalendar/index.global.min.js') }}"></script>
+<script src="{{ asset('assets/js/pages/calendar.init.js') }}"></script>
+
+<script src="{{ asset('assets/libs/mobius1-selectr/selectr.min.js') }}"></script>
+<script src="{{ asset('assets/libs/huebee/huebee.pkgd.min.js') }}"></script>
+<script src="{{ asset('assets/libs/vanillajs-datepicker/js/datepicker-full.min.js') }}"></script>
+<script src="{{ asset('assets/js/moment.js') }}"></script>
+<script src="{{ asset('assets/libs/imask/imask.min.js') }}"></script>
+<script src="{{ asset('assets/js/pages/forms-advanced.js') }}"></script>
 
 
 <script src="{{ asset('assets/js/pages/index.init.js') }}"></script>

@@ -128,3 +128,7 @@ Route::get('/stripe', function () {
 Route::get('/leadsource', function () {
     return view('leadsource');
 });
+
+Route::get('/calendar', function () {
+    return view('calendar');
+});

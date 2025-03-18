@@ -6,12 +6,18 @@
     <title>@yield('title', 'My Laravel App')</title>
 
     <link href="{{ asset('assets/libs/simple-datatables/style.css') }}" rel="stylesheet" type="text/css" />
+    
+       
+    <link href="{{ asset('assets/libs/mobius1-selectr/selectr.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/libs/huebee/huebee.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/libs/vanillajs-datepicker/css/datepicker.min.css') }}" rel="stylesheet" type="text/css" />
+
     <!-- App CSS -->
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
 <style>
-    .page-content{
+    .page-content,.modal-body{
         background-color: #EEEEEE;
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
@@ -19,6 +25,41 @@
 </head>
 <body>
 
+    <div class="modal fade new-leads" id="new-leads" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title m-0" id="myExtraLargeModalLabel">Create new local leads</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div><!--end modal-header-->
+                <div class="modal-body">
+                    <h5 class="mt-0">You can create a new local lead by selecting clients on the dropdown lists or you can create a new lead for a new client.</h5>
+                        <div class="row">                        
+                            <div class="col-md-12 col-lg-6">
+                                <div class="card">
+                                    <div class="card-body pt-2">
+                                        <div class="col-md-12">
+                                            <label class="mb-2">Select clients account here</label>
+                                            <select id="default">
+                                                <option value="value-1">Value 1</option>
+                                                <option value="value-2">Value 2</option>
+                                                <option value="value-3">Value 3</option>
+                                            </select>                                    
+                                        </div><!-- end col -->    
+                                    </div><!--end card-body--> 
+                                </div><!--end card-->                             
+                            </div> <!--end col--> 
+                            <div class="col-md-12 col-lg-6">
+                                <button type="button" class="btn btn-primary w-100">CREATE FRESH LEADS</button>                           
+                            </div> <!--end col-->           
+                        </div>
+                </div><!--end modal-body-->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div><!--end modal-footer-->
+            </div><!--end modal-content-->
+        </div><!--end modal-dialog-->
+    </div><!--end modal-->
 
       <!-- Top Bar Start -->
       <div class="topbar d-print-none">
@@ -53,7 +94,7 @@
                     </li>
     
                     <li class="dropdown topbar-item">
-                        <a class="nav-link arrow-none nav-icon" href="#" role="button" aria-expanded="false" data-bs-offset="0,19">
+                        <a class="nav-link arrow-none nav-icon" href="{{ url('/calendar') }}" role="button" aria-expanded="false" data-bs-offset="0,19">
                             <i class="iconoir-calendar"></i>
                             <span class="alert-badge"></span>
                         </a>
@@ -124,12 +165,12 @@
                             </a>
                         </li><!--end nav-item-->
 
-                        <li class="nav-item">
+                        {{-- <li class="nav-item">
                             <a class="nav-link" href="{{ url('/registercustomer') }}">
                                 <i class="fas fa-user menu-icon"></i>
                                 <span>Register Customer</span>
                             </a>
-                        </li><!--end nav-item-->
+                        </li> --}}
 
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/loadboard') }}">
@@ -147,7 +188,8 @@
                             <div class="collapse " id="sidebarAnalytics">
                                 <ul class="nav flex-column">
                                     <li class="nav-item">
-                                        <a href="{{ url('/leads') }}" class="nav-link ">New</a>
+                                        {{-- <a href="{{ url('/leads') }}" class="nav-link" data-bs-toggle="modal" data-bs-target="#bd-example-modal-xl">New</a> --}}
+                                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#new-leads">New</a>
                                     </li><!--end nav-item-->
                                     <li class="nav-item">
                                         <a href="{{ url('/local') }}" class="nav-link ">Local</a>
