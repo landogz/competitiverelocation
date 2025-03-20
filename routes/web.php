@@ -124,9 +124,12 @@ Route::get('/stripe', function () {
     return view('stripe');
 });
 
+Route::get('/stripe', function () {
+    return view('stripe');
+});
 
-Route::get('/leadsource', function () {
-    return view('leadsource');
+Route::get('/sms', function () {
+    return view('sms');
 });
 
 Route::get('/calendar', function () {

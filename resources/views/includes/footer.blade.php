@@ -46,6 +46,7 @@
 <script src="{{ asset('assets/libs/imask/imask.min.js') }}"></script>
 <script src="{{ asset('assets/js/pages/forms-advanced.js') }}"></script>
 
+<script src="{{ asset('assets/js/pages/form-validation.js') }}"></script>
 
 <script src="{{ asset('assets/js/pages/index.init.js') }}"></script>
 <script src="{{ asset('assets/js/app.js') }}"></script>

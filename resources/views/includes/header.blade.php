@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'My Laravel App')</title>
-
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/logo.png') }}">
     <link href="{{ asset('assets/libs/simple-datatables/style.css') }}" rel="stylesheet" type="text/css" />
     
        
@@ -40,7 +40,7 @@
                                     <div class="card-body pt-2">
                                         <div class="col-md-12">
                                             <label class="mb-2">Select clients account here</label>
-                                            <select id="default">
+                                            <select id="existing_leads">
                                                 <option value="value-1">Value 1</option>
                                                 <option value="value-2">Value 2</option>
                                                 <option value="value-3">Value 3</option>
@@ -305,10 +305,13 @@
                                         <a href="{{ url('/settings') }}" class="nav-link ">Local Inventory</a>
                                     </li><!--end nav-item-->
                                     <li class="nav-item">
+                                        <a href="{{ url('/leadsource') }}" class="nav-link ">Lead Source</a>
+                                    </li><!--end nav-item-->
+                                    <li class="nav-item">
                                         <a href="{{ url('/stripe') }}" class="nav-link ">Stripe Account</a>
                                     </li><!--end nav-item-->
                                     <li class="nav-item">
-                                        <a href="{{ url('/leadsource') }}" class="nav-link ">Lead Source</a>
+                                        <a href="{{ url('/sms') }}" class="nav-link ">SMS API</a>
                                     </li><!--end nav-item-->
                                 </ul><!--end nav-->
                             </div>
