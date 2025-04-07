@@ -31,7 +31,7 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                     <h4 class="card-title mb-0">Long Distance List Leads</h4>
                     <button type="button" class="btn btn-primary btn-sm">Create New Lead</button>
                 </div>
-                <div class="card-body pt-0">
+                <div class="card-body pt-0 table-responsive">
                     <table id="example" class="table table-bordered mb-0 table-centered">
                         <thead>
                             <tr>

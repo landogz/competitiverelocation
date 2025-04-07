@@ -14,6 +14,9 @@
         background-color: #EEEEEE;
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
+    .hidden{
+        display: none !important;
+    }
 </style>
 </head>
 <body>
@@ -26,11 +29,11 @@
                         <div class="card">
                             <div class="card-body p-0 bg-black auth-header-box rounded-top">
                                 <div class="text-center p-3">
-                                    <a href="index-2.html" class="logo logo-admin">
+                                    <a href="#" class="logo logo-admin">
                                         <img src="assets/images/logo-sm.png" height="50" alt="logo" class="auth-logo">
                                     </a>
-                                    <h4 class="mt-3 mb-1 fw-semibold text-white fs-18">Let's Get Started Mifty</h4>   
-                                    <p class="text-muted fw-medium mb-0">Sign in to continue to Mifty.</p>  
+                                    <h4 class="mt-3 mb-1 fw-semibold text-white fs-18">Let's Get Started</h4>   
+                                    <p class="text-muted fw-medium mb-0">Sign in to continue to Competitive Relocation.</p>  
                                 </div>
                             </div>
                             <div class="card-body pt-0">                                    
@@ -67,9 +70,9 @@
                                 </form><!--end form-->
                                 <div class="text-center  mb-2">
                                     <p class="text-muted">Don't have an account ?  <a href="{{ url('/register') }}" class="text-primary ms-2">Free Register</a></p>
-                                    <h6 class="px-3 d-inline-block">Or Login With</h6>
+                                    <h6 class="px-3 d-inline-block hidden">Or Login With</h6>
                                 </div>
-                                <div class="d-flex justify-content-center">
+                                <div class="d-flex justify-content-center hidden">
                                     <a href="#" class="d-flex justify-content-center align-items-center thumb-md bg-blue-subtle text-blue rounded-circle me-2">
                                         <i class="fab fa-facebook align-self-center"></i>
                                     </a>

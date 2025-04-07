@@ -119,6 +119,9 @@ Route::get('/settings', function () {
     return view('settings');
 });
 
+Route::get('/leadsource', function () {
+    return view('leadsource');
+});
 
 Route::get('/stripe', function () {
     return view('stripe');
@@ -134,4 +137,13 @@ Route::get('/sms', function () {
 
 Route::get('/calendar', function () {
     return view('calendar');
+});
+
+Route::get('/profile', function () {
+    return view('profile');
+});
+
+
+Route::get('/customer', function () {
+    return view('customer.customer');
 });

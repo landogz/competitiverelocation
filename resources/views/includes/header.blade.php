@@ -61,6 +61,54 @@
         </div><!--end modal-dialog-->
     </div><!--end modal-->
 
+
+    <div class="modal fade" id="accountSettingsModal" tabindex="-1" role="dialog" aria-labelledby="accountSettingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+            <div class="modal-content">
+    
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountSettingsModalLabel">
+                        <i class="fas fa-user-cog me-2"></i>Account Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+    
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <form method="POST" action="">
+                        @csrf
+    
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="currentPassword" name="current_password" placeholder="Enter current password" required>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Enter new password" required>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="new_password_confirmation" placeholder="Confirm new password" required>
+                        </div>
+    
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-key me-1"></i> Update Password
+                        </button>
+                    </form>
+                </div>
+    
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <small class="text-muted">Make sure your new password is strong and secure.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
       <!-- Top Bar Start -->
       <div class="topbar d-print-none">
         <div class="container-fluid">
@@ -117,11 +165,11 @@
                             </div>
                             <div class="dropdown-divider mt-0"></div>
                             <small class="text-muted px-2 pb-1 d-block">Account</small>
-                            <a class="dropdown-item" href="pages-profile.html"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
-                            <a class="dropdown-item" href="pages-faq.html"><i class="las la-wallet fs-18 me-1 align-text-bottom"></i> Earning</a>
+                            <a class="dropdown-item" href="{{ url('/profile') }}"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
+                            {{-- <a class="dropdown-item" href="pages-faq.html"><i class="las la-wallet fs-18 me-1 align-text-bottom"></i> Earning</a> --}}
                             <small class="text-muted px-2 py-1 d-block">Settings</small>                        
-                            <a class="dropdown-item" href="pages-profile.html"><i class="las la-cog fs-18 me-1 align-text-bottom"></i>Account Settings</a>
-                            <a class="dropdown-item" href="pages-profile.html"><i class="las la-lock fs-18 me-1 align-text-bottom"></i> Security</a>
+                            {{-- <a class="dropdown-item" href="pages-profile.html"><i class="las la-cog fs-18 me-1 align-text-bottom"></i>Account Settings</a> --}}
+                            <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#accountSettingsModal"><i class="las la-lock fs-18 me-1 align-text-bottom"></i> Security</a>
                             <a class="dropdown-item" href="pages-faq.html"><i class="las la-question-circle fs-18 me-1 align-text-bottom"></i> Help Center</a>                       
                             <div class="dropdown-divider mb-0"></div>
                             <a class="dropdown-item text-danger" href="auth-login.html"><i class="las la-power-off fs-18 me-1 align-text-bottom"></i> Logout</a>
