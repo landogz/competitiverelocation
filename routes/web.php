@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeadSourceController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\InventoryItemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -114,7 +116,7 @@ Route::get('/servicerates', function () {
 
 Route::get('/settings', function () {
     return view('settings');
-});
+})->name('settings.index');
 
 
 Route::get('/stripe', function () {
@@ -142,3 +144,15 @@ Route::get('/leadsource', [LeadSourceController::class, 'index'])->name('leadsou
 Route::post('/leadsource_save', [LeadSourceController::class, 'store'])->name('leadsource.store');
 Route::put('/leadsource/{leadSource}', [LeadSourceController::class, 'update'])->name('leadsource.update');
 Route::delete('/leadsource/{leadSource}', [LeadSourceController::class, 'destroy'])->name('leadsource.destroy');
+
+// Category routes
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+// Inventory Item routes
+Route::get('/inventory-items', [InventoryItemController::class, 'index'])->name('inventory-items.index');
+Route::post('/inventory-items', [InventoryItemController::class, 'store'])->name('inventory-items.store');
+Route::put('/inventory-items/{inventoryItem}', [InventoryItemController::class, 'update'])->name('inventory-items.update');
+Route::delete('/inventory-items/{inventoryItem}', [InventoryItemController::class, 'destroy'])->name('inventory-items.destroy');
