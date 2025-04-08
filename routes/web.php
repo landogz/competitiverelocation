@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LeadSourceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -102,10 +103,6 @@ Route::get('/salesreports', function () {
     return view('salesreports');
 });
 
-Route::get('/salesreports', function () {
-    return view('salesreports');
-});
-
 Route::get('/bestagents', function () {
     return view('bestagents');
 });
@@ -119,13 +116,6 @@ Route::get('/settings', function () {
     return view('settings');
 });
 
-Route::get('/leadsource', function () {
-    return view('leadsource');
-});
-
-Route::get('/stripe', function () {
-    return view('stripe');
-});
 
 Route::get('/stripe', function () {
     return view('stripe');
@@ -147,3 +137,8 @@ Route::get('/profile', function () {
 Route::get('/customer', function () {
     return view('customer.customer');
 });
+
+Route::get('/leadsource', [LeadSourceController::class, 'index'])->name('leadsource.index');
+Route::post('/leadsource_save', [LeadSourceController::class, 'store'])->name('leadsource.store');
+Route::put('/leadsource/{leadSource}', [LeadSourceController::class, 'update'])->name('leadsource.update');
+Route::delete('/leadsource/{leadSource}', [LeadSourceController::class, 'destroy'])->name('leadsource.destroy');
