@@ -22,6 +22,32 @@
         background-color: #EEEEEE;
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
     }
+    
+    /* Password field styles */
+    .password-field {
+        position: relative;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        z-index: 10;
+    }
+    
+    .password-toggle:hover {
+        color: #3b82f6;
+    }
+    
+    .generate-password-btn {
+        margin-top: 10px;
+        font-size: 0.85rem;
+    }
 </style>
 </head>
 <body>
@@ -82,17 +108,35 @@
     
                         <div class="mb-3">
                             <label for="currentPassword" class="form-label">Current Password</label>
-                            <input type="password" class="form-control" id="currentPassword" name="current_password" placeholder="Enter current password" required>
+                            <div class="password-field">
+                                <input type="password" class="form-control" id="currentPassword" name="current_password" placeholder="Enter current password" required>
+                                <button type="button" class="password-toggle" data-target="currentPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
     
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">New Password</label>
-                            <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Enter new password" required>
+                            <div class="password-field">
+                                <input type="password" class="form-control" id="newPassword" name="new_password" placeholder="Enter new password" required>
+                                <button type="button" class="password-toggle" data-target="newPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary generate-password-btn" id="generatePassword">
+                                <i class="fas fa-magic"></i> Generate Strong Password
+                            </button>
                         </div>
     
                         <div class="mb-3">
                             <label for="confirmPassword" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" id="confirmPassword" name="new_password_confirmation" placeholder="Confirm new password" required>
+                            <div class="password-field">
+                                <input type="password" class="form-control" id="confirmPassword" name="new_password_confirmation" placeholder="Confirm new password" required>
+                                <button type="button" class="password-toggle" data-target="confirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
     
                         <button type="submit" class="btn btn-primary w-100">
@@ -123,7 +167,7 @@
                         </button>
                     </li> 
                     <li class="mx-2 welcome-text">
-                        <h5 class="mb-0 fw-semibold text-truncate">Good Morning, {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}!</h5>
+                        <h5 class="mb-0 fw-semibold text-truncate" id="timeBasedGreeting">Good Morning, {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}!</h5>
                     </li>                   
                 </ul>
                 <ul class="topbar-item list-unstyled d-inline-flex align-items-center mb-0">    
@@ -392,6 +436,30 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Time-based greeting
+    function updateGreeting() {
+        const hour = new Date().getHours();
+        const greetingElement = document.getElementById('timeBasedGreeting');
+        const userName = "{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}";
+        
+        let greeting;
+        if (hour >= 5 && hour < 12) {
+            greeting = "Good Morning";
+        } else if (hour >= 12 && hour < 17) {
+            greeting = "Good Afternoon";
+        } else if (hour >= 17 && hour < 22) {
+            greeting = "Good Evening";
+        } else {
+            greeting = "Good Night";
+        }
+        
+        greetingElement.textContent = `${greeting}, ${userName}!`;
+    }
+    
+    // Update greeting immediately and then every minute
+    updateGreeting();
+    setInterval(updateGreeting, 60000);
+    
     // Logout functionality
     document.getElementById('logoutBtn').addEventListener('click', function(e) {
         e.preventDefault();
@@ -423,6 +491,60 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Password toggle functionality
+    document.querySelectorAll('.password-toggle').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordField = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+    
+    // Generate strong password
+    document.getElementById('generatePassword').addEventListener('click', function() {
+        const length = 16;
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+        let password = "";
+        
+        // Ensure at least one of each required character type
+        password += charset.match(/[A-Z]/)[0]; // Uppercase
+        password += charset.match(/[a-z]/)[0]; // Lowercase
+        password += charset.match(/[0-9]/)[0]; // Number
+        password += charset.match(/[!@#$%^&*()_+]/)[0]; // Special character
+        
+        // Fill the rest randomly
+        for (let i = password.length; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * charset.length);
+            password += charset[randomIndex];
+        }
+        
+        // Shuffle the password
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        
+        // Set the generated password
+        document.getElementById('newPassword').value = password;
+        document.getElementById('confirmPassword').value = password;
+        
+        // Show success message
+        Swal.fire({
+            title: 'Password Generated',
+            text: 'A strong password has been generated and filled in both fields',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    });
+    
     // Change password functionality
     document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -451,20 +573,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('current_password', currentPassword);
+        formData.append('new_password', newPassword);
+        formData.append('new_password_confirmation', confirmPassword);
+        formData.append('_token', '{{ csrf_token() }}');
+        
         // Send AJAX request to update password
         fetch('{{ route("password.update") }}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                current_password: currentPassword,
-                new_password: newPassword,
-                new_password_confirmation: confirmPassword
-            })
+            body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 Swal.fire({
@@ -490,13 +622,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             Swal.fire({
                 title: 'Error!',
-                text: 'An error occurred while updating your password',
+                text: error.message || 'An error occurred while updating your password',
                 icon: 'error',
                 confirmButtonColor: '#3085d6'
             });
-            console.error('Error:', error);
         });
     });
 });

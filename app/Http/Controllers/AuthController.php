@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -45,19 +47,60 @@ class AuthController extends Controller
         return view('auth.forgot');
     }
 
+    /**
+     * Send a password reset link to the given user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function sendResetLink(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email'
-        ]);
+        try {
+            $request->validate(['email' => 'required|email']);
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+            $user = User::where('email', $request->email)->first();
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)]);
+            if (!$user) {
+                // Return success even if user doesn't exist (security best practice)
+                return response()->json(['status' => 'passwords.sent']);
+            }
+
+            // For development environment, we'll skip the email sending
+            if (config('app.env') === 'local') {
+                // Generate a token
+                $token = Str::random(64);
+                
+                // Store the token in the password_reset_tokens table
+                DB::table('password_reset_tokens')->updateOrInsert(
+                    ['email' => $request->email],
+                    [
+                        'token' => Hash::make($token),
+                        'created_at' => now()
+                    ]
+                );
+                
+                // Return success with the token (only in development)
+                return response()->json([
+                    'status' => 'passwords.sent',
+                    'debug_token' => $token // Only included in development
+                ]);
+            }
+
+            // In production, use the standard password reset flow
+            $status = Password::sendResetLink(
+                $request->only('email')
+            );
+
+            return $status === Password::RESET_LINK_SENT
+                ? response()->json(['status' => $status])
+                : response()->json(['status' => $status], 400);
+        } catch (\Exception $e) {
+            \Log::error('Password reset link error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while sending the password reset link. Please try again.'
+            ], 500);
+        }
     }
 
     public function showResetForm(Request $request)
@@ -67,24 +110,41 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request)
     {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
-        ]);
+        try {
+            $request->validate([
+                'token' => 'required',
+                'email' => 'required|email',
+                'password' => 'required|min:8|confirmed',
+            ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->save();
+            $status = Password::reset(
+                $request->only('email', 'password', 'password_confirmation', 'token'),
+                function (User $user, string $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password)
+                    ])->save();
+                }
+            );
+
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Your password has been reset successfully.',
+                    'redirect' => url('/')
+                ]);
             }
-        );
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to reset password. The reset link may have expired.'
+            ], 400);
+        } catch (\Exception $e) {
+            \Log::error('Password reset error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while resetting your password. Please try again.'
+            ], 500);
+        }
     }
 
     public function updatePassword(Request $request)

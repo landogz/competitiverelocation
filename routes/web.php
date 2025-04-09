@@ -174,7 +174,7 @@ Route::post('/auth/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/password/reset', [AuthController::class, 'showForgotForm'])->name('password.request');
 Route::post('/password/email', [AuthController::class, 'sendResetLink'])->name('password.email');
 Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
-Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
+Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.reset.submit');
 
 // Password Update Route (for logged-in users)
 Route::middleware(['auth'])->group(function () {

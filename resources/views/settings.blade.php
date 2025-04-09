@@ -8,7 +8,7 @@
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box d-flex justify-content-between align-items-center">
-                <h4 class="page-title">Local Inventory</h4>
+                <h4 class="page-title">Local Inventory</h4>                             
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">Dashboard</a></li>
@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row">                        
         <!-- Categories Section -->
         <div class="col-md-12 col-lg-3">
             <div class="card shadow-sm">
@@ -41,15 +41,15 @@
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
-                                <tr>
-                                    <th>Category</th>
+                            <tr>
+                                <th>Category</th>
                                     <th class="text-end">Actions</th>
-                                </tr>
+                            </tr>
                             </thead>
                             <tbody id="categoryTableBody">
                                 <tr>
                                     <td colspan="2" class="text-center">No records available</td>
-                                </tr>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
@@ -955,15 +955,15 @@ $(document).ready(function() {
                         <td colspan="4" class="p-0">
                             <div class="category-items-wrapper">
                                 <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Item</th>
-                                            <th>Category</th>
-                                            <th>Cubic Ft.</th>
+                            <thead class="table-light">
+                              <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Cubic Ft.</th>
                                             <th class="text-end">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                              </tr>
+                            </thead>
+                            <tbody>
                 `;
                 
                 // Add items for this category
@@ -986,16 +986,16 @@ $(document).ready(function() {
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
+                                    </td>
+                                </tr>                                                                         
                     `;
                 });
                 
                 // Close the items table
                 html += `
-                                    </tbody>
-                                </table>
-                            </div>
+                            </tbody>
+                          </table>
+                    </div> 
                         </td>
                     </tr>
                 `;
