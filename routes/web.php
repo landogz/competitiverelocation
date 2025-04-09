@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LeadSourceController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InventoryItemController;
+use App\Http\Controllers\SmsController;
+use App\Http\Controllers\AgentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,9 +91,10 @@ Route::get('/housting', function () {
     return view('housting');
 });
 
-Route::get('/agents', function () {
-    return view('agents');
-});
+Route::get('/agents', [AgentController::class, 'index'])->name('agents.index');
+Route::get('/agents/data', [AgentController::class, 'data'])->name('agents.data');
+Route::post('/agents/sync', [AgentController::class, 'sync'])->name('agents.sync');
+Route::post('/agents/update', [AgentController::class, 'update'])->name('agents.update');
 
 Route::get('/salesreps', function () {
     return view('salesreps');
@@ -123,9 +126,11 @@ Route::get('/stripe', function () {
     return view('stripe');
 });
 
-Route::get('/sms', function () {
-    return view('sms');
-});
+Route::get('/sms', [SmsController::class, 'index'])->name('sms.index');
+Route::post('/sms/settings', [SmsController::class, 'updateSettings'])->name('sms.settings.update');
+Route::post('/sms/send', [SmsController::class, 'sendSms'])->name('sms.send');
+Route::get('/sms/logs', [SmsController::class, 'getLogs'])->name('sms.logs');
+Route::get('/sms/status/{transactionId}', [SmsController::class, 'checkStatus'])->name('sms.status');
 
 Route::get('/calendar', function () {
     return view('calendar');

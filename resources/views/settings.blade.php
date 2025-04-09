@@ -66,13 +66,45 @@
                 <div class="card-body pt-0">
                     <div class="table-responsive">
                         <table class="table datatable table-bordered mb-0 table-centered" id="inventoryTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Cubic Ft.</th>
+                                    <th style="width:120px;">Actions</th>
+                                </tr>
+                            </thead>
                             <tbody id="inventoryTableBody">
                                 <tr>
                                     <td colspan="4" class="text-center">No records available</td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div> 
+                    </div>
+                    <!-- Pagination Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">Show:</span>
+                            <select class="form-select form-select-sm" id="itemsPerPage" style="width: 70px;">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="ms-2">items per page</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" id="paginationInfo">Showing 0-0 of 0 items</span>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="nextPage" disabled>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div><!--end card-body--> 
             </div><!--end card-->                             
         </div> <!--end col-->           
@@ -127,9 +159,40 @@ $.ajaxSetup({
 });
 
 $(document).ready(function() {
+    // Pagination variables
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let totalItems = 0;
+    let filteredItems = [];
+    let allItems = [];
+    
     // Load initial data
     loadCategories();
     loadInventoryItems();
+    
+    // Items per page change
+    $('#itemsPerPage').on('change', function() {
+        itemsPerPage = parseInt($(this).val());
+        currentPage = 1;
+        renderInventoryTable();
+    });
+    
+    // Previous page button
+    $('#prevPage').on('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderInventoryTable();
+        }
+    });
+    
+    // Next page button
+    $('#nextPage').on('click', function() {
+        const maxPage = Math.ceil(filteredItems.length / itemsPerPage);
+        if (currentPage < maxPage) {
+            currentPage++;
+            renderInventoryTable();
+        }
+    });
     
     // Search functionality
     $('#searchInventory').on('keyup', function() {
@@ -147,39 +210,169 @@ $(document).ready(function() {
     function searchInventoryItems(searchText) {
         if (searchText === '') {
             // If search is empty, show all items
-            $('.category-section').show();
-            $('.inventory-item-row').show();
-            return;
+            filteredItems = [...allItems];
+        } else {
+            // Filter items based on search text
+            filteredItems = allItems.filter(item => 
+                item.item.toLowerCase().includes(searchText) || 
+                item.category.name.toLowerCase().includes(searchText) || 
+                item.cubic_ft.toString().includes(searchText)
+            );
         }
         
-        // Hide all category sections first
-        $('.category-section').hide();
+        // Reset to first page and render
+        currentPage = 1;
+        renderInventoryTable();
+    }
+    
+    // Function to render inventory table with pagination
+    function renderInventoryTable() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
         
-        // Search through each item
-        $('.inventory-item-row').each(function() {
-            const itemName = $(this).find('td:first').text().toLowerCase();
-            const categoryName = $(this).find('td:eq(1)').text().toLowerCase();
-            const cubicFt = $(this).find('td:eq(2)').text().toLowerCase();
-            
-            if (itemName.includes(searchText) || 
-                categoryName.includes(searchText) || 
-                cubicFt.includes(searchText)) {
-                // Show the item
-                $(this).show();
-                // Show its parent category section
-                $(this).closest('.category-section').show();
-            } else {
-                // Hide the item
-                $(this).hide();
+        // Update pagination info
+        if (filteredItems.length > 0) {
+            $('#paginationInfo').text(`Showing ${startIndex + 1}-${endIndex} of ${filteredItems.length} items`);
+        } else {
+            $('#paginationInfo').text('No items found');
+        }
+        
+        // Enable/disable pagination buttons
+        $('#prevPage').prop('disabled', currentPage === 1);
+        $('#nextPage').prop('disabled', endIndex >= filteredItems.length);
+        
+        // Group items by category
+        const groupedItems = {};
+        filteredItems.forEach(item => {
+            if (!groupedItems[item.category.name]) {
+                groupedItems[item.category.name] = [];
             }
+            groupedItems[item.category.name].push(item);
         });
         
-        // Hide empty category sections
-        $('.category-section').each(function() {
-            const visibleItems = $(this).find('.inventory-item-row:visible').length;
-            if (visibleItems === 0) {
-                $(this).hide();
+        // Render the table
+        let html = '';
+        
+        if (Object.keys(groupedItems).length > 0) {
+            let categoryIndex = 0;
+            let itemCount = 0;
+            let currentCategory = '';
+            let categoryStarted = false;
+            
+            // First, count how many items we need to skip
+            let itemsToSkip = startIndex;
+            
+            // Then, determine which category we should start with
+            for (const categoryName in groupedItems) {
+                if (itemsToSkip < groupedItems[categoryName].length) {
+                    currentCategory = categoryName;
+                    break;
+                }
+                itemsToSkip -= groupedItems[categoryName].length;
             }
+            
+            // Now render the categories and items
+            for (const categoryName in groupedItems) {
+                // Skip categories before our starting point
+                if (categoryName < currentCategory) continue;
+                
+                categoryIndex++;
+                categoryStarted = false;
+                
+                // Add category header with collapse functionality
+                html += `
+                    <tr class="table-light category-section">
+                        <td colspan="4">
+                            <a class="d-flex align-items-center text-dark text-decoration-none" 
+                               data-bs-toggle="collapse" 
+                               href="#category${categoryIndex}" 
+                               role="button" 
+                               aria-expanded="true" 
+                               aria-controls="category${categoryIndex}">
+                                <i class="fas fa-chevron-down me-2"></i>
+                                <strong>${categoryName}</strong>
+                                <span class="badge bg-primary ms-2">${groupedItems[categoryName].length} items</span>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+                
+                // Add collapsible content for items in this category
+                html += `
+                    <tr class="category-section">
+                        <td colspan="4" class="p-0">
+                            <div class="collapse show" id="category${categoryIndex}">
+                                <table class="table table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Category</th>
+                                            <th>Cubic Ft.</th>
+                                            <th style="width:120px;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                // Add items in this category, but only if we've reached our starting point
+                let itemsInThisCategory = groupedItems[categoryName];
+                let startItemIndex = 0;
+                
+                // If this is the first category we're showing, we need to skip some items
+                if (categoryName === currentCategory) {
+                    startItemIndex = itemsToSkip;
+                }
+                
+                // Only add items up to our end index
+                for (let i = startItemIndex; i < itemsInThisCategory.length; i++) {
+                    if (itemCount >= itemsPerPage) break;
+                    
+                    const item = itemsInThisCategory[i];
+                    html += `
+                        <tr class="inventory-item-row">
+                            <td>${item.item}</td>
+                            <td>${item.category.name}</td>
+                            <td>${item.cubic_ft}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-info edit-inventory-btn" 
+                                    data-id="${item.id}" 
+                                    data-item="${item.item}" 
+                                    data-category-id="${item.category_id}" 
+                                    data-cubic-ft="${item.cubic_ft}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger delete-inventory-btn" data-id="${item.id}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    itemCount++;
+                }
+                
+                // Close the collapsible content
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
+                // If we've shown all the items we need, break out of the loop
+                if (itemCount >= itemsPerPage) break;
+            }
+        } else {
+            html = '<tr><td colspan="4" class="text-center">No records available</td></tr>';
+        }
+        
+        $('#inventoryTableBody').html(html);
+        
+        // Add click handler for collapse icons
+        $('.collapse').on('show.bs.collapse', function() {
+            $(this).prev().find('.fa-chevron-down').addClass('fa-rotate-180');
+        }).on('hide.bs.collapse', function() {
+            $(this).prev().find('.fa-chevron-down').removeClass('fa-rotate-180');
         });
     }
     
@@ -592,121 +785,12 @@ $(document).ready(function() {
             url: '/inventory-items',
             method: 'GET',
             success: function(response) {
-                // Update inventory table
-                if (response.items.length > 0) {
-                    let html = '';
-                    
-                    // Group items by category
-                    const groupedItems = response.groupedItems;
-                    
-                    // If there are items, display them grouped by category
-                    if (Object.keys(groupedItems).length > 0) {
-                        let categoryIndex = 0;
-                        for (const categoryName in groupedItems) {
-                            categoryIndex++;
-                            // Add category header with collapse functionality
-                            html += `
-                                <tr class="table-light category-section">
-                                    <td colspan="4">
-                                        <a class="d-flex align-items-center text-dark text-decoration-none" 
-                                           data-bs-toggle="collapse" 
-                                           href="#category${categoryIndex}" 
-                                           role="button" 
-                                           aria-expanded="true" 
-                                           aria-controls="category${categoryIndex}">
-                                            <i class="fas fa-chevron-down me-2"></i>
-                                            <strong>${categoryName}</strong>
-                                            <span class="badge bg-primary ms-2">${groupedItems[categoryName].length} items</span>
-                                        </a>
-                                    </td>
-                                </tr>
-                            `;
-                            
-                            // Add collapsible content for items in this category
-                            html += `
-                                <tr class="category-section">
-                                    <td colspan="4" class="p-0">
-                                        <div class="collapse show" id="category${categoryIndex}">
-                                            <table class="table table-bordered mb-0">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th>Item</th>
-                                                        <th>Category</th>
-                                                        <th>Cubic Ft.</th>
-                                                        <th style="width:120px;">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                            `;
-                            
-                            // Add items in this category
-                            groupedItems[categoryName].forEach(function(item) {
-                                html += `
-                                    <tr class="inventory-item-row">
-                                        <td>${item.item}</td>
-                                        <td>${item.category.name}</td>
-                                        <td>${item.cubic_ft}</td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-info edit-inventory-btn" 
-                                                data-id="${item.id}" 
-                                                data-item="${item.item}" 
-                                                data-category-id="${item.category_id}" 
-                                                data-cubic-ft="${item.cubic_ft}">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-inventory-btn" data-id="${item.id}">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                            
-                            // Close the collapsible content
-                            html += `
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
-                        }
-                    } else {
-                        // If no grouping, just show all items
-                        response.items.forEach(function(item) {
-                            html += `
-                                <tr>
-                                    <td>${item.item}</td>
-                                    <td>${item.category.name}</td>
-                                    <td>${item.cubic_ft}</td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info edit-inventory-btn" 
-                                            data-id="${item.id}" 
-                                            data-item="${item.item}" 
-                                            data-category-id="${item.category_id}" 
-                                            data-cubic-ft="${item.cubic_ft}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-inventory-btn" data-id="${item.id}">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-                    }
-                    
-                    $('#inventoryTableBody').html(html);
-                    
-                    // Add click handler for collapse icons
-                    $('.collapse').on('show.bs.collapse', function() {
-                        $(this).prev().find('.fa-chevron-down').addClass('fa-rotate-180');
-                    }).on('hide.bs.collapse', function() {
-                        $(this).prev().find('.fa-chevron-down').removeClass('fa-rotate-180');
-                    });
-                } else {
-                    $('#inventoryTableBody').html('<tr><td colspan="4" class="text-center">No records available</td></tr>');
-                }
+                // Store all items
+                allItems = response.items;
+                filteredItems = [...allItems];
+                
+                // Render the table with pagination
+                renderInventoryTable();
             },
             error: function() {
                 Swal.fire({

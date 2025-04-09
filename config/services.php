@@ -31,4 +31,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'twilio' => [
+        'phone_number' => env('TWILIO_PHONE_NUMBER'),
+    ],
+
 ];
