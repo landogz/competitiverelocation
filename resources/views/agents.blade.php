@@ -483,7 +483,7 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
         button.html('<i class="fas fa-spinner fa-spin"></i> Syncing...');
 
         $.ajax({
-            url: "{{ route('agents.sync') }}",
+            url: "{{ route('agents.syncAgents') }}",
             method: 'POST',
             success: function(response) {
                 table.ajax.reload();

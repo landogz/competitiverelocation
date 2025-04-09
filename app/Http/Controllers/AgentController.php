@@ -62,27 +62,37 @@ class AgentController extends Controller
         return response()->json(['data' => $agents]);
     }
 
-    public function syncAgents()
+    public function syncAgents(Request $request)
     {
         try {
-            // Get existing company names from database
+            // Get existing company names to avoid duplicates
             $existingCompanies = Agent::pluck('company_name')->toArray();
             
-            // Fetch agents from the API
-            $response = Http::get('https://api.example.com/agents'); // Replace with your actual API endpoint
-            $apiAgents = $response->json();
-
+            // Fetch agents from API
+            $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/data');
+            
+            if (!$response->successful()) {
+                throw new \Exception('API request failed: ' . $response->body());
+            }
+            
+            $apiData = $response->json();
+            
+            if (!isset($apiData['success']) || !$apiData['success'] || !isset($apiData['data'])) {
+                throw new \Exception('Invalid API response format');
+            }
+            
+            $apiAgents = $apiData['data'];
             $newAgentsCount = 0;
             $skippedCount = 0;
-
+            
             foreach ($apiAgents as $apiAgent) {
                 // Skip if company already exists
                 if (in_array($apiAgent['company_name'], $existingCompanies)) {
                     $skippedCount++;
                     continue;
                 }
-
-                // Add new agent
+                
+                // Create new agent
                 Agent::create([
                     'company_name' => $apiAgent['company_name'],
                     'company_website' => $apiAgent['company_website'] ?? null,
@@ -94,27 +104,35 @@ class AgentController extends Controller
                     'city' => $apiAgent['city'] ?? null,
                     'state' => $apiAgent['state'] ?? null,
                     'zip_code' => $apiAgent['zip_code'] ?? null,
-                    'services' => $apiAgent['services'] ?? [],
-                    'num_trucks' => $apiAgent['num_trucks'] ?? 0,
+                    'num_trucks' => $apiAgent['num_trucks'] ?? null,
                     'truck_size' => $apiAgent['truck_size'] ?? null,
-                    'num_crews' => $apiAgent['num_crews'] ?? 0,
-                    'truck_image' => $apiAgent['truck_image'] ?? null,
-                    'corporate_sales' => $apiAgent['corporate_sales'] ?? 0,
-                    'consumer_sales' => $apiAgent['consumer_sales'] ?? 0,
-                    'local_sales' => $apiAgent['local_sales'] ?? 0,
-                    'long_distance_sales' => $apiAgent['long_distance_sales'] ?? 0,
-                    'delivery_service_sales' => $apiAgent['delivery_service_sales'] ?? 0,
-                    'total_sales' => $apiAgent['total_sales'] ?? 0,
-                    'is_active' => $apiAgent['is_active'] ?? true
+                    'num_crews' => $apiAgent['num_crews'] ?? null,
+                    'is_active' => ($apiAgent['status'] ?? '') === 'approved',
+                    'corporate_sales' => $apiAgent['corporate_sales'] ?? null,
+                    'consumer_sales' => $apiAgent['consumer_sales'] ?? null,
+                    'local_sales' => $apiAgent['local_sales'] ?? null,
+                    'long_distance_sales' => $apiAgent['long_distance_sales'] ?? null,
+                    'delivery_service_sales' => $apiAgent['delivery_service_sales'] ?? null,
+                    'total_sales' => $apiAgent['total_sales'] ?? null,
+                    'services' => [
+                        'local_moving' => ($apiAgent['local_moving_service'] ?? '') === 'yes',
+                        'delivery' => ($apiAgent['delivery_service'] ?? '') === 'yes',
+                        'labor' => ($apiAgent['labor_services'] ?? '') === 'yes',
+                        'commercial' => ($apiAgent['commercial_moving'] ?? '') === 'yes',
+                        'booking_agent' => ($apiAgent['booking_agent'] ?? '') === 'yes',
+                        'general_freight' => ($apiAgent['general_freight'] ?? '') === 'yes'
+                    ],
+                    'truck_image' => $apiAgent['truck_image'] ?? null
                 ]);
+                
                 $newAgentsCount++;
             }
-
+            
             return response()->json([
                 'success' => true,
-                'message' => "Sync completed. Added {$newAgentsCount} new agents. Skipped {$skippedCount} existing agents."
+                'message' => "Sync completed successfully. Added {$newAgentsCount} new agents. Skipped {$skippedCount} existing agents."
             ]);
-
+            
         } catch (\Exception $e) {
             Log::error('Agent sync failed: ' . $e->getMessage());
             return response()->json([

@@ -35,4 +35,12 @@ return [
         'phone_number' => env('TWILIO_PHONE_NUMBER'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'connect_client_id' => env('STRIPE_CONNECT_CLIENT_ID'),
+        'connect_redirect_uri' => env('STRIPE_CONNECT_REDIRECT_URI'),
+        'client_id' => env('STRIPE_CLIENT_ID'),
+    ],
+
 ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\StripeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,7 +94,7 @@ Route::get('/housting', function () {
 
 Route::get('/agents', [AgentController::class, 'index'])->name('agents.index');
 Route::get('/agents/data', [AgentController::class, 'data'])->name('agents.data');
-Route::post('/agents/sync', [AgentController::class, 'sync'])->name('agents.sync');
+Route::post('/agents/sync', [AgentController::class, 'syncAgents'])->name('agents.syncAgents');
 Route::post('/agents/update', [AgentController::class, 'update'])->name('agents.update');
 
 Route::get('/salesreps', function () {
@@ -122,9 +123,8 @@ Route::get('/settings', function () {
 })->name('settings.index');
 
 
-Route::get('/stripe', function () {
-    return view('stripe');
-});
+Route::get('/stripe', [StripeController::class, 'index'])->name('stripe.index');
+Route::post('/stripe/settings', [StripeController::class, 'updateSettings'])->name('stripe.settings.update');
 
 Route::get('/sms', [SmsController::class, 'index'])->name('sms.index');
 Route::post('/sms/settings', [SmsController::class, 'updateSettings'])->name('sms.settings.update');
@@ -161,3 +161,7 @@ Route::get('/inventory-items', [InventoryItemController::class, 'index'])->name(
 Route::post('/inventory-items', [InventoryItemController::class, 'store'])->name('inventory-items.store');
 Route::put('/inventory-items/{inventoryItem}', [InventoryItemController::class, 'update'])->name('inventory-items.update');
 Route::delete('/inventory-items/{inventoryItem}', [InventoryItemController::class, 'destroy'])->name('inventory-items.destroy');
+
+// Stripe Connect Routes
+Route::get('/stripe/connect', [StripeController::class, 'connect'])->name('stripe.connect');
+Route::post('/stripe/callback', [StripeController::class, 'callback'])->name('stripe.callback');
