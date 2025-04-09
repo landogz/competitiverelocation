@@ -1,43 +1,50 @@
 @extends('includes.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Local Inventory')
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
-            <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
-                <h4 class="page-title">Local Inventory</h4>                             
-            </div><!--end page-title-box-->
-        </div><!--end col-->
-    </div><!--end row-->
-    <div class="row">                        
+            <div class="page-title-box d-flex justify-content-between align-items-center">
+                <h4 class="page-title">Local Inventory</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Settings</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Categories Section -->
         <div class="col-md-12 col-lg-3">
-            <div class="card">
-                <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col">                      
-                            <h4 class="card-title">Category</h4>                      
-                        </div><!--end col-->
-                    </div>  <!--end row-->                                  
-                </div><!--end card-header-->
-                <div class="card-body pt-0">
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h4 class="card-title mb-0">Categories</h4>
+                </div>
+                <div class="card-body">
                     <form id="categoryForm" onsubmit="return false;">
                         @csrf
-                        <div class="mb-1">
-                            <input type="text" class="form-control" id="categoryName" name="name" placeholder="Enter Category">
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="categoryName" name="name" placeholder="Enter Category">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-sm btn-primary">Create Category</button>
                     </form>
-                    <hr>
                     <div class="table-responsive">
-                        <table class="table table-bordered mb-0 table-centered">
+                        <table class="table table-hover mb-0">
                             <thead class="table-light">
-                            <tr>
-                                <th>Category</th>
-                                <th class="text-center" style="width: 40%;">Action</th>
-                            </tr>
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
                             </thead>
                             <tbody id="categoryTableBody">
                                 <tr>
@@ -46,69 +53,46 @@
                             </tbody>
                         </table>
                     </div>
-                </div><!--end card-body--> 
-            </div><!--end card-->                             
-        </div> <!--end col--> 
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Section -->
         <div class="col-md-12 col-lg-9">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0">Inventory Settings</h4>
-                    <div class="d-flex align-items-center">
-                        <div class="input-group me-2" style="width: 250px;">
-                            <input type="text" class="form-control form-control-sm" id="searchInventory" placeholder="Search items...">
-                            <button class="btn btn-sm btn-outline-secondary" type="button" id="clearSearch">
-                                <i class="fas fa-times"></i>
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">Inventory Items</h4>
+                        <div class="d-flex gap-3">
+                            <div class="search-wrapper">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0 ps-0" id="searchInventory" placeholder="Search items...">
+                                    <button class="btn btn-outline-secondary border-start-0" type="button" id="clearSearch">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary d-flex align-items-center" id="addInventoryItemBtn">
+                                <i class="fas fa-plus me-2"></i> New Item
                             </button>
                         </div>
-                        <button type="button" class="btn btn-primary btn-sm" id="addInventoryItemBtn">New Item</button>
                     </div>
                 </div>
                 <div class="card-body pt-0">
                     <div class="table-responsive">
-                        <table class="table datatable table-bordered mb-0 table-centered" id="inventoryTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Category</th>
-                                    <th>Cubic Ft.</th>
-                                    <th style="width:120px;">Actions</th>
-                                </tr>
-                            </thead>
+                        <table class="table table-hover mb-0" id="inventoryTable">
                             <tbody id="inventoryTableBody">
-                                <tr>
-                                    <td colspan="4" class="text-center">No records available</td>
-                                </tr>
+                                <!-- Categories will be dynamically inserted here -->
                             </tbody>
                         </table>
                     </div>
-                    <!-- Pagination Controls -->
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="d-flex align-items-center">
-                            <span class="me-2">Show:</span>
-                            <select class="form-select form-select-sm" id="itemsPerPage" style="width: 70px;">
-                                <option value="10" selected>10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <span class="ms-2">items per page</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <span class="me-2" id="paginationInfo">Showing 0-0 of 0 items</span>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="nextPage" disabled>
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div><!--end card-body--> 
-            </div><!--end card-->                             
-        </div> <!--end col-->           
-    </div><!--end row-->                                         
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Add/Edit Inventory Item Modal -->
@@ -140,14 +124,307 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveInventoryItemBtn">Save</button>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
+<style>
+:root {
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --secondary-color: #6b7280;
+    --light-bg: #f8fafc;
+    --border-color: #e5e7eb;
+    --text-dark: #1f2937;
+    --text-muted: #6b7280;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --transition: all 0.3s ease;
+}
+
+body {
+    background-color: #f9fafb;
+    color: var(--text-dark);
+}
+
+.card {
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem;
+    background-color: white;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1rem;
+    transition: var(--transition);
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn {
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-info {
+    background-color: #0ea5e9;
+    border-color: #0ea5e9;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #0284c7;
+    border-color: #0284c7;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    border-color: #ef4444;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-dark);
+    border-bottom-width: 1px;
+    background-color: var(--light-bg);
+}
+
+.table td {
+    vertical-align: middle;
+    color: var(--text-muted);
+    padding: 1rem;
+}
+
+.btn-group {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.btn-group .btn {
+    padding: 0.4rem 0.8rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.input-group .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.modal-content {
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.page-title-box {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-muted);
+}
+
+.search-wrapper {
+    position: relative;
+    width: 300px;
+}
+
+.search-wrapper .input-group {
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.search-wrapper .input-group:focus-within {
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+}
+
+.search-wrapper .input-group-text {
+    border: 1px solid var(--border-color);
+    border-right: none;
+    padding: 0.6rem 1rem;
+}
+
+.search-wrapper .form-control {
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+}
+
+.search-wrapper .btn-outline-secondary {
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 0.6rem 1rem;
+}
+
+.search-wrapper .btn-outline-secondary:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+#addInventoryItemBtn {
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
+    transition: var(--transition);
+}
+
+#addInventoryItemBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+#addInventoryItemBtn i {
+    font-size: 0.9rem;
+}
+
+.category-header {
+    background-color: var(--light-bg);
+    border-left: 4px solid var(--primary-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.category-header:hover {
+    background-color: #f1f5f9;
+}
+
+.category-header .toggle-category {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.category-header .toggle-category i {
+    transition: transform 0.3s ease;
+}
+
+.category-header .category-title {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.category-header .category-count {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+}
+
+.category-items-wrapper {
+    background-color: white;
+}
+
+.category-items {
+    transition: var(--transition);
+}
+
+.category-items:hover {
+    background-color: #f9fafb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .search-wrapper {
+        width: 100%;
+    }
+    
+    .card-header .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .card-header .d-flex > div:last-child {
+        width: 100%;
+    }
+}
+</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -159,222 +436,9 @@ $.ajaxSetup({
 });
 
 $(document).ready(function() {
-    // Pagination variables
-    let currentPage = 1;
-    let itemsPerPage = 10;
-    let totalItems = 0;
-    let filteredItems = [];
-    let allItems = [];
-    
     // Load initial data
     loadCategories();
     loadInventoryItems();
-    
-    // Items per page change
-    $('#itemsPerPage').on('change', function() {
-        itemsPerPage = parseInt($(this).val());
-        currentPage = 1;
-        renderInventoryTable();
-    });
-    
-    // Previous page button
-    $('#prevPage').on('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderInventoryTable();
-        }
-    });
-    
-    // Next page button
-    $('#nextPage').on('click', function() {
-        const maxPage = Math.ceil(filteredItems.length / itemsPerPage);
-        if (currentPage < maxPage) {
-            currentPage++;
-            renderInventoryTable();
-        }
-    });
-    
-    // Search functionality
-    $('#searchInventory').on('keyup', function() {
-        const searchText = $(this).val().toLowerCase();
-        searchInventoryItems(searchText);
-    });
-    
-    // Clear search
-    $('#clearSearch').on('click', function() {
-        $('#searchInventory').val('');
-        searchInventoryItems('');
-    });
-    
-    // Function to search inventory items
-    function searchInventoryItems(searchText) {
-        if (searchText === '') {
-            // If search is empty, show all items
-            filteredItems = [...allItems];
-        } else {
-            // Filter items based on search text
-            filteredItems = allItems.filter(item => 
-                item.item.toLowerCase().includes(searchText) || 
-                item.category.name.toLowerCase().includes(searchText) || 
-                item.cubic_ft.toString().includes(searchText)
-            );
-        }
-        
-        // Reset to first page and render
-        currentPage = 1;
-        renderInventoryTable();
-    }
-    
-    // Function to render inventory table with pagination
-    function renderInventoryTable() {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
-        
-        // Update pagination info
-        if (filteredItems.length > 0) {
-            $('#paginationInfo').text(`Showing ${startIndex + 1}-${endIndex} of ${filteredItems.length} items`);
-        } else {
-            $('#paginationInfo').text('No items found');
-        }
-        
-        // Enable/disable pagination buttons
-        $('#prevPage').prop('disabled', currentPage === 1);
-        $('#nextPage').prop('disabled', endIndex >= filteredItems.length);
-        
-        // Group items by category
-        const groupedItems = {};
-        filteredItems.forEach(item => {
-            if (!groupedItems[item.category.name]) {
-                groupedItems[item.category.name] = [];
-            }
-            groupedItems[item.category.name].push(item);
-        });
-        
-        // Render the table
-        let html = '';
-        
-        if (Object.keys(groupedItems).length > 0) {
-            let categoryIndex = 0;
-            let itemCount = 0;
-            let currentCategory = '';
-            let categoryStarted = false;
-            
-            // First, count how many items we need to skip
-            let itemsToSkip = startIndex;
-            
-            // Then, determine which category we should start with
-            for (const categoryName in groupedItems) {
-                if (itemsToSkip < groupedItems[categoryName].length) {
-                    currentCategory = categoryName;
-                    break;
-                }
-                itemsToSkip -= groupedItems[categoryName].length;
-            }
-            
-            // Now render the categories and items
-            for (const categoryName in groupedItems) {
-                // Skip categories before our starting point
-                if (categoryName < currentCategory) continue;
-                
-                categoryIndex++;
-                categoryStarted = false;
-                
-                // Add category header with collapse functionality
-                html += `
-                    <tr class="table-light category-section">
-                        <td colspan="4">
-                            <a class="d-flex align-items-center text-dark text-decoration-none" 
-                               data-bs-toggle="collapse" 
-                               href="#category${categoryIndex}" 
-                               role="button" 
-                               aria-expanded="true" 
-                               aria-controls="category${categoryIndex}">
-                                <i class="fas fa-chevron-down me-2"></i>
-                                <strong>${categoryName}</strong>
-                                <span class="badge bg-primary ms-2">${groupedItems[categoryName].length} items</span>
-                            </a>
-                        </td>
-                    </tr>
-                `;
-                
-                // Add collapsible content for items in this category
-                html += `
-                    <tr class="category-section">
-                        <td colspan="4" class="p-0">
-                            <div class="collapse show" id="category${categoryIndex}">
-                                <table class="table table-bordered mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Item</th>
-                                            <th>Category</th>
-                                            <th>Cubic Ft.</th>
-                                            <th style="width:120px;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                `;
-                
-                // Add items in this category, but only if we've reached our starting point
-                let itemsInThisCategory = groupedItems[categoryName];
-                let startItemIndex = 0;
-                
-                // If this is the first category we're showing, we need to skip some items
-                if (categoryName === currentCategory) {
-                    startItemIndex = itemsToSkip;
-                }
-                
-                // Only add items up to our end index
-                for (let i = startItemIndex; i < itemsInThisCategory.length; i++) {
-                    if (itemCount >= itemsPerPage) break;
-                    
-                    const item = itemsInThisCategory[i];
-                    html += `
-                        <tr class="inventory-item-row">
-                            <td>${item.item}</td>
-                            <td>${item.category.name}</td>
-                            <td>${item.cubic_ft}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-info edit-inventory-btn" 
-                                    data-id="${item.id}" 
-                                    data-item="${item.item}" 
-                                    data-category-id="${item.category_id}" 
-                                    data-cubic-ft="${item.cubic_ft}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger delete-inventory-btn" data-id="${item.id}">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    itemCount++;
-                }
-                
-                // Close the collapsible content
-                html += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                
-                // If we've shown all the items we need, break out of the loop
-                if (itemCount >= itemsPerPage) break;
-            }
-        } else {
-            html = '<tr><td colspan="4" class="text-center">No records available</td></tr>';
-        }
-        
-        $('#inventoryTableBody').html(html);
-        
-        // Add click handler for collapse icons
-        $('.collapse').on('show.bs.collapse', function() {
-            $(this).prev().find('.fa-chevron-down').addClass('fa-rotate-180');
-        }).on('hide.bs.collapse', function() {
-            $(this).prev().find('.fa-chevron-down').removeClass('fa-rotate-180');
-        });
-    }
     
     // Category Form Submit
     $('#categoryForm').on('submit', function(e) {
@@ -418,9 +482,11 @@ $(document).ready(function() {
                 const newRow = `
                     <tr>
                         <td>${response.data.name}</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-info edit-category-btn" data-id="${response.data.id}" data-name="${response.data.name}"><i class="fas fa-edit"></i></button>
-                            <button type="button" class="btn btn-sm btn-danger delete-category-btn" data-id="${response.data.id}"><i class="fas fa-trash-alt"></i></button>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-info edit-category-btn" data-id="${response.data.id}" data-name="${response.data.name}"><i class="fas fa-edit"></i></button>
+                                <button type="button" class="btn btn-sm btn-danger delete-category-btn" data-id="${response.data.id}"><i class="fas fa-trash-alt"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -736,6 +802,50 @@ $(document).ready(function() {
         });
     });
     
+    // Search functionality
+    $('#searchInventory').on('keyup', function() {
+        const searchText = $(this).val().toLowerCase();
+        searchInventoryItems(searchText);
+    });
+    
+    // Clear search
+    $('#clearSearch').on('click', function() {
+        $('#searchInventory').val('');
+        searchInventoryItems('');
+    });
+    
+    // Function to search inventory items
+    function searchInventoryItems(searchText) {
+        if (searchText === '') {
+            // If search is empty, show all items
+            filteredItems = [...allItems];
+        } else {
+            // Filter items based on search text
+            filteredItems = allItems.filter(item => 
+                item.item.toLowerCase().includes(searchText) || 
+                item.category.name.toLowerCase().includes(searchText) || 
+                item.cubic_ft.toString().includes(searchText)
+            );
+        }
+        
+        // Render the table
+        renderInventoryTable();
+        
+        // If there's a search text, expand categories with matching items
+        if (searchText !== '') {
+            // Get unique categories that have matching items
+            const matchingCategories = new Set(filteredItems.map(item => item.category.name));
+            
+            // Expand matching categories
+            matchingCategories.forEach(category => {
+                $(`.category-content[data-category="${category}"]`).show();
+                $(`.category-header[data-category="${category}"] .toggle-category i`)
+                    .removeClass('fa-chevron-right')
+                    .addClass('fa-chevron-down');
+            });
+        }
+    }
+    
     // Load Categories
     function loadCategories() {
         $.ajax({
@@ -749,9 +859,11 @@ $(document).ready(function() {
                         html += `
                             <tr>
                                 <td>${category.name}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info edit-category-btn" data-id="${category.id}" data-name="${category.name}"><i class="fas fa-edit"></i></button>
-                                    <button type="button" class="btn btn-sm btn-danger delete-category-btn" data-id="${category.id}"><i class="fas fa-trash-alt"></i></button>
+                                <td class="text-end">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-info edit-category-btn" data-id="${category.id}" data-name="${category.name}"><i class="fas fa-edit"></i></button>
+                                        <button type="button" class="btn btn-sm btn-danger delete-category-btn" data-id="${category.id}"><i class="fas fa-trash-alt"></i></button>
+                                    </div>
                                 </td>
                             </tr>
                         `;
@@ -789,7 +901,7 @@ $(document).ready(function() {
                 allItems = response.items;
                 filteredItems = [...allItems];
                 
-                // Render the table with pagination
+                // Render the table
                 renderInventoryTable();
             },
             error: function() {
@@ -801,5 +913,114 @@ $(document).ready(function() {
             }
         });
     }
+    
+    // Function to render inventory table
+    function renderInventoryTable() {
+        // Group items by category
+        const groupedItems = {};
+        filteredItems.forEach(item => {
+            if (!groupedItems[item.category.name]) {
+                groupedItems[item.category.name] = {
+                    items: []
+                };
+            }
+            groupedItems[item.category.name].items.push(item);
+        });
+        
+        // Render the table
+        let html = '';
+        
+        if (Object.keys(groupedItems).length > 0) {
+            Object.entries(groupedItems).forEach(([categoryName, categoryData], categoryIndex) => {
+                // Add category header with collapse functionality
+                html += `
+                    <tr class="category-header" data-category="${categoryName}">
+                        <td colspan="4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-link text-dark p-0 me-2 toggle-category" data-category="${categoryName}">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <span class="category-title">${categoryName}</span>
+                                    <span class="category-count ms-2">${categoryData.items.length} items</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
+                // Add collapsible content for items
+                html += `
+                    <tr class="category-content" data-category="${categoryName}">
+                        <td colspan="4" class="p-0">
+                            <div class="category-items-wrapper">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Category</th>
+                                            <th>Cubic Ft.</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                // Add items for this category
+                categoryData.items.forEach(item => {
+                    html += `
+                        <tr class="category-items">
+                            <td>${item.item}</td>
+                            <td>${item.category.name}</td>
+                            <td>${item.cubic_ft}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-info edit-inventory-btn" 
+                                        data-id="${item.id}" 
+                                        data-item="${item.item}" 
+                                        data-category-id="${item.category_id}" 
+                                        data-cubic-ft="${item.cubic_ft}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger delete-inventory-btn" data-id="${item.id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                // Close the items table
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            html = '<tr><td colspan="4" class="text-center">No records available</td></tr>';
+        }
+        
+        $('#inventoryTableBody').html(html);
+        
+        // Initialize category states
+        $('.category-content').hide();
+        $('.category-header .toggle-category i').addClass('fa-chevron-right').removeClass('fa-chevron-down');
+        
+        // Add click handlers for category toggles
+        $('.toggle-category').off('click').on('click', function(e) {
+            e.preventDefault();
+            const category = $(this).data('category');
+            const icon = $(this).find('i');
+            const content = $(`.category-content[data-category="${category}"]`);
+            
+            content.slideToggle(300);
+            icon.toggleClass('fa-chevron-right fa-chevron-down');
+        });
+    }
 });
 </script>
+@endsection

@@ -77,7 +77,7 @@
     
                 <!-- Modal Body -->
                 <div class="modal-body">
-                    <form method="POST" action="">
+                    <form id="changePasswordForm">
                         @csrf
     
                         <div class="mb-3">
@@ -123,8 +123,7 @@
                         </button>
                     </li> 
                     <li class="mx-2 welcome-text">
-                        <h5 class="mb-0 fw-semibold text-truncate">Good Morning, James!</h5>
-                        <!-- <h6 class="mb-0 fw-normal text-muted text-truncate fs-14">Here's your overview this week.</h6> -->
+                        <h5 class="mb-0 fw-semibold text-truncate">Good Morning, {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}!</h5>
                     </li>                   
                 </ul>
                 <ul class="topbar-item list-unstyled d-inline-flex align-items-center mb-0">    
@@ -152,16 +151,25 @@
                     <li class="dropdown topbar-item">
                         <a class="nav-link dropdown-toggle arrow-none nav-icon" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false" data-bs-offset="0,19">
-                            <img src="assets/images/users/avatar-1.jpg" alt="" class="thumb-md rounded-circle">
+                            <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                class="thumb-md rounded-circle" 
+                                onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
                         </a>
                         <div class="dropdown-menu dropdown-menu-end py-0">
                             <div class="d-flex align-items-center dropdown-item py-2 bg-secondary-subtle">
                                 <div class="flex-shrink-0">
-                                    <img src="assets/images/users/avatar-1.jpg" alt="" class="thumb-md rounded-circle">
+                                    <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                        class="thumb-md rounded-circle"
+                                        onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate align-self-center">
-                                    <h6 class="my-0 fw-medium text-dark fs-13">William Martin</h6>
-                                    <small class="text-muted mb-0">Front End Developer</small>
+                                    <h6 class="my-0 fw-medium text-dark fs-13">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</h6>
+                                    <small class="text-muted mb-0">
+                                        <span class="badge bg-{{ Auth::user()->privilege === 'admin' ? 'danger' : (Auth::user()->privilege === 'manager' ? 'warning' : 'info') }}">
+                                            {{ ucfirst(Auth::user()->privilege) }}
+                                        </span>
+                                        {{ Auth::user()->position }}
+                                    </small>
                                 </div><!--end media-body-->
                             </div>
                             <div class="dropdown-divider mt-0"></div>
@@ -173,7 +181,7 @@
                             <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#accountSettingsModal"><i class="las la-lock fs-18 me-1 align-text-bottom"></i> Security</a>
                             <a class="dropdown-item" href="pages-faq.html"><i class="las la-question-circle fs-18 me-1 align-text-bottom"></i> Help Center</a>                       
                             <div class="dropdown-divider mb-0"></div>
-                            <a class="dropdown-item text-danger" href="auth-login.html"><i class="las la-power-off fs-18 me-1 align-text-bottom"></i> Logout</a>
+                            <a class="dropdown-item text-danger" href="#" id="logoutBtn"><i class="las la-power-off fs-18 me-1 align-text-bottom"></i> Logout</a>
                         </div>
                     </li>
                 </ul><!--end topbar-nav-->
@@ -379,3 +387,117 @@
 
         <!-- Page Content-->
         <div class="page-content">
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out of your account",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Submit the logout form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("logout") }}';
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+    
+    // Change password functionality
+    document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (newPassword !== confirmPassword) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'New passwords do not match',
+                icon: 'error',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+        
+        // Show loading state
+        Swal.fire({
+            title: 'Updating Password',
+            text: 'Please wait...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Send AJAX request to update password
+        fetch('{{ route("password.update") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword,
+                new_password_confirmation: confirmPassword
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Your password has been updated successfully',
+                    icon: 'success',
+                    confirmButtonColor: '#3085d6'
+                }).then(() => {
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('accountSettingsModal'));
+                    modal.hide();
+                    
+                    // Reset the form
+                    document.getElementById('changePasswordForm').reset();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: data.message || 'Failed to update password',
+                    icon: 'error',
+                    confirmButtonColor: '#3085d6'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                title: 'Error!',
+                text: 'An error occurred while updating your password',
+                icon: 'error',
+                confirmButtonColor: '#3085d6'
+            });
+            console.error('Error:', error);
+        });
+    });
+});
+</script>

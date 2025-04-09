@@ -25,6 +25,25 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
     background-color: #dc3545;
     color: white;
 }
+
+/* Clickable contact info styles */
+.contact-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.contact-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.contact-link i {
+    font-size: 0.9rem;
+}
 </style>
 <div class="container-fluid">
     <div class="row">
@@ -240,8 +259,22 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                 name: 'company_name',
                 render: function(data, type, row) {
                     if (type === 'display') {
+                        // Format the website URL properly
+                        let websiteUrl = row.company_website || '';
+                        
+                        // Remove any localhost prefix
+                        websiteUrl = websiteUrl.replace(/^https?:\/\/127\.0\.0\.1:8000\//, '');
+                        
+                        // Ensure the URL has a proper protocol
+                        if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) {
+                            websiteUrl = 'https://' + websiteUrl;
+                        }
+                        
+                        // Clean up any double slashes except after protocol
+                        websiteUrl = websiteUrl.replace(/([^:])\/\//g, '$1/');
+                        
                         return `<strong>${data}</strong><br>
-                                <small><i class="fas fa-globe"></i> ${row.company_website || 'N/A'}</small>`;
+                                <small><i class="fas fa-globe"></i> ${websiteUrl ? `<a href="${websiteUrl}" target="_blank" rel="noopener noreferrer" class="contact-link">${websiteUrl.replace(/^https?:\/\//, '')}</a>` : 'N/A'}</small>`;
                     }
                     return data; // Return raw data for sorting and searching
                 }
@@ -321,11 +354,11 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                         <table class="table table-sm">
                             <tr>
                                 <th>Email:</th>
-                                <td>${d.email}</td>
+                                <td><a href="mailto:${d.email}" class="contact-link"><i class="fas fa-envelope"></i> ${d.email}</a></td>
                             </tr>
                             <tr>
                                 <th>Phone:</th>
-                                <td>${d.phone_number}</td>
+                                <td><a href="tel:${d.phone_number}" class="contact-link"><i class="fas fa-phone"></i> ${d.phone_number}</a></td>
                             </tr>
                             <tr>
                                 <th>Address:</th>

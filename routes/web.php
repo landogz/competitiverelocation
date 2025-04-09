@@ -7,6 +7,8 @@ use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\StripeController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,13 +29,10 @@ Route::get('/forgot', function () {
     return view('auth.forgot');
 });
 
-Route::get('/register', function () {
-    return view('auth.register');
-});
-
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
 });
 
 Route::get('/registercustomer', function () {
@@ -165,3 +164,22 @@ Route::delete('/inventory-items/{inventoryItem}', [InventoryItemController::clas
 // Stripe Connect Routes
 Route::get('/stripe/connect', [StripeController::class, 'connect'])->name('stripe.connect');
 Route::post('/stripe/callback', [StripeController::class, 'callback'])->name('stripe.callback');
+
+// Auth Routes
+Route::get('/auth/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/auth/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/auth/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/password/reset', [AuthController::class, 'showForgotForm'])->name('password.request');
+Route::post('/password/email', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.update');
+
+// Password Update Route (for logged-in users)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/password/update', [AuthController::class, 'updatePassword'])->name('password.update');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/update-photo', [ProfileController::class, 'updatePhoto'])->name('profile.update.photo');
+});
