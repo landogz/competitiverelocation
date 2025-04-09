@@ -13,7 +13,7 @@
         </div><!--end col-->
     </div><!--end row-->
 
-    <div class="row">
+    <div class="row">                        
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">
@@ -32,51 +32,51 @@
                                     <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Delivery Service</h5>
                                 </div>
                                 <div class="card-body p-0">
-                                    <div class="table-responsive">
+                    <div class="table-responsive">
                                         <table class="table table-hover mb-0">
-                                            <thead class="table-light">
-                                                <tr>
+                            <thead class="table-light">
+                            <tr>
                                                     <th>Value Range</th>
                                                     <th>Rate</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
                                                     <td>Less than $750</td>
                                                     <td><span class="badge bg-primary">$79.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$750 - Less than $1500</td>
                                                     <td><span class="badge bg-primary">$159.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$1500 - Less than $2000</td>
                                                     <td><span class="badge bg-primary">$179.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$2000 - Less than $2750</td>
                                                     <td><span class="badge bg-primary">$194.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$2750 - Less than $4000</td>
                                                     <td><span class="badge bg-primary">$224.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$4000 - Less than $6000</td>
                                                     <td><span class="badge bg-primary">$284.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$6000 - Less than $8000</td>
                                                     <td><span class="badge bg-primary">$314.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$8000 - Less than $10000</td>
                                                     <td><span class="badge bg-primary">$344.99</span> light assembly</td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>$10000 and more</td>
                                                     <td><span class="badge bg-primary">$384.99</span> light assembly</td>
-                                                </tr>
+                            </tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -125,26 +125,26 @@
                                                 <tr>
                                                     <th>Crew Size</th>
                                                     <th>Rate</th>
-                                                </tr>
+                            </tr>
                                             </thead>
                                             <tbody>
-                                                <tr>
+                            <tr>
                                                     <td>2 men</td>
                                                     <td><span class="badge bg-info">$270.00</span></td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>  
                                                     <td>3 men</td>
                                                     <td><span class="badge bg-info">$465.00</span></td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr>
                                                     <td>4 men</td>
                                                     <td><span class="badge bg-info">$465.00</span></td>
-                                                </tr>
-                                                <tr>
+                            </tr>
+                            <tr> 
                                                     <td>5 men</td>
                                                     <td><span class="badge bg-info">$465.00</span></td>
-                                                </tr>
-                                            </tbody>
+                            </tr>
+                            </tbody>
                                         </table>
                                     </div>
                                 </div>

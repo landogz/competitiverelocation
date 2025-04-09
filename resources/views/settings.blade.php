@@ -954,7 +954,7 @@ $(document).ready(function() {
                     <tr class="category-content" data-category="${categoryName}">
                         <td colspan="4" class="p-0">
                             <div class="category-items-wrapper">
-                                <table class="table table-hover mb-0">
+                                <table class="table table-hover table-bordered mb-0">
                             <thead class="table-light">
                               <tr>
                                 <th>Item</th>
