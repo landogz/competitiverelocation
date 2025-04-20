@@ -67,7 +67,7 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                     </div>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
                         <table id="agentsTable" class="table table-bordered mb-0 table-centered">
                         <thead>
                             <tr>

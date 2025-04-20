@@ -3,6 +3,8 @@
 @section('title', 'Dashboard')
 
 @section('content')
+<!-- Add custom dashboard CSS -->
+<link href="{{ asset('assets/css/dashboard.css') }}" rel="stylesheet">
 
         <div class="container-fluid">
             <div class="row">
@@ -28,7 +30,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$8365.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">248</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -58,7 +60,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">865</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">156</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -88,7 +90,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">155</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">89</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -118,7 +120,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$12550.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">$4,850.00</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -150,7 +152,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$8365.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">134</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -181,7 +183,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">865</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">78</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -210,7 +212,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">155</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">192</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -240,7 +242,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$12550.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">$3,750.00</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -272,7 +274,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$8365.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">$2,450.00</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -302,7 +304,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">865</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">45</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -332,7 +334,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">155</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">24</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -362,7 +364,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$12550.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">$185,750.00</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">

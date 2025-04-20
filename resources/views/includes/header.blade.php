@@ -167,7 +167,13 @@
                         </button>
                     </li> 
                     <li class="mx-2 welcome-text">
-                        <h5 class="mb-0 fw-semibold text-truncate" id="timeBasedGreeting">Good Morning, {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}!</h5>
+                        <h5 class="mb-0 fw-semibold text-truncate" id="timeBasedGreeting">
+                            @if(Auth::check())
+                                Good Morning, {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}!
+                            @else
+                                Welcome!
+                            @endif
+                        </h5>
                     </li>                   
                 </ul>
                 <ul class="topbar-item list-unstyled d-inline-flex align-items-center mb-0">    
@@ -195,37 +201,45 @@
                     <li class="dropdown topbar-item">
                         <a class="nav-link dropdown-toggle arrow-none nav-icon" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false" data-bs-offset="0,19">
-                            <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
-                                class="thumb-md rounded-circle" 
-                                onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
+                            @if(Auth::check())
+                                <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                    class="thumb-md rounded-circle" 
+                                    onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
+                            @else
+                                <img src="{{ asset('assets/images/no-profile-image.png') }}" alt="User" class="thumb-md rounded-circle">
+                            @endif
                         </a>
                         <div class="dropdown-menu dropdown-menu-end py-0">
-                            <div class="d-flex align-items-center dropdown-item py-2 bg-secondary-subtle">
-                                <div class="flex-shrink-0">
-                                    <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
-                                        class="thumb-md rounded-circle"
-                                        onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
+                            @if(Auth::check())
+                                <div class="d-flex align-items-center dropdown-item py-2 bg-secondary-subtle">
+                                    <div class="flex-shrink-0">
+                                        <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                            class="thumb-md rounded-circle"
+                                            onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
+                                    </div>
+                                    <div class="flex-grow-1 ms-2 text-truncate align-self-center">
+                                        <h6 class="my-0 fw-medium text-dark fs-13">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</h6>
+                                        <small class="text-muted mb-0">
+                                            <span class="badge bg-{{ Auth::user()->privilege === 'admin' ? 'danger' : (Auth::user()->privilege === 'manager' ? 'warning' : 'info') }}">
+                                                {{ ucfirst(Auth::user()->privilege) }}
+                                            </span>
+                                            {{ Auth::user()->position }}
+                                        </small>
+                                    </div><!--end media-body-->
                                 </div>
-                                <div class="flex-grow-1 ms-2 text-truncate align-self-center">
-                                    <h6 class="my-0 fw-medium text-dark fs-13">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</h6>
-                                    <small class="text-muted mb-0">
-                                        <span class="badge bg-{{ Auth::user()->privilege === 'admin' ? 'danger' : (Auth::user()->privilege === 'manager' ? 'warning' : 'info') }}">
-                                            {{ ucfirst(Auth::user()->privilege) }}
-                                        </span>
-                                        {{ Auth::user()->position }}
-                                    </small>
-                                </div><!--end media-body-->
-                            </div>
-                            <div class="dropdown-divider mt-0"></div>
-                            <small class="text-muted px-2 pb-1 d-block">Account</small>
-                            <a class="dropdown-item" href="{{ url('/profile') }}"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
-                            {{-- <a class="dropdown-item" href="pages-faq.html"><i class="las la-wallet fs-18 me-1 align-text-bottom"></i> Earning</a> --}}
-                            <small class="text-muted px-2 py-1 d-block">Settings</small>                        
-                            {{-- <a class="dropdown-item" href="pages-profile.html"><i class="las la-cog fs-18 me-1 align-text-bottom"></i>Account Settings</a> --}}
-                            <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#accountSettingsModal"><i class="las la-lock fs-18 me-1 align-text-bottom"></i> Security</a>
-                            <a class="dropdown-item" href="pages-faq.html"><i class="las la-question-circle fs-18 me-1 align-text-bottom"></i> Help Center</a>                       
-                            <div class="dropdown-divider mb-0"></div>
-                            <a class="dropdown-item text-danger" href="#" id="logoutBtn"><i class="las la-power-off fs-18 me-1 align-text-bottom"></i> Logout</a>
+                                <div class="dropdown-divider mt-0"></div>
+                                <small class="text-muted px-2 pb-1 d-block">Account</small>
+                                <a class="dropdown-item" href="{{ url('/profile') }}"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
+                                {{-- <a class="dropdown-item" href="pages-faq.html"><i class="las la-wallet fs-18 me-1 align-text-bottom"></i> Earning</a> --}}
+                                <small class="text-muted px-2 py-1 d-block">Settings</small>                        
+                                {{-- <a class="dropdown-item" href="pages-profile.html"><i class="las la-cog fs-18 me-1 align-text-bottom"></i>Account Settings</a> --}}
+                                <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#accountSettingsModal"><i class="las la-lock fs-18 me-1 align-text-bottom"></i> Security</a>
+                                <a class="dropdown-item" href="pages-faq.html"><i class="las la-question-circle fs-18 me-1 align-text-bottom"></i> Help Center</a>                       
+                                <div class="dropdown-divider mb-0"></div>
+                                <a class="dropdown-item text-danger" href="#" id="logoutBtn"><i class="las la-power-off fs-18 me-1 align-text-bottom"></i> Logout</a>
+                            @else
+                                <a class="dropdown-item" href="{{ route('login') }}"><i class="las la-sign-in-alt fs-18 me-1 align-text-bottom"></i> Login</a>
+                            @endif
                         </div>
                     </li>
                 </ul><!--end topbar-nav-->
@@ -440,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateGreeting() {
         const hour = new Date().getHours();
         const greetingElement = document.getElementById('timeBasedGreeting');
-        const userName = "{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}";
         
         let greeting;
         if (hour >= 5 && hour < 12) {
@@ -453,7 +466,12 @@ document.addEventListener('DOMContentLoaded', function() {
             greeting = "Good Night";
         }
         
-        greetingElement.textContent = `${greeting}, ${userName}!`;
+        @if(Auth::check())
+            const userName = "{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}";
+            greetingElement.textContent = `${greeting}, ${userName}!`;
+        @else
+            greetingElement.textContent = `${greeting}!`;
+        @endif
     }
     
     // Update greeting immediately and then every minute
@@ -461,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateGreeting, 60000);
     
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+    document.getElementById('logoutBtn')?.addEventListener('click', function(e) {
         e.preventDefault();
         
         Swal.fire({

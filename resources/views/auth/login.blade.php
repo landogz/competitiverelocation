@@ -32,7 +32,7 @@
                             <div class="card-body p-0 bg-black auth-header-box rounded-top">
                                 <div class="text-center p-3">
                                     <a href="#" class="logo logo-admin">
-                                        <img src="assets/images/logo-sm.png" height="50" alt="logo" class="auth-logo">
+                                        <img src="{{ asset('assets/images/logo-sm.png') }}" height="50" alt="logo" class="auth-logo">
                                     </a>
                                     <h4 class="mt-3 mb-1 fw-semibold text-white fs-18">Let's Get Started</h4>   
                                     <p class="text-muted fw-medium mb-0">Sign in to continue to Competitive Relocation.</p>  
@@ -43,18 +43,18 @@
                                     @csrf
                                     <div class="form-group mb-2">
                                         <label class="form-label" for="email">Email</label>
-                                        <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" placeholder="Enter email" required autofocus>                               
+                                        <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="Enter email" required autofocus>                               
                                     </div><!--end form-group--> 
         
                                     <div class="form-group">
                                         <label class="form-label" for="password">Password</label>                                            
-                                        <input type="password" class="form-control" name="password" id="password" placeholder="Enter password" required>                            
+                                        <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" id="password" placeholder="Enter password" required>                            
                                     </div><!--end form-group--> 
         
                                     <div class="form-group row mt-3">
                                         <div class="col-sm-6">
                                             <div class="form-check form-switch form-switch-success">
-                                                <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                                                <input class="form-check-input" type="checkbox" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="remember">Remember me</label>
                                             </div>
                                         </div><!--end col--> 
