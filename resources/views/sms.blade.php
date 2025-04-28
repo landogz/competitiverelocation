@@ -103,7 +103,7 @@
                         <button type="submit" class="btn btn-success">Send SMS</button>
                     </form>
                 </div><!--end card-body--> 
-            </div><!--end card-->
+            </div><!--end card-->                             
         </div> <!--end col-->   
         <div class="col-md-12 col-lg-6">
             <div class="card">
@@ -128,7 +128,7 @@
                             </thead>
                             <tbody id="smsLogsTableBody">
                                 @forelse($logs as $log)
-                                <tr>
+                            <tr>
                                     <td>{{ $log->transaction_id }}</td>   
                                     <td>{{ $log->message }}</td>
                                     <td>{{ $log->recipient }}</td>                                
@@ -142,7 +142,7 @@
                                 @empty
                                 <tr>
                                     <td colspan="5" class="text-center">No logs available</td>
-                                </tr>
+                            </tr>
                                 @endforelse
                             </tbody>
                         </table><!--end /table-->

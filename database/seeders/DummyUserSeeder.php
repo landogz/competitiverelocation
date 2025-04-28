@@ -15,7 +15,8 @@ class DummyUserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'Rolan Benavidez',
+            'first_name' => 'Rolan',
+            'last_name' => 'Benavidez',
             'email' => 'rolan.benavidez@gmail.com',
             'password' => Hash::make('0000000'),
             'email_verified_at' => now(),

@@ -10,6 +10,7 @@ use App\Http\Controllers\StripeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -174,4 +175,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/update-photo', [ProfileController::class, 'updatePhoto'])->name('profile.update.photo');
+
+    // Leads Routes
+    Route::get('/leads', [TransactionController::class, 'create'])->name('leads.create');
+    Route::get('/leads/{id}/edit', [TransactionController::class, 'edit'])->name('leads.edit');
+    Route::post('/leads', [TransactionController::class, 'store'])->name('leads.store');
+    Route::put('/leads/{id}', [TransactionController::class, 'update'])->name('leads.update');
+    Route::post('/leads/{id}/update-field', [TransactionController::class, 'updateField'])->name('leads.updateField');
+
+    Route::get('/loadboard', [TransactionController::class, 'index']);
+    Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
+    Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');
 });

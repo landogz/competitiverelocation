@@ -19,7 +19,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="row">
+ <div class="row">
         <div class="col-xl-3 col-md-6">
             <div class="card card-h-100">
                 <div class="card-body">
@@ -143,7 +143,7 @@
                 <div class="card-header">
                     <h4 class="card-title mb-0">Sales Distribution</h4>
                 </div>
-                <div class="card-body">
+        <div class="card-body">
                     <div id="salesDistribution" style="height: 350px;"></div>
                 </div>
             </div>
@@ -157,22 +157,22 @@
                 <div class="card-header">
                     <h4 class="card-title mb-0">Top Performing Agents</h4>
                 </div>
-                <div class="card-body">
+        <div class="card-body">
                     <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                         <table id="agentsTable" class="table table-centered table-nowrap mb-0">
                             <thead class="table-light">
-                                <tr>
+                        <tr>
                                     <th>Rank</th>
                                     <th>Agent</th>
-                                    <th>Total Sales</th>
-                                    <th>Revenue</th>
-                                    <th>Rating</th>
+                            <th>Total Sales</th>
+                            <th>Revenue</th>
+                            <th>Rating</th>
                                     <th>Status</th>
                                     <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
                                     <td>
                                         <span class="badge bg-primary">#1</span>
                                     </td>
@@ -187,8 +187,8 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>320</td>
-                                    <td>$45,000</td>
+                            <td>320</td>
+                            <td>$45,000</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-star text-warning"></i>
@@ -202,8 +202,8 @@
                                     <td>
                                         <button class="btn btn-sm btn-soft-primary">View Profile</button>
                                     </td>
-                                </tr>
-                                <tr>
+                        </tr>
+                        <tr>
                                     <td>
                                         <span class="badge bg-primary">#2</span>
                                     </td>
@@ -218,8 +218,8 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>290</td>
-                                    <td>$39,800</td>
+                            <td>290</td>
+                            <td>$39,800</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-star text-warning"></i>
@@ -233,8 +233,8 @@
                                     <td>
                                         <button class="btn btn-sm btn-soft-primary">View Profile</button>
                                     </td>
-                                </tr>
-                                <tr>
+                        </tr>
+                        <tr>
                                     <td>
                                         <span class="badge bg-primary">#3</span>
                                     </td>
@@ -249,8 +249,8 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>275</td>
-                                    <td>$37,500</td>
+                            <td>275</td>
+                            <td>$37,500</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-star text-warning"></i>
@@ -264,12 +264,12 @@
                                     <td>
                                         <button class="btn btn-sm btn-soft-primary">View Profile</button>
                                     </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 </div>

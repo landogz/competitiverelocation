@@ -10,15 +10,15 @@
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
     <!-- SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <style>
-        .page-content{
-            background-color: #EEEEEE;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .hidden{
-            display: none !important;
-        }
-    </style>
+<style>
+    .page-content{
+        background-color: #EEEEEE;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .hidden{
+        display: none !important;
+    }
+</style>
 </head>
 <body>
 

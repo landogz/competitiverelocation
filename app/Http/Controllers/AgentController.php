@@ -23,12 +23,7 @@ class AgentController extends Controller
 
             return DataTables::of($query)
                 ->addColumn('services', function($agent) {
-                    $services = [];
-                    if ($agent->local_moving_service === 'yes') $services[] = 'Local Moving';
-                    if ($agent->delivery_service === 'yes') $services[] = 'Delivery';
-                    if ($agent->labor_services === 'yes') $services[] = 'Labor';
-                    if ($agent->commercial_moving === 'yes') $services[] = 'Commercial';
-                    return $services;
+                    return $agent->services;
                 })
                 ->addColumn('status', function($agent) {
                     return $agent->is_active;
@@ -65,8 +60,8 @@ class AgentController extends Controller
     public function syncAgents(Request $request)
     {
         try {
-            // Get existing company names to avoid duplicates
-            $existingCompanies = Agent::pluck('company_name')->toArray();
+            // Get existing external IDs to avoid duplicates
+            $existingExternalIds = Agent::pluck('external_id')->toArray();
             
             // Fetch agents from API
             $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/data');
@@ -86,14 +81,42 @@ class AgentController extends Controller
             $skippedCount = 0;
             
             foreach ($apiAgents as $apiAgent) {
-                // Skip if company already exists
-                if (in_array($apiAgent['company_name'], $existingCompanies)) {
+                // Skip if agent already exists (using external_id)
+                if (in_array($apiAgent['id'], $existingExternalIds)) {
                     $skippedCount++;
                     continue;
                 }
                 
+                // Create services array
+                $services = [
+                    'local_moving' => ($apiAgent['local_moving_service'] ?? '') === 'yes',
+                    'delivery' => ($apiAgent['delivery_service'] ?? '') === 'yes',
+                    'labor' => ($apiAgent['labor_services'] ?? '') === 'yes',
+                    'commercial' => ($apiAgent['commercial_moving'] ?? '') === 'yes',
+                    'booking_agent' => ($apiAgent['booking_agent'] ?? '') === 'yes',
+                    'general_freight' => ($apiAgent['general_freight'] ?? '') === 'yes'
+                ];
+
+                // Clean numeric values
+                $salesFields = [
+                    'corporate_sales',
+                    'consumer_sales',
+                    'local_sales',
+                    'long_distance_sales',
+                    'delivery_service_sales',
+                    'total_sales'
+                ];
+
+                foreach ($salesFields as $field) {
+                    if (isset($apiAgent[$field])) {
+                        $apiAgent[$field] = str_replace(',', '', $apiAgent[$field]);
+                        $apiAgent[$field] = is_numeric($apiAgent[$field]) ? $apiAgent[$field] : 0;
+                    }
+                }
+                
                 // Create new agent
                 Agent::create([
+                    'external_id' => $apiAgent['id'],
                     'company_name' => $apiAgent['company_name'],
                     'company_website' => $apiAgent['company_website'] ?? null,
                     'contact_name' => $apiAgent['contact_name'] ?? null,
@@ -114,14 +137,7 @@ class AgentController extends Controller
                     'long_distance_sales' => $apiAgent['long_distance_sales'] ?? null,
                     'delivery_service_sales' => $apiAgent['delivery_service_sales'] ?? null,
                     'total_sales' => $apiAgent['total_sales'] ?? null,
-                    'services' => [
-                        'local_moving' => ($apiAgent['local_moving_service'] ?? '') === 'yes',
-                        'delivery' => ($apiAgent['delivery_service'] ?? '') === 'yes',
-                        'labor' => ($apiAgent['labor_services'] ?? '') === 'yes',
-                        'commercial' => ($apiAgent['commercial_moving'] ?? '') === 'yes',
-                        'booking_agent' => ($apiAgent['booking_agent'] ?? '') === 'yes',
-                        'general_freight' => ($apiAgent['general_freight'] ?? '') === 'yes'
-                    ],
+                    'services' => $services,
                     'truck_image' => $apiAgent['truck_image'] ?? null
                 ]);
                 

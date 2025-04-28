@@ -254,11 +254,11 @@
         <div class="brand">
             <a href="{{ url('/dashboard') }}" class="logo">
                 <span>
-                    <img src="assets/images/logo-sm.png" alt="logo-small" class="logo-sm">
+                    <img src="{{ asset('assets/images/logo-sm.png') }}" alt="logo-small" class="logo-sm">
                 </span>
                 <span class="">
-                    <img src="assets/images/logo-light.png" alt="logo-large" class="logo-lg logo-light">
-                    <img src="assets/images/logo-dark.png" alt="logo-large" class="logo-lg logo-dark">
+                    <img src="{{ asset('assets/images/logo-light.png') }}" alt="logo-large" class="logo-lg logo-light">
+                    <img src="{{ asset('assets/images/logo-dark.png') }}" alt="logo-large" class="logo-lg logo-dark">
                 </span>
             </a>
         </div>

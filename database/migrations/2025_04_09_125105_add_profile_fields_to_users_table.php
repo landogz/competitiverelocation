@@ -38,15 +38,3 @@ return new class extends Migration
         });
     }
 };
-
-            $table->dropColumn([
-                'profile_image',
-                'address',
-                'city',
-                'state',
-                'zip_code',
-                'phone'
-            ]);
-        });
-    }
-};

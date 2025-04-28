@@ -306,9 +306,23 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                 name: 'services',
                 render: function(data, type, row) {
                     if (type === 'display') {
-                        return Array.isArray(data) ? data.join(', ') : 'No services';
+                        if (data && typeof data === 'object') {
+                            const labelMap = {
+                                labor: 'Labor',
+                                delivery: 'Delivery',
+                                commercial: 'Commercial',
+                                local_moving: 'Local Moving',
+                                booking_agent: 'Booking Agent',
+                                general_freight: 'General Freight'
+                            };
+                            const enabled = Object.keys(data)
+                                .filter(key => data[key])
+                                .map(key => `<span class='badge bg-primary me-1'>${labelMap[key] || key}</span>`);
+                            return enabled.length ? enabled.join(' ') : 'No services';
+                        }
+                        return 'No services';
                     }
-                    return Array.isArray(data) ? data.join(' ') : ''; // For searching
+                    return '';
                 }
             },
             {

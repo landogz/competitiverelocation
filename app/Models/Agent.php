@@ -10,6 +10,7 @@ class Agent extends Model
     use HasFactory;
 
     protected $fillable = [
+        'external_id',
         'company_name',
         'company_website',
         'contact_name',

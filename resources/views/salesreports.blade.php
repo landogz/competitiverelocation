@@ -22,7 +22,7 @@
     <div class="row">
         <div class="col-xl-3 col-md-6">
             <div class="card card-h-100">
-                <div class="card-body">
+            <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
                             <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Sales</span>
@@ -69,12 +69,12 @@
                             </span>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
+    </div>
         <div class="col-xl-3 col-md-6">
             <div class="card card-h-100">
-                <div class="card-body">
+            <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
                             <span class="text-muted mb-3 lh-1 d-block text-truncate">New Customers</span>
@@ -119,9 +119,9 @@
                             <span class="avatar-title bg-soft-info rounded-circle fs-3">
                                 <i class="fas fa-shopping-cart text-info"></i>
                             </span>
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+</div>
             </div>
         </div>
     </div>
@@ -133,7 +133,7 @@
                 <div class="card-header">
                     <h4 class="card-title mb-0">Sales Performance</h4>
                 </div>
-                <div class="card-body">
+            <div class="card-body">
                     <div id="salesChart" style="height: 350px;"></div>
                 </div>
             </div>
@@ -145,8 +145,8 @@
                 </div>
                 <div class="card-body">
                     <div id="salesByCategory" style="height: 350px;"></div>
-                </div>
-            </div>
+    </div>
+</div>
         </div>
     </div>
 
@@ -157,20 +157,20 @@
                 <div class="card-header">
                     <h4 class="card-title mb-0">Recent Sales</h4>
                 </div>
-                <div class="card-body">
+        <div class="card-body">
                     <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                         <table id="salesTable" class="table table-centered table-nowrap mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Customer</th>
-                                    <th>Date</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
                                     <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    </tr>
+                </thead>
+                <tbody>
                                 <tr>
                                     <td>#CR-001</td>
                                     <td>
@@ -231,8 +231,8 @@
                                         <button class="btn btn-sm btn-soft-primary">View</button>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                </tbody>
+            </table>
                     </div>
                 </div>
             </div>
@@ -267,8 +267,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Sales Chart
     var salesOptions = {
-        series: [{
-            name: 'Sales',
+            series: [{
+                name: 'Sales',
             data: [31, 40, 28, 51, 42, 109, 100]
         }, {
             name: 'Revenue',
@@ -287,7 +287,7 @@ document.addEventListener("DOMContentLoaded", function() {
         stroke: {
             curve: 'smooth'
         },
-        xaxis: {
+            xaxis: {
             type: 'datetime',
             categories: ["2025-02-01", "2025-02-02", "2025-02-03", "2025-02-04", "2025-02-05", "2025-02-06", "2025-02-07"]
         },
