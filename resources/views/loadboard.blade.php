@@ -117,9 +117,9 @@
                                     <td>{{ $transaction->transaction_id }}</td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar-sm rounded-circle bg-primary bg-opacity-10 p-2">
+                                            <!-- <div class="avatar-sm rounded-circle bg-primary bg-opacity-10 p-2">
                                                 <span class="text-primary fw-semibold">{{ substr($transaction->firstname, 0, 1) }}{{ substr($transaction->lastname, 0, 1) }}</span>
-                                            </div>
+                                            </div> -->
                                             <div>
                                                 <h6 class="mb-0">{{ $transaction->firstname }} {{ $transaction->lastname }}</h6>
                                                 <small class="text-muted">{{ $transaction->email }}</small>
@@ -387,8 +387,9 @@
                             @foreach($images as $image)
                                 @if(trim($image))
                                     <a href="{{ trim($image) }}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer">
+                                       class="lightbox-image"
+                                       data-lightbox="gallery-{{ $transaction->id }}" 
+                                       data-title="{{ $transaction->firstname }} {{ $transaction->lastname }} - {{ $transaction->service }}">
                                         <img src="{{ trim($image) }}" 
                                              alt="Transaction Image" 
                                              class="img-thumbnail"
@@ -409,9 +410,10 @@
 </div>
 @endforeach
 
-@push('styles')
 <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
+<!-- Lightbox2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
 <style>
     .fs-14 { font-size: 14px; }
     .avatar-md { width: 48px; height: 48px; }
@@ -520,8 +522,13 @@
         transform: scale(1.05);
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
+    
+    /* Lightbox Styling */
+    .lightbox-image {
+        display: inline-block;
+        text-decoration: none;
+    }
 </style>
-@endpush
 
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -531,6 +538,8 @@
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
+<!-- Lightbox2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -579,6 +588,14 @@
         // Adjust table layout on window resize
         $(window).on('resize', function() {
             table.columns.adjust();
+        });
+
+        // Configure Lightbox
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true,
+            'albumLabel': 'Image %1 of %2',
+            'fadeDuration': 300
         });
 
         // Sync Transactions

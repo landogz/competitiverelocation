@@ -18,6 +18,7 @@ class Transaction extends Model
         'lead_source',
         'lead_type',
         'assigned_agent',
+        'status',
         'sales_name',
         'sales_email',
         'sales_location',
@@ -42,7 +43,6 @@ class Transaction extends Model
         'payment_id',
         'uploaded_image',
         'services',
-        'status',
         'last_synced_at'
     ];
 
@@ -62,4 +62,11 @@ class Transaction extends Model
         'grand_total' => 'decimal:2',
         'last_synced_at' => 'datetime'
     ];
+
+    public function inventoryItems()
+    {
+        return $this->belongsToMany(InventoryItem::class, 'transaction_inventory_items')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 } 

@@ -11,6 +11,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\EmailTemplateController;
+use App\Http\Controllers\CallCenterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,9 +110,15 @@ Route::middleware(['auth'])->group(function () {
         return view('salesreps');
     });
 
-    Route::get('/callcenter', function () {
-        return view('callcenter');
-    });
+    Route::get('/callcenter', [CallCenterController::class, 'index'])->name('callcenter.index');
+    Route::get('/callcenter/create', [CallCenterController::class, 'create'])->name('callcenter.create');
+    Route::post('/callcenter', [CallCenterController::class, 'store'])->name('callcenter.store');
+    Route::get('/callcenter/{lead}', [CallCenterController::class, 'show'])->name('callcenter.show');
+    Route::get('/callcenter/{lead}/edit', [CallCenterController::class, 'edit'])->name('callcenter.edit');
+    Route::put('/callcenter/{lead}', [CallCenterController::class, 'update'])->name('callcenter.update');
+    Route::delete('/callcenter/{lead}', [CallCenterController::class, 'destroy'])->name('callcenter.destroy');
+    Route::post('/callcenter/{lead}/logs', [CallCenterController::class, 'storeLog'])->name('callcenter.logs.store');
+    Route::get('/callcenter/{lead}/logs', [CallCenterController::class, 'viewLogs'])->name('callcenter.logs.view');
 
     Route::get('/salesreports', function () {
         return view('salesreports');
@@ -181,9 +189,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leads/{id}/edit', [TransactionController::class, 'edit'])->name('leads.edit');
     Route::post('/leads', [TransactionController::class, 'store'])->name('leads.store');
     Route::put('/leads/{id}', [TransactionController::class, 'update'])->name('leads.update');
-    Route::post('/leads/{id}/update-field', [TransactionController::class, 'updateField'])->name('leads.updateField');
+    Route::post('/leads/{id}/update-field', [TransactionController::class, 'updateField'])->name('leads.update-field');
+    Route::post('/leads/{id}/upload-insurance-document', [TransactionController::class, 'uploadInsuranceDocument'])->name('leads.upload-insurance-document');
+    Route::post('/leads/{id}/update-inventory', [TransactionController::class, 'updateInventoryItem'])->name('leads.update-inventory');
+    Route::get('/leads/{id}/added-inventory-items', [TransactionController::class, 'getAddedInventoryItems'])->name('leads.added-inventory-items');
 
     Route::get('/loadboard', [TransactionController::class, 'index']);
     Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
     Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');
+
+    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::post('/email-templates', [EmailTemplateController::class, 'store'])->name('email-templates.store');
+    Route::get('/email-templates/{template}', [EmailTemplateController::class, 'show'])->name('email-templates.show');
+    Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
 });

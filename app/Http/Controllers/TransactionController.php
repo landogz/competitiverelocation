@@ -8,6 +8,7 @@ use App\Models\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
@@ -182,15 +183,17 @@ class TransactionController extends Controller
     {
         $leadSources = \App\Models\LeadSource::pluck('title', 'id');
         $agents = \App\Models\Agent::pluck('company_name', 'id');
-        return view('leads', compact('leadSources', 'agents'));
+        $inventoryItems = \App\Models\InventoryItem::with('category')->get();
+        return view('leads', compact('leadSources', 'agents', 'inventoryItems'));
     }
 
     public function edit($id)
     {
-        $transaction = Transaction::findOrFail($id);
+        $transaction = Transaction::with('inventoryItems')->findOrFail($id);
         $leadSources = \App\Models\LeadSource::pluck('title', 'id');
         $agents = \App\Models\Agent::pluck('company_name', 'id');
-        return view('leads', compact('transaction', 'leadSources', 'agents'));
+        $inventoryItems = \App\Models\InventoryItem::with('category')->get();
+        return view('leads', compact('transaction', 'leadSources', 'agents', 'inventoryItems'));
     }
 
     public function store(Request $request)
@@ -221,7 +224,8 @@ class TransactionController extends Controller
         $value = $request->input('value');
         $allowedFields = [
             'firstname', 'lastname', 'email', 'phone', 'lead_source', 'lead_type', 'assigned_agent',
-            'sales_name', 'sales_email', 'sales_location',
+            'sales_name', 'sales_email', 'sales_location', 'date', 'service', 'no_of_items',
+            'pickup_location', 'delivery_location', 'miles', 'insurance_number'
         ];
         if (!in_array($field, $allowedFields)) {
             return response()->json(['success' => false, 'message' => 'Invalid field'], 400);
@@ -252,5 +256,92 @@ class TransactionController extends Controller
             'sales_location' => 'nullable|string|max:255',
             'uploaded_image' => 'nullable|string'
         ]);
+    }
+
+    // AJAX: Update inventory item quantity for a transaction
+    public function updateInventoryItem(Request $request, $id)
+    {
+        $transaction = Transaction::findOrFail($id);
+        $itemId = $request->input('item_id');
+        $quantity = $request->input('quantity');
+        
+        // Validate the input
+        $request->validate([
+            'item_id' => 'required|exists:inventory_items,id',
+            'quantity' => 'required|integer|min:0'
+        ]);
+        
+        // Update or create the pivot record
+        $transaction->inventoryItems()->syncWithoutDetaching([
+            $itemId => ['quantity' => $quantity]
+        ]);
+        
+        return response()->json([
+            'success' => true, 
+            'message' => 'Inventory item updated successfully'
+        ]);
+    }
+
+    /**
+     * Get added inventory items for a transaction
+     *
+     * @param int $id Transaction ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAddedInventoryItems($id)
+    {
+        $transaction = Transaction::with(['inventoryItems' => function($query) {
+            $query->wherePivot('quantity', '>', 0);
+        }, 'inventoryItems.category'])->findOrFail($id);
+        
+        $addedItems = $transaction->inventoryItems
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->item,
+                    'category' => $item->category->name,
+                    'cubic_ft' => $item->cubic_ft,
+                    'quantity' => $item->pivot->quantity,
+                    'total_volume' => $item->cubic_ft * $item->pivot->quantity
+                ];
+            })
+            ->sortBy('name')
+            ->values();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $addedItems
+        ]);
+    }
+
+    public function uploadInsuranceDocument(Request $request, $id)
+    {
+        $request->validate([
+            'insurance_document' => 'required|file|mimes:pdf,doc,docx|max:10240'
+        ]);
+
+        $transaction = Transaction::findOrFail($id);
+
+        if ($request->hasFile('insurance_document')) {
+            // Delete old document if exists
+            if ($transaction->insurance_document) {
+                Storage::disk('public')->delete($transaction->insurance_document);
+            }
+
+            // Store new document
+            $path = $request->file('insurance_document')->store('insurance_documents', 'public');
+            $transaction->insurance_document = $path;
+            $transaction->save();
+
+            return response()->json([
+                'success' => true,
+                'document_url' => Storage::url($path)
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No document was uploaded'
+        ], 400);
     }
 } 

@@ -428,6 +428,9 @@
                                     <li class="nav-item">
                                         <a href="{{ url('/sms') }}" class="nav-link ">SMS API</a>
                                     </li><!--end nav-item-->
+                                    <li class="nav-item">
+                                        <a href="{{ url('/email-templates') }}" class="nav-link ">Email Templates</a>
+                                    </li><!--end nav-item-->
                                 </ul><!--end nav-->
                             </div>
                         </li><!--end nav-item-->  

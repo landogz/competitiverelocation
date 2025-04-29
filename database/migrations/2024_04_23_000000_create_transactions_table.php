@@ -40,6 +40,8 @@ return new class extends Migration
             $table->string('uploaded_image')->nullable();
             $table->json('services')->nullable();
             $table->string('status')->default('pending');
+            $table->string('insurance_number')->nullable();
+            $table->string('insurance_document')->nullable();
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
         });

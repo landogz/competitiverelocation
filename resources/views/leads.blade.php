@@ -78,7 +78,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0"></h4>
-                        <button type="submit" class="btn btn-success btn-xl">Save Data</button>
+                        <!-- <button type="submit" class="btn btn-success btn-xl">Save Data</button> -->
                 </div>
                 <div class="card-body pt-0">
                     <!-- Nav tabs -->
@@ -90,7 +90,7 @@
                             <a class="nav-link" data-bs-toggle="tab" href="#profile-1" role="tab" aria-selected="false" tabindex="-1">Local Info</a>
                         </li>
                         <li class="nav-item waves-effect waves-light" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#settings-1" role="tab" aria-selected="false" tabindex="-1">Moving Supplies</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#settings-1" role="tab" aria-selected="false" tabindex="-1">Insurance</a>
                         </li>
                     </ul>
 
@@ -212,17 +212,40 @@
                                         <div class="row">
                                             <div class="col-lg-6">
                                                 <div class="mb-3">
-                                                    <label for="exampleInputEmail1" class="form-label">Total Volume From Inventory</label>
-                                                    <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Total Volume From Inventory">                   
+                                                    <label for="total_volume" class="form-label">Total Volume From Inventory</label>
+                                                    <input type="text" class="form-control" id="total_volume" name="total_volume" value="0" readonly>                   
                                                 </div>
                                             </div><!--end col-->  
                                             <div class="col-lg-6">   
                                                 <div class="mb-3">
-                                                    <label for="exampleInputEmail1" class="form-label">Total Weight From Inventory</label>
-                                                    <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Total Weight From Inventory">                                         
+                                                    <label for="total_weight" class="form-label">Total Weight From Inventory</label>
+                                                    <input type="text" class="form-control" id="total_weight" name="total_weight" value="0" readonly>                                         
                                                 </div>
                                             </div><!--end col-->
                                         </div>      
+                                        
+                                        <!-- Added Inventory Items Table -->
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <h5>Added Inventory Items</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered mb-0 table-centered" id="added-inventory-table">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Item</th>
+                                                                <th>Category</th>
+                                                                <th>Cubic Feet</th>
+                                                                <th>Quantity</th>
+                                                                <th>Total Volume</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="added-inventory-items">
+                                                            <!-- Items will be added here dynamically -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div><!--end col-->    
                                     <div class="col-lg-3">
                                         <div class="card">
@@ -259,9 +282,30 @@
                             </div>
                         </div>
                         <div class="tab-pane p-3" id="settings-1" role="tabpanel">
-                            <p class="text-muted mb-0">
-                                Trust fund seitan letterpress, keytar raw denim keffiyeh etsy.
-                            </p>
+                            <div class="card-body pt-0">
+                                <hr>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Insurance Number</label>
+                                            <input type="text" class="form-control" name="insurance_number" value="{{ $transaction->insurance_number ?? '' }}" placeholder="Enter Insurance Number">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Insurance Document</label>
+                                            <input type="file" class="form-control" name="insurance_document" accept=".pdf,.doc,.docx">
+                                            @if(isset($transaction) && $transaction->insurance_document)
+                                                <div class="mt-2">
+                                                    <a href="{{ $transaction->insurance_document }}" target="_blank" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-file-alt"></i> View Current Document
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>    
                     </div>
@@ -504,26 +548,26 @@
             <table class="table datatable table-bordered mb-0 table-centered" id="datatable_1">
                 <thead class="table-light">
                   <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Company</th>
-                    <th  style="width:120px;">Actions </th>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Cubic Feet</th>
+                    <th>Quantity</th>
                   </tr>
                 </thead>
                 <tbody>
+                    @foreach($inventoryItems as $item)
                     <tr>
-                        <td>1/22/2025</td>
-                        <td>Michael Borrero</td>
-                        <td>(856) 498-2046</td>     
-                        <td>mikeborrero@vinelandcity.org </td>        
-                        <td>Keller Williams Prime Realty</td>                                    
-                        <td class="text-center">                                                
-                            <button type="button" class="btn btn-sm btn-warning"  data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="View Logs"><i class="fas fa-eye"></i></button>  
-                            <button type="button" class="btn btn-sm btn-info"   data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="Add Logs"><i class="fas fa-plus"></i></button>    
+                        <td>{{ $item->item }}</td>
+                        <td>{{ $item->category->name }}</td>
+                        <td>{{ $item->cubic_ft }}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm quantity-input" 
+                                   data-item-id="{{ $item->id }}"
+                                   value="{{ isset($transaction) && $transaction->inventoryItems->contains($item->id) ? $transaction->inventoryItems->find($item->id)->pivot->quantity : 0 }}"
+                                   min="0">
                         </td>
                     </tr>                                                                         
+                    @endforeach
                 </tbody>
               </table>
         </div>
@@ -799,6 +843,20 @@ document.addEventListener('DOMContentLoaded', function() {
         transform: translateY(-20px);
     }
 }
+
+/* Inventory Tool Form Modal Table Styles */
+#datatable_1 tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#datatable_1 tbody tr:hover {
+    background-color: rgba(67, 233, 123, 0.1) !important;
+    cursor: pointer;
+}
+
+#datatable_1 tbody tr:hover td {
+    background-color: transparent !important;
+}
 </style>
 <div id="toast-container"></div>
 <script>
@@ -806,74 +864,466 @@ document.addEventListener('DOMContentLoaded', function () {
     // Only run if editing an existing transaction
     if (!window.location.pathname.match(/\/leads\/(\d+)\/edit/)) return;
     const transactionId = window.location.pathname.match(/\/leads\/(\d+)\/edit/)[1];
-    // Fields inside the form
-    const form = document.getElementById('leadForm');
-    const fields = ['firstname', 'lastname', 'email', 'phone', 'lead_source', 'lead_type', 'assigned_agent'];
-    if (form) {
-        fields.forEach(function (field) {
-            const input = form.querySelector(`[name="${field}"]`);
-            if (input) {
-                const isSelect = input.tagName.toLowerCase() === 'select';
-                const eventName = isSelect ? 'change' : 'blur';
-                input.addEventListener(eventName, function () {
-                    const value = input.value;
+    
+    // Store inventory item data for calculations
+    const inventoryItems = {};
+    
+    // Initialize inventory items data from the transaction's inventory items
+    document.querySelectorAll('.quantity-input').forEach(function(input) {
+        const itemId = input.getAttribute('data-item-id');
+        const row = input.closest('tr');
+        const itemName = row.querySelector('td:first-child').textContent.trim();
+        const categoryName = row.querySelector('td:nth-child(2)').textContent.trim();
+        const cubicFt = parseFloat(row.querySelector('td:nth-child(3)').textContent) || 0;
+        const quantity = parseInt(input.value) || 0;
+        
+        // Always add to inventoryItems, regardless of quantity
+        inventoryItems[itemId] = {
+            name: itemName,
+            category: categoryName,
+            cubicFt: cubicFt,
+            quantity: quantity
+        };
+    });
+    
+    // Load added inventory items from the server
+    function loadAddedInventoryItems() {
+        fetch(`/leads/${transactionId}/added-inventory-items`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear the added items table
+                    const addedItemsTable = document.getElementById('added-inventory-items');
+                    if (!addedItemsTable) {
+                        console.error('Added inventory items table not found');
+                        return;
+                    }
+                    addedItemsTable.innerHTML = '';
+                    
+                    // Calculate totals
+                    let totalVolume = 0;
+                    let totalWeight = 0;
+                    
+                    // Add rows to the table
+                    data.data.forEach(item => {
+                        totalVolume += item.total_volume;
+                        totalWeight += item.total_volume * 10; // Assuming weight is volume * 10
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${item.category}</td>
+                            <td>${parseFloat(item.cubic_ft).toFixed(2)}</td>
+                            <td>${item.quantity}</td>
+                            <td>${parseFloat(item.total_volume).toFixed(2)}</td>
+                        `;
+                        addedItemsTable.appendChild(row);
+                    });
+                    
+                    // Update the total fields
+                    const totalVolumeInput = document.getElementById('total_volume');
+                    const totalWeightInput = document.getElementById('total_weight');
+                    
+                    if (totalVolumeInput) totalVolumeInput.value = totalVolume.toFixed(2);
+                    if (totalWeightInput) totalWeightInput.value = totalWeight.toFixed(2);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading added inventory items:', error);
+                showToast('Error loading inventory items', 'error');
+            });
+    }
+    
+    // Initial load of added inventory items
+    loadAddedInventoryItems();
+    
+    // Handle inventory item quantity changes
+    const quantityInputs = document.querySelectorAll('.quantity-input');
+    quantityInputs.forEach(function(input) {
+        input.addEventListener('change', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const quantity = parseInt(this.value) || 0;
+            
+            // Update the stored quantity
+            if (!inventoryItems[itemId]) {
+                const row = this.closest('tr');
+                const itemName = row.querySelector('td:first-child').textContent.trim();
+                const categoryName = row.querySelector('td:nth-child(2)').textContent.trim();
+                const cubicFt = parseFloat(row.querySelector('td:nth-child(3)').textContent) || 0;
+                
+                inventoryItems[itemId] = {
+                    name: itemName,
+                    category: categoryName,
+                    cubicFt: cubicFt,
+                    quantity: quantity
+                };
+            } else {
+                inventoryItems[itemId].quantity = quantity;
+            }
+            
+            // Save to server
+            fetch(`/leads/${transactionId}/update-inventory`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                },
+                body: JSON.stringify({ 
+                    item_id: itemId, 
+                    quantity: quantity 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Inventory updated');
+                    // Reload the added inventory items
+                    loadAddedInventoryItems();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating inventory:', error);
+                showToast('Error updating inventory', 'error');
+            });
+        });
+    });
+
+    // Add event listener for modal close
+    const inventoryModal = document.getElementById('setinventory');
+    if (inventoryModal) {
+        inventoryModal.addEventListener('hidden.bs.modal', function () {
+            // Reload the added inventory items when modal is closed
+            loadAddedInventoryItems();
+        });
+    }
+
+    // Handle Lead Information and Contact Info dropdown changes
+    const leadSourceSelect = document.getElementById('lead_source');
+    const leadTypeSelect = document.getElementById('lead_type');
+    const assignedAgentSelect = document.getElementById('assigned');
+
+    function handleDropdownChange(select, field) {
+        if (select) {
+            select.addEventListener('change', function() {
+                const value = this.value;
+                
                     fetch(`/leads/${transactionId}/update-field`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
                         },
-                        body: JSON.stringify({ field, value })
+                    body: JSON.stringify({ 
+                        field: field,
+                        value: value 
+                    })
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if (data.success) showToast('Updated information');
+                    if (data.success) {
+                        showToast('Information updated successfully');
+                    } else {
+                        showToast('Error updating information', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating field:', error);
+                    showToast('Error updating information', 'error');
                     });
                 });
             }
-        });
     }
-    // Fields outside the form
-    const extraFields = ['sales_name', 'sales_email', 'sales_location'];
-    extraFields.forEach(function(field) {
-        const input = document.querySelector(`[name="${field}"]`);
-        if (input) {
-            input.addEventListener('blur', function () {
-                const value = input.value;
+
+    // Initialize dropdown handlers
+    handleDropdownChange(leadSourceSelect, 'lead_source');
+    handleDropdownChange(leadTypeSelect, 'lead_type');
+    handleDropdownChange(assignedAgentSelect, 'assigned_agent');
+
+    // Handle Contact Info tab form fields
+    const contactInfoFields = {
+        'service': 'service',
+        'date': 'date',
+        'no_of_items': 'no_of_items',
+        'pickup_location': 'pickup_location',
+        'delivery_location': 'delivery_location',
+        'miles': 'miles',
+        'sales_name': 'sales_name',
+        'sales_email': 'sales_email',
+        'sales_location': 'sales_location'
+    };
+
+    // Add change event listeners to all contact info fields
+    Object.entries(contactInfoFields).forEach(([elementId, fieldName]) => {
+        const element = document.querySelector(`[name="${elementId}"]`);
+        if (element) {
+            element.addEventListener('change', function() {
+                let value = this.value;
+                
+                // Special handling for date field
+                if (fieldName === 'date') {
+                    // Ensure the date is in YYYY-MM-DD format
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                        value = date.toISOString().split('T')[0];
+                    } else {
+                        showToast('Invalid date format', 'error');
+                        return;
+                    }
+                }
+                
                 fetch(`/leads/${transactionId}/update-field`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
                     },
-                    body: JSON.stringify({ field, value })
+                    body: JSON.stringify({ 
+                        field: fieldName,
+                        value: value 
+                    })
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) showToast('Updated information');
+                    if (data.success) {
+                        showToast('Information updated successfully');
+                    } else {
+                        showToast('Error updating information', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating field:', error);
+                    showToast('Error updating information', 'error');
                 });
             });
         }
     });
 
-    function showToast(message) {
-        const toast = document.createElement('div');
-        toast.className = 'custom-toast';
-        toast.innerHTML = `
-            <span class="toast-icon">✔️</span>
-            <span>${message}</span>
-            <button class="toast-close" aria-label="Close">&times;</button>
-        `;
-        document.getElementById('toast-container').appendChild(toast);
-        // Animate out and remove after 2s or on close
-        const removeToast = () => {
-            toast.style.animation = 'toast-out 0.3s forwards';
-            setTimeout(() => toast.remove(), 300);
-        };
-        setTimeout(removeToast, 2000);
-        toast.querySelector('.toast-close').onclick = removeToast;
+    // Handle Lead Information fields
+    const leadInfoFields = {
+        'firstname': 'firstname',
+        'lastname': 'lastname',
+        'email': 'email',
+        'phone': 'phone'
+    };
+
+    // Add change event listeners to all lead info fields
+    Object.entries(leadInfoFields).forEach(([elementId, fieldName]) => {
+        const element = document.querySelector(`[name="${elementId}"]`);
+        if (element) {
+            element.addEventListener('change', function() {
+                const value = this.value;
+                
+                fetch(`/leads/${transactionId}/update-field`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                    },
+                    body: JSON.stringify({ 
+                        field: fieldName,
+                        value: value 
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Information updated successfully');
+                    } else {
+                        showToast('Error updating information', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating field:', error);
+                    showToast('Error updating information', 'error');
+                });
+            });
+        }
+    });
+
+    // Handle insurance fields
+    const insuranceFields = {
+        'insurance_number': 'Insurance Number'
+    };
+
+    Object.entries(insuranceFields).forEach(([fieldName, fieldLabel]) => {
+        const input = document.querySelector(`input[name="${fieldName}"]`);
+        if (input) {
+            input.addEventListener('change', async function() {
+                const newValue = this.value;
+                try {
+                    const response = await fetch(`/leads/${transactionId}/update-field`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        },
+                        body: JSON.stringify({
+                            field: fieldName,
+                            value: newValue
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast(`${fieldLabel} updated successfully`);
+                    } else {
+                        showToast(`Failed to update ${fieldLabel}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating field:', error);
+                    showToast(`Error updating ${fieldLabel}`, 'error');
+                }
+            });
+        }
+    });
+
+    // Handle insurance document upload
+    const insuranceDocumentInput = document.querySelector('input[name="insurance_document"]');
+    if (insuranceDocumentInput) {
+        insuranceDocumentInput.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            // Show loading SweetAlert with progress bar
+            Swal.fire({
+                title: 'Uploading Document...',
+                html: `
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: 0%" 
+                             id="upload-progress-bar">0%</div>
+                    </div>
+                    <div id="upload-status" class="mt-2">Preparing to upload...</div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const formData = new FormData();
+            formData.append('insurance_document', file);
+
+            try {
+                // Use XMLHttpRequest for upload progress
+                const xhr = new XMLHttpRequest();
+                
+                // Track upload progress
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        const progressBar = document.getElementById('upload-progress-bar');
+                        const statusText = document.getElementById('upload-status');
+                        if (progressBar && statusText) {
+                            progressBar.style.width = percentComplete + '%';
+                            progressBar.textContent = Math.round(percentComplete) + '%';
+                            
+                            // Update status text based on progress
+                            if (percentComplete < 100) {
+                                statusText.textContent = `Uploading: ${Math.round(percentComplete)}%`;
+                            } else {
+                                statusText.textContent = 'Processing...';
+                            }
+                        }
+                    }
+                };
+
+                // Create a promise to handle the XHR
+                const uploadPromise = new Promise((resolve, reject) => {
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                resolve(response);
+                            } catch (e) {
+                                reject(new Error('Invalid response format'));
+                            }
+                        } else {
+                            reject(new Error('Upload failed'));
+                        }
+                    };
+                    xhr.onerror = () => reject(new Error('Network error'));
+                    
+                    // Set up and send the request
+                    xhr.open('POST', `/leads/${transactionId}/upload-insurance-document`, true);
+                    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
+                    xhr.send(formData);
+                });
+
+                // Wait for upload to complete
+                const response = await uploadPromise;
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Document successfully uploaded',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                    
+                    // Update the view document link if it exists
+                    const viewLink = document.querySelector('a[href*="insurance_document"]');
+                    if (viewLink) {
+                    viewLink.href = response.document_url;
+                    } else {
+                        // Create new view link if it doesn't exist
+                        const container = this.parentElement;
+                        const linkDiv = document.createElement('div');
+                        linkDiv.className = 'mt-2';
+                        linkDiv.innerHTML = `
+                        <a href="${response.document_url}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-file-alt"></i> View Current Document
+                            </a>
+                        `;
+                        container.appendChild(linkDiv);
+                }
+            } catch (error) {
+                // Show error message
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload Failed',
+                    text: error.message || 'Error uploading insurance document',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
     }
 });
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+    
+    const icon = type === 'success' ? '✓' : '⚠️';
+        toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close">&times;</button>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Add click event to close button
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+            toast.style.animation = 'toast-out 0.3s forwards';
+            setTimeout(() => toast.remove(), 300);
+    });
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'toast-out 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 </script>
 
 @endsection

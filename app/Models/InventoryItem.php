@@ -19,4 +19,11 @@ class InventoryItem extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function transactions()
+    {
+        return $this->belongsToMany(Transaction::class, 'transaction_inventory_items')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 }
