@@ -25,7 +25,31 @@ class TransactionController extends Controller
             )
             ->orderByDesc('transactions.created_at')
             ->get();
-        return view('loadboard', compact('transactions'));
+
+        // Get email templates
+        $templates = \App\Models\EmailTemplate::all();
+
+        // Define placeholders for transaction data
+        $placeholders = [
+            'Transaction' => [
+                'Customer Name' => '{customer_name}',
+                'Customer Email' => '{customer_email}',
+                'Customer Phone' => '{customer_phone}',
+                'Service Type' => '{service_type}',
+                'Pickup Location' => '{pickup_location}',
+                'Delivery Location' => '{delivery_location}',
+                'Move Date' => '{move_date}',
+                'Total Amount' => '{total_amount}',
+                'Down Payment' => '{down_payment}',
+                'Remaining Balance' => '{remaining_balance}',
+                'Miles' => '{miles}',
+                'Assigned Agent' => '{assigned_agent}',
+                'Lead Source' => '{lead_source}',
+                'Transaction ID' => '{transaction_id}'
+            ]
+        ];
+
+        return view('loadboard', compact('transactions', 'templates', 'placeholders'));
     }
 
     public function syncFromApi()
@@ -56,18 +80,30 @@ class TransactionController extends Controller
                 'first_transaction' => $transactions[0] ?? 'No transactions'
             ]);
 
-            $updated = 0;
             $created = 0;
             $errors = [];
 
             foreach ($transactions as $data) {
                 try {
+                    // Log the transaction being processed
                     Log::info('Processing transaction', [
-                        'id' => $data['id'] ?? 'unknown',
-                        'data' => $data
+                        'transaction_id' => $data['id'] ?? 'unknown',
+                        'email' => $data['email'] ?? 'unknown',
+                        'service' => $data['service'] ?? 'unknown'
                     ]);
                     
+                    // Check if transaction already exists
+                    $existingTransaction = Transaction::where('transaction_id', $data['id'])->first();
+                    
+                    if ($existingTransaction) {
+                        Log::info('Transaction already exists, skipping', [
+                            'transaction_id' => $data['id']
+                    ]);
+                        continue;
+                    }
+                    
                     $transactionData = [
+                        'transaction_id' => $data['id'], // Make sure to include transaction_id
                         'firstname' => $data['firstname'] ?? null,
                         'lastname' => $data['lastname'] ?? null,
                         'email' => $data['email'] ?? null,
@@ -100,30 +136,22 @@ class TransactionController extends Controller
                         'last_synced_at' => now(),
                     ];
 
-                    Log::info('Attempting to save transaction', [
+                    Log::info('Creating new transaction', [
                         'transaction_id' => $data['id'],
                         'data' => $transactionData
                     ]);
 
-                    $transaction = Transaction::updateOrCreate(
-                        ['transaction_id' => $data['id']],
-                        $transactionData
-                    );
+                    $transaction = Transaction::create($transactionData);
 
-                    Log::info('Transaction saved', [
+                    Log::info('Transaction created successfully', [
                         'id' => $transaction->id,
-                        'was_created' => $transaction->wasRecentlyCreated,
-                        'was_updated' => $transaction->wasChanged()
+                        'transaction_id' => $transaction->transaction_id
                     ]);
 
-                    if ($transaction->wasRecentlyCreated) {
                         $created++;
-                    } else {
-                        $updated++;
-                    }
                 } catch (\Exception $e) {
                     Log::error('Error processing transaction', [
-                        'id' => $data['id'] ?? 'unknown',
+                        'transaction_id' => $data['id'] ?? 'unknown',
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
@@ -136,16 +164,16 @@ class TransactionController extends Controller
 
             Log::info('Sync completed', [
                 'created' => $created,
-                'updated' => $updated,
-                'errors' => count($errors)
+                'errors' => count($errors),
+                'error_details' => $errors
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Sync completed successfully',
+                'message' => $created > 0 ? "Successfully added {$created} new transaction(s)" : "No new transactions to add",
+                'new_count' => $created,
                 'data' => [
                     'created' => $created,
-                    'updated' => $updated,
                     'errors' => $errors
                 ]
             ]);
@@ -163,20 +191,25 @@ class TransactionController extends Controller
         }
     }
 
-    public function updateStatus(Request $request, Transaction $transaction)
+    public function updateStatus(Request $request, $transaction)
     {
-        $request->validate([
-            'status' => 'required|in:pending,in_progress,completed,cancelled'
-        ]);
-
-        $transaction->update([
-            'status' => $request->status
-        ]);
+        try {
+            $transaction = Transaction::findOrFail($transaction);
+            $oldStatus = $transaction->status;
+            $transaction->status = $request->status;
+            $transaction->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Transaction status updated successfully'
+                'message' => 'Transaction status updated successfully',
+                'old_status' => $oldStatus
         ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update transaction status'
+            ], 500);
+        }
     }
 
     public function create()
@@ -343,5 +376,124 @@ class TransactionController extends Controller
             'success' => false,
             'message' => 'No document was uploaded'
         ], 400);
+    }
+
+    public function datatable(Request $request)
+    {
+        try {
+            $query = Transaction::query()
+                ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                ->select(
+                    'transactions.*',
+                    'agents.company_name as assigned_agent_company_name'
+                );
+            
+            // Get total records count
+            $totalRecords = Transaction::count();
+            $filteredRecords = $totalRecords;
+            
+            // Apply search
+            if ($request->has('search') && !empty($request->search['value'])) {
+                $search = $request->search['value'];
+                $query->where(function($q) use ($search) {
+                    $q->where('transactions.transaction_id', 'like', "%{$search}%")
+                      ->orWhere('transactions.firstname', 'like', "%{$search}%")
+                      ->orWhere('transactions.lastname', 'like', "%{$search}%")
+                      ->orWhere('transactions.email', 'like', "%{$search}%")
+                      ->orWhere('transactions.pickup_location', 'like', "%{$search}%")
+                      ->orWhere('transactions.delivery_location', 'like', "%{$search}%")
+                      ->orWhere('transactions.services', 'like', "%{$search}%")
+                      ->orWhere('agents.company_name', 'like', "%{$search}%");
+                });
+                
+                // Update filtered count after search
+                $filteredRecords = $query->count();
+            }
+            
+            // Apply ordering
+            if ($request->has('order')) {
+                $columns = [
+                    'transactions.transaction_id',
+                    'transactions.firstname',
+                    'transactions.date',
+                    'transactions.services',
+                    'transactions.pickup_location',
+                    'transactions.delivery_location',
+                    'transactions.miles',
+                    'transactions.grand_total',
+                    'agents.company_name',
+                    'transactions.status'
+                ];
+                
+                $column = $columns[$request->order[0]['column']];
+                $direction = $request->order[0]['dir'];
+                $query->orderBy($column, $direction);
+            } else {
+                $query->orderBy('transactions.transaction_id', 'desc');
+            }
+            
+            // Apply pagination
+            $records = $query->skip($request->start)
+                           ->take($request->length)
+                           ->get();
+            
+            // Format data for DataTables
+            $data = [];
+            foreach ($records as $record) {
+                $data[] = [
+                    'id' => $record->id,
+                    'transaction_id' => $record->transaction_id,
+                    'firstname' => $record->firstname,
+                    'lastname' => $record->lastname,
+                    'email' => $record->email,
+                    'date' => $record->date,
+                    'services' => $record->services,
+                    'pickup_location' => $record->pickup_location,
+                    'delivery_location' => $record->delivery_location,
+                    'miles' => $record->miles,
+                    'grand_total' => $record->grand_total,
+                    'assigned_agent_company_name' => $record->assigned_agent_company_name,
+                    'status' => $record->status
+                ];
+            }
+            
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('DataTable Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'An error occurred while processing your request.'
+            ], 500);
+        }
+    }
+
+    public function getCounts()
+    {
+        try {
+            $counts = [
+                'total' => Transaction::count(),
+                'pending' => Transaction::where('status', 'pending')->count(),
+                'in_progress' => Transaction::where('status', 'in_progress')->count(),
+                'completed' => Transaction::where('status', 'completed')->count()
+            ];
+
+            return response()->json($counts);
+        } catch (\Exception $e) {
+            \Log::error('Error getting counts: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to get counts'
+            ], 500);
+        }
     }
 } 

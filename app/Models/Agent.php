@@ -11,6 +11,8 @@ class Agent extends Model
 
     protected $fillable = [
         'external_id',
+        'user_id',
+        'unique_url',
         'company_name',
         'company_website',
         'contact_name',
@@ -21,6 +23,15 @@ class Agent extends Model
         'city',
         'state',
         'zip_code',
+        'country',
+        'website',
+        'status',
+        'notes',
+        'sales_volume',
+        'sales_volume_currency',
+        'sales_volume_year',
+        'number_of_shipments',
+        'number_of_shipments_year',
         'services',
         'num_trucks',
         'truck_size',
@@ -47,4 +58,9 @@ class Agent extends Model
         'total_sales' => 'integer',
         'is_active' => 'boolean'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

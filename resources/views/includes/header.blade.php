@@ -51,7 +51,6 @@
 </style>
 </head>
 <body>
-
     <div class="modal fade new-leads" id="new-leads" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -304,7 +303,7 @@
                                 <ul class="nav flex-column">
                                     <li class="nav-item">
                                         {{-- <a href="{{ url('/leads') }}" class="nav-link" data-bs-toggle="modal" data-bs-target="#bd-example-modal-xl">New</a> --}}
-                                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#new-leads">New</a>
+                                        <!-- <a class="nav-link" data-bs-toggle="modal" data-bs-target="#new-leads">New</a> -->
                                     </li><!--end nav-item-->
                                     <li class="nav-item">
                                         <a href="{{ url('/local') }}" class="nav-link ">Local</a>

@@ -57,9 +57,7 @@ Route::middleware(['auth'])->group(function () {
         return view('registercustomer');
     });
 
-    Route::get('/loadboard', function () {
-        return view('loadboard');
-    });
+    Route::get('/loadboard', [TransactionController::class, 'index'])->name('loadboard.index');
 
     Route::get('/leads', function () {
         return view('leads');
@@ -103,6 +101,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/agents', [AgentController::class, 'index'])->name('agents.index');
     Route::get('/agents/data', [AgentController::class, 'data'])->name('agents.data');
+    Route::get('/agents/get-data', [AgentController::class, 'getData'])->name('agents.getData');
     Route::post('/agents/sync', [AgentController::class, 'syncAgents'])->name('agents.syncAgents');
     Route::post('/agents/update', [AgentController::class, 'update'])->name('agents.update');
 
@@ -197,6 +196,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/loadboard', [TransactionController::class, 'index']);
     Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
     Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');
+    Route::get('/transactions/get-counts', [TransactionController::class, 'getCounts'])->name('transactions.getCounts');
+
+    Route::post('/transactions/datatable', [TransactionController::class, 'datatable'])->name('transactions.datatable');
 
     Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
     Route::post('/email-templates', [EmailTemplateController::class, 'store'])->name('email-templates.store');

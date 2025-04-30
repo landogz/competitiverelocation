@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('agents', function (Blueprint $table) {
             $table->id();
             $table->string('external_id')->unique();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->string('unique_url')->nullable();
             $table->string('company_name');
             $table->string('contact_name');
             $table->string('contact_title');

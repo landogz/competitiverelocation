@@ -15,4 +15,8 @@ class EmailTemplate extends Model
         'content',
         'description'
     ];
+
+    protected $casts = [
+        'content' => 'string'
+    ];
 } 

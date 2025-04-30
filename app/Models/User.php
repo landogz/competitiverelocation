@@ -78,4 +78,9 @@ class User extends Authenticatable
         }
         return asset('assets/images/no-profile-image.png');
     }
+
+    public function agent()
+    {
+        return $this->hasOne(Agent::class);
+    }
 }

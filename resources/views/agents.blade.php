@@ -318,7 +318,17 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                             const enabled = Object.keys(data)
                                 .filter(key => data[key])
                                 .map(key => `<span class='badge bg-primary me-1'>${labelMap[key] || key}</span>`);
-                            return enabled.length ? enabled.join(' ') : 'No services';
+                            
+                            // Group spans into pairs
+                            const groupedSpans = [];
+                            for (let i = 0; i < enabled.length; i += 2) {
+                                const pair = enabled.slice(i, i + 2);
+                                groupedSpans.push(pair.join(' '));
+                            }
+                            
+                            return groupedSpans.length ? 
+                                groupedSpans.join('<br>') : 
+                                'No services';
                         }
                         return 'No services';
                     }
@@ -343,9 +353,17 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                 orderable: false,
                 searchable: false,
                 render: function(data, type, row) {
-                    return `<button class="btn btn-sm btn-primary edit-agent" data-id="${data}">
+                    return `<div class="btn-group">
+                            <button class="btn btn-sm btn-primary edit-agent" data-id="${data}">
                                 <i class="fas fa-edit"></i> Edit
-                            </button>`;
+                            </button>
+                            <a href="${row.unique_url}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Open Delivery System URL">
+                                <i class="fas fa-external-link-alt"></i> Open URL
+                            </a>
+                            <button type="button" class="btn btn-sm btn-secondary copy-url" data-url="${row.unique_url}" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy Delivery System URL">
+                                <i class="fas fa-copy"></i> Copy URL
+                            </button>
+                        </div>`;
                 }
             }
         ],
@@ -551,6 +569,31 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
                 button.prop('disabled', false);
                 button.html('<i class="fas fa-sync-alt"></i> Sync Now');
             }
+        });
+    });
+
+    // Copy URL functionality
+    $('#agentsTable').on('click', '.copy-url', function() {
+        const url = $(this).data('url');
+        navigator.clipboard.writeText(url).then(function() {
+            // Show success message
+            const button = $(this);
+            const originalHtml = button.html();
+            button.html('<i class="fas fa-check"></i> Copied!');
+            button.removeClass('btn-secondary').addClass('btn-success');
+            
+            // Reset button after 2 seconds
+            setTimeout(function() {
+                button.html(originalHtml);
+                button.removeClass('btn-success').addClass('btn-secondary');
+            }, 2000);
+        }.bind(this)).catch(function(err) {
+            console.error('Failed to copy URL: ', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to copy URL to clipboard'
+            });
         });
     });
     });

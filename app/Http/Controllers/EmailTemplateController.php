@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EmailTemplate;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 
 class EmailTemplateController extends Controller
 {
@@ -13,6 +14,11 @@ class EmailTemplateController extends Controller
         $templates = EmailTemplate::all();
         $placeholders = $this->getAvailablePlaceholders();
         return view('email-templates.index', compact('templates', 'placeholders'));
+    }
+
+    public function create()
+    {
+        return view('email-templates.create');
     }
 
     public function store(Request $request)
@@ -43,6 +49,11 @@ class EmailTemplateController extends Controller
     public function show(EmailTemplate $template)
     {
         return response()->json($template);
+    }
+
+    public function edit(EmailTemplate $emailTemplate)
+    {
+        return view('email-templates.edit', compact('emailTemplate'));
     }
 
     public function update(Request $request, EmailTemplate $template)
@@ -85,6 +96,11 @@ class EmailTemplateController extends Controller
                 'message' => $e->getMessage()
             ], 422);
         }
+    }
+
+    public function preview(EmailTemplate $emailTemplate)
+    {
+        return view('email-templates.preview', compact('emailTemplate'));
     }
 
     private function getAvailablePlaceholders()

@@ -28,6 +28,9 @@ class AgentController extends Controller
                 ->addColumn('status', function($agent) {
                     return $agent->is_active;
                 })
+                ->addColumn('unique_url', function($agent) {
+                    return $agent->unique_url ?? '-';
+                })
                 ->rawColumns(['status'])
                 ->make(true);
         }
@@ -113,10 +116,35 @@ class AgentController extends Controller
                         $apiAgent[$field] = is_numeric($apiAgent[$field]) ? $apiAgent[$field] : 0;
                     }
                 }
+
+                // Create user account for the agent
+                try {
+                    $user = \App\Models\User::firstOrCreate(
+                        ['email' => $apiAgent['email'] ?? ''],
+                        [
+                            'first_name' => $apiAgent['contact_name'] ?? 'Agent',
+                            'last_name' => $apiAgent['company_name'] ?? '',
+                            'password' => bcrypt('12345678'),
+                            'privilege' => 'agent',
+                            'phone' => $apiAgent['phone_number'] ?? null,
+                            'address' => $apiAgent['address'] ?? null,
+                            'city' => $apiAgent['city'] ?? null,
+                            'state' => $apiAgent['state'] ?? null,
+                            'zip_code' => $apiAgent['zip_code'] ?? null
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // If user creation fails, try to find existing user
+                    $user = \App\Models\User::where('email', $apiAgent['email'] ?? '')->first();
+                    if (!$user) {
+                        throw $e; // Re-throw if we can't find the user
+                    }
+                }
                 
                 // Create new agent
-                Agent::create([
+                $agent = Agent::create([
                     'external_id' => $apiAgent['id'],
+                    'user_id' => $user->id,
                     'company_name' => $apiAgent['company_name'],
                     'company_website' => $apiAgent['company_website'] ?? null,
                     'contact_name' => $apiAgent['contact_name'] ?? null,
@@ -138,7 +166,8 @@ class AgentController extends Controller
                     'delivery_service_sales' => $apiAgent['delivery_service_sales'] ?? null,
                     'total_sales' => $apiAgent['total_sales'] ?? null,
                     'services' => $services,
-                    'truck_image' => $apiAgent['truck_image'] ?? null
+                    'truck_image' => $apiAgent['truck_image'] ?? null,
+                    'unique_url' => 'https://competitiverelocation.com/delivery-services/?agent=' . $apiAgent['id'] . '&ref=' . str_replace(' ', '-', strtolower($apiAgent['company_name']))
                 ]);
                 
                 $newAgentsCount++;
