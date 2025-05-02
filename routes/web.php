@@ -205,4 +205,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/email-templates/{template}', [EmailTemplateController::class, 'show'])->name('email-templates.show');
     Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
     Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
+
+    Route::post('/leads/sync', [CallCenterController::class, 'sync'])->name('leads.sync');
+    Route::post('/leads/datatable', [CallCenterController::class, 'datatable'])->name('leads.datatable');
 });

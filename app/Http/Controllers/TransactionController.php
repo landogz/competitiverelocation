@@ -108,6 +108,7 @@ class TransactionController extends Controller
                         'lastname' => $data['lastname'] ?? null,
                         'email' => $data['email'] ?? null,
                         'phone' => $data['phone'] ?? null,
+                        'assigned_agent' => $data['agent_id'] ?? null,
                         'sales_name' => $data['sales_name'] ?? null,
                         'sales_email' => $data['sales_email'] ?? null,
                         'sales_location' => $data['sales_location'] ?? null,

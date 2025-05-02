@@ -19,10 +19,10 @@ class Lead extends Model
         'phone',
         'email',
         'company',
-        'notes',
         'status',
         'source',
-        'assigned_to',
+        'notes',
+        'assigned_to'
     ];
 
     /**

@@ -8,12 +8,18 @@
         <div class="col-sm-12">
             <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
                 <h4 class="page-title">Call Center</h4>                             
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLeadModal">
-                    <i class="fas fa-plus me-2"></i>Add New Lead
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" id="syncLeads">
+                        <i class="fas fa-sync-alt me-1"></i> Sync Leads
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLeadModal">
+                        <i class="fas fa-plus me-2"></i>Add New Lead
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
 
     <div class="row">               
         <div class="col-12">
@@ -342,28 +348,144 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize DataTable with responsive settings
-        var dataTable = $('#datatable_1').DataTable({
+        // Toast function for silent sync
+        function showToast(message) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                icon: 'success',
+                title: message,
+                customClass: {
+                    popup: 'colored-toast'
+                }
+            });
+        }
+
+        // Perform silent sync on page load
+        function silentSync() {
+            $.ajax({
+                url: "{{ route('leads.sync') }}",
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    action: 'add_new'
+                },
+                success: function(response) {
+                    if (response.new_count > 0) {
+                        // Reload table data silently if new leads were added
+                        $('#datatable_1').DataTable().ajax.reload(null, false);
+                        
+                        // Update the stats boxes with fresh counts using IDs
+                        $('#totalLeads').text(parseInt($('#totalLeads').text()) + response.new_count);
+                        $('#newLeads').text(parseInt($('#newLeads').text()) + response.new_count);
+                        $('#contactedLeads').text(parseInt($('#contactedLeads').text()) + response.new_count);
+                        $('#qualifiedLeads').text(parseInt($('#qualifiedLeads').text()) + response.new_count);
+
+                        // Show toast notification
+                        showToast(`${response.new_count} new lead${response.new_count > 1 ? 's' : ''} added`);
+                    }
+                },
+                error: function(xhr) {
+                    console.log('Silent sync failed:', xhr.responseJSON?.message || 'Unknown error');
+                }
+            });
+        }
+
+        // Add custom styles for toast
+        $('<style>')
+            .text(`
+                .colored-toast.swal2-icon-success {
+                    background-color: #a5dc86 !important;
+                    color: white !important;
+                }
+                .colored-toast .swal2-title {
+                    color: white !important;
+                }
+                .colored-toast .swal2-close {
+                    color: white !important;
+                }
+                .colored-toast .swal2-timer-progress-bar {
+                    background: rgba(255, 255, 255, 0.7) !important;
+                }
+            `)
+            .appendTo('head');
+
+        // Initialize DataTable
+        var table = $('#datatable_1').DataTable({
+            processing: true,
+            serverSide: true,
             pageLength: 10,
-            order: [[0, 'desc']],
-            responsive: true,
-            dom: 'lfrtip',
-            searching: true,
-            info: true,
-            paging: true,
-            language: {
-                paginate: {
-                    previous: '<i class="fas fa-chevron-left"></i>',
-                    next: '<i class="fas fa-chevron-right"></i>'
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            ajax: {
+                url: '{{ route("leads.datatable") }}',
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
             },
-            drawCallback: function() {
-                // Remove any duplicate controls that might have been created
-                $('.dataTables_length:not(:first)').remove();
-                $('.dataTables_filter:not(:first)').remove();
-                $('.dataTables_info:not(:first)').remove();
-                $('.dataTables_paginate:not(:first)').remove();
-            }
+            columns: [
+                { data: 'created_at', name: 'created_at' },
+                { data: 'name', name: 'name' },
+                { data: 'phone', name: 'phone' },
+                { data: 'email', name: 'email' },
+                { data: 'company', name: 'company' },
+                { data: 'status', name: 'status' },
+                { data: 'actions', name: 'actions', orderable: false, searchable: false }
+            ],
+            order: [[0, 'desc']]
+        });
+
+        // Perform silent sync after DataTable initialization
+        silentSync();
+
+        // Add sync button functionality
+        $('#syncLeads').on('click', function() {
+            var button = $(this);
+            button.prop('disabled', true);
+            button.html('<i class="fas fa-spinner fa-spin"></i> Syncing...');
+
+            $.ajax({
+                url: "{{ route('leads.sync') }}",
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    action: 'add_new'
+                },
+                success: function(response) {
+                    if (response.new_count > 0) {
+                        table.ajax.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: `Added ${response.new_count} new leads`
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'No New Leads',
+                            text: 'All leads are up to date'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: xhr.responseJSON?.message || 'Failed to sync leads data'
+                    });
+                },
+                complete: function() {
+                    button.prop('disabled', false);
+                    button.html('<i class="fas fa-sync-alt me-1"></i> Sync Leads');
+                }
+            });
         });
 
         // Remove any existing DataTables controls before initialization
@@ -497,6 +619,17 @@
                     // Reset the form
                     form[0].reset();
                     
+                    // Update the badge count
+                    var viewLogsBtn = $('.view-logs-btn[data-lead-id="' + leadId + '"]');
+                    var currentBadge = viewLogsBtn.find('.badge');
+                    var currentCount = currentBadge.length ? parseInt(currentBadge.text()) : 0;
+                    
+                    if (currentBadge.length) {
+                        currentBadge.text(currentCount + 1);
+                    } else {
+                        viewLogsBtn.prepend('<span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6em; padding: 0.25em 0.4em;">1</span>');
+                    }
+                    
                     // Reload logs modal
                     loadLogsModal(leadId);
                 },
@@ -524,8 +657,8 @@
                 phone: row.find('td:eq(2)').text().trim(),
                 email: row.find('td:eq(3)').text().trim(),
                 company: row.find('td:eq(4)').text().trim(),
-                status: row.find('td:eq(5) .badge').text().trim(),
-                source: row.data('source') || '', // Get source from data attribute
+                status: row.find('td:eq(5) .badge').text().trim().toLowerCase(),
+                source: row.data('source') || 'website', // Default to 'website' if not set
                 notes: row.data('notes') || '' // Get notes from data attribute
             };
             
@@ -857,11 +990,11 @@
             $('#edit_company').val(leadData.company);
             
             // Get the status from the badge text and convert to lowercase
-            var status = leadData.status.toLowerCase();
+            var status = leadData.status || 'new';
             $('#edit_status').val(status);
 
             // Get the source from the row data
-            var source = leadData.source || '';
+            var source = leadData.source || 'website';
             $('#edit_source').val(source);
 
             // Set notes if available
