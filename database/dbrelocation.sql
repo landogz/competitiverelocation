@@ -454,15 +454,16 @@ CREATE TABLE IF NOT EXISTS `leads` (
   `company` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci,
   `status` enum('new','contacted','qualified','unqualified','converted') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
-  `source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `source` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Website',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table dbrelocation.leads: ~0 rows (approximately)
+-- Dumping data for table dbrelocation.leads: ~1 rows (approximately)
 INSERT INTO `leads` (`id`, `name`, `phone`, `email`, `company`, `notes`, `status`, `source`, `created_at`, `updated_at`) VALUES
-	(7, 'Rolan Jr M Benavidez', '09465283233', 'rolan.benavidez@gmail.com', 'Competitive Relocation', 'test', 'qualified', 'social', '2025-04-29 06:40:43', '2025-04-29 07:15:31');
+	(7, 'Rolan Jr M Benavidez', '09465283233', 'rolan.benavidez@gmail.com', 'Competitive Relocation', 'test', 'qualified', 'social', '2025-04-29 06:40:43', '2025-04-29 07:15:31'),
+	(10, 'Rolan M Benavidez', '09387077940', 'rolan.benavidez@gmail.com', 'd&y moving', NULL, 'new', 'website', '2025-05-02 02:39:32', '2025-05-02 02:39:32');
 
 -- Dumping structure for table dbrelocation.lead_logs
 CREATE TABLE IF NOT EXISTS `lead_logs` (
@@ -476,14 +477,17 @@ CREATE TABLE IF NOT EXISTS `lead_logs` (
   PRIMARY KEY (`id`),
   KEY `lead_logs_lead_id_foreign` (`lead_id`),
   CONSTRAINT `lead_logs_lead_id_foreign` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.lead_logs: ~2 rows (approximately)
 INSERT INTO `lead_logs` (`id`, `lead_id`, `type`, `content`, `user_id`, `created_at`, `updated_at`) VALUES
 	(13, 7, 'note', 'Lead created', '1', '2025-04-29 06:40:43', '2025-04-29 06:40:43'),
 	(14, 7, 'other', '4545', '1', '2025-04-29 06:45:31', '2025-04-29 06:45:31'),
 	(15, 7, 'email', '4848', '1', '2025-04-29 06:45:40', '2025-04-29 06:45:40'),
-	(16, 7, 'call', 'call again in 2 weeks', '1', '2025-04-30 07:44:19', '2025-04-30 07:44:19');
+	(16, 7, 'call', 'call again in 2 weeks', '1', '2025-04-30 07:44:19', '2025-04-30 07:44:19'),
+	(17, 10, 'call', 'call next week', '1', '2025-05-02 02:41:42', '2025-05-02 02:41:42'),
+	(18, 10, 'email', 'email 1 week', '1', '2025-05-02 02:45:23', '2025-05-02 02:45:23'),
+	(19, 10, 'call', 'tetete', '1', '2025-05-02 02:47:05', '2025-05-02 02:47:05');
 
 -- Dumping structure for table dbrelocation.lead_sources
 CREATE TABLE IF NOT EXISTS `lead_sources` (
@@ -661,11 +665,10 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `transactions_transaction_id_unique` (`transaction_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=87 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.transactions: ~81 rows (approximately)
 INSERT INTO `transactions` (`id`, `transaction_id`, `firstname`, `lastname`, `email`, `phone`, `lead_source`, `lead_type`, `assigned_agent`, `sales_name`, `sales_email`, `sales_location`, `date`, `pickup_location`, `delivery_location`, `miles`, `add_mile`, `mile_rate`, `service`, `service_rate`, `no_of_items`, `no_of_crew`, `crew_rate`, `delivery_rate`, `subtotal`, `software_fee`, `truck_fee`, `downpayment`, `grand_total`, `coupon_code`, `payment_id`, `uploaded_image`, `services`, `status`, `insurance_number`, `insurance_document`, `last_synced_at`, `created_at`, `updated_at`) VALUES
-	(1, '241', 'Rolan', 'M Benavidez', 'rolan.benavidez@gmail.com', '09465283233', '1', 'long_distance', '33', 'test', 'rolan.benavidez@gmail.com', 'test', '2025-04-23 00:00:00', 'Tampo (Pob.), Botolan, Zambales, Philippines', 'San Juan, Botolan, Zambales, Philippines', 15.13, 15.13, 13.47, NULL, 0.00, 1, 0, 0.00, 0.00, 350.00, 0.00, 0.00, 0.00, 601.82, NULL, 'pi_3RGsdHIv2nL0m0UJ0wXjqJpR', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Rolan_1745366400_1.png', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$350.00", "crew_rate": "$350.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'completed', '234213', 'insurance_documents/Acys6Xlf0d1svN487I8hUqPI9BXlzqXWXSntyM4g.pdf', '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 13:50:45'),
 	(2, '239', 'Lisa', 'Patti-Diaz i', 'lpdstarstruck03@yahoo.com', '6097900364', '1', 'local', '1', 'Lamar Reyes', 'lamar@competitiverelocation.com', 'Mt.Laurel', '2025-04-14 00:00:00', '114 Bastian Drive, Mount Laurel Township, NJ, USA', 'Removal', 0.00, 0.00, 0.00, NULL, 0.00, 1, 0, 0.00, 0.00, 125.00, 0.00, 0.00, 0.00, 125.00, NULL, 'pi_3RCLkbIv2nL0m0UJ0N7lKp7w', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Lisa_1744243200_1-scaled.jpg', '[{"id": null, "name": "REMOVAL", "rate": "$125.00", "subtotal": "$125.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
 	(3, '238', 'Belle', 'Sparango', 'isparango@gmail.com', '2678844909', NULL, NULL, NULL, 'Lamar', 'N/A', 'N/A', '2025-06-04 00:00:00', 'CubeSmart Self Storage, Forge Drive, Newark, DE, USA', '49 Choate Street, Newark, DE, USA', 3.37, 0.00, 0.00, NULL, 0.00, 12, 0, 0.00, 0.00, 325.00, 0.00, 0.00, 0.00, 227.50, NULL, 'pi_3RBiHqIv2nL0m0UJ2S1QXmHS', '', '[{"id": null, "name": "COLLEGE ROOM MOVE", "rate": "$325.00", "subtotal": "$325.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
 	(4, '233', 'Melissa', 'Miller', 'missm921@aol.com', '7329105034', NULL, NULL, NULL, 'Lamar', 'crsmoving08@gmail.com', 'Edison', '2025-04-05 00:00:00', 'Edison Lock-Up, Old Post Road, Edison, NJ, USA', '3000 Ford Road, Bristol, PA, USA', 104.85, 104.85, 93.31, NULL, 0.00, 50, 0, 0.00, 0.00, 250.00, 0.00, 0.00, 0.00, 570.36, NULL, 'pi_3RAAvcIv2nL0m0UJ0ngcHRNc', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Melissa_1743724800_1-scaled.jpg', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$250.00", "crew_rate": "$250.00", "no_of_crew": "3", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
@@ -747,7 +750,8 @@ INSERT INTO `transactions` (`id`, `transaction_id`, `firstname`, `lastname`, `em
 	(80, '143', 'Bernaleen Grace', 'Magbanua', 'test@gmail.com', '0908-107-3313', NULL, NULL, NULL, 'Maria', 'd@gmail.com', 'Delaware', '2025-01-06 00:00:00', '13 Galaxy Ct, Sewell, NJ, USA', '2750 Fashion Center Boulevard, New Castle, DE, USA', 73.88, 73.88, 251.93, NULL, 0.00, 2, 0, 0.00, 0.00, 739.99, 0.00, 0.00, 0.00, 991.92, NULL, NULL, '', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$284.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$284.99", "purchased_amount": "4000"}, {"id": null, "name": "MATTRESS REMOVAL", "rate": "$125.00", "subtotal": "$222.50", "crew_rate": "$97.50", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}, {"id": null, "name": "CLEANING SERVICES", "rate": "$135.00", "subtotal": "$232.50", "crew_rate": "$97.50", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:59', '2025-04-24 18:37:58', '2025-04-30 10:05:59'),
 	(81, '140', 'Bernaleen Grace', 'Magbanua', 'love@competitiverelocation.com', '0908-107-3313', NULL, NULL, NULL, 'Maria', 'd@gmail.com', 'Delaware', '2025-01-03 00:00:00', '13 Galaxy Court, Sewell, NJ, USA', '2750 Fashion Center Boulevard, New Castle, DE, USA', 73.88, 73.88, 251.93, NULL, 0.00, 2, 0, 0.00, 0.00, 397.50, 0.00, 0.00, 0.00, 649.43, NULL, NULL, '', '[{"id": null, "name": "REMOVAL", "rate": "$175.00", "subtotal": "$175.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}, {"id": null, "name": "MATTRESS REMOVAL", "rate": "$125.00", "subtotal": "$222.50", "crew_rate": "$97.50", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:59', '2025-04-24 18:37:58', '2025-04-30 10:05:59'),
 	(84, '242', 'Lady', 'Kinslow', '02.barns_throes@icloud.com', '4843669579', NULL, NULL, NULL, 'Naz', 'Mhuda@raymourflanigan.com', '400 S State Road Springfield Pa 19064', '2025-04-29 00:00:00', '400 South State Road, Springfield, PA, USA', '640 Brooklyn Street, Philadelphia, PA, USA', 18.29, 18.29, 16.28, NULL, 0.00, 3, 0, 0.00, 0.00, 79.99, 0.00, 0.00, 0.00, 96.27, NULL, 'pi_3RIzwdIv2nL0m0UJ2VCLYHa1', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Lady_1745798400_1-scaled.jpeg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$79.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$79.99", "purchased_amount": "530.00"}]', 'pending', NULL, NULL, '2025-04-30 10:23:49', '2025-04-30 10:23:49', '2025-04-30 13:18:57'),
-	(85, '243', 'Raoul', 'Jaggi', 'raoul.jaggi@gmail.com', '6095537200', NULL, NULL, NULL, 'Chigbo', 'na', 'Raymour outlets Nassau', '2025-05-01 00:00:00', '700 Nassau Park Blvd, West Windsor Township, NJ 08550, USA', '7 Ternstedt Court, apt 105 Ewing Township, NJ, USA', 22.75, 22.75, 20.24, NULL, 0.00, 1, 0, 0.00, 0.00, 159.99, 0.00, 0.00, 0.00, 180.23, NULL, 'pi_3RJgwWIv2nL0m0UJ003s5fAM', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Raoul_1745971200_1-scaled.jpg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$159.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$159.99", "purchased_amount": "1322.11"}]', 'pending', NULL, NULL, '2025-04-30 12:10:38', '2025-04-30 12:10:38', '2025-04-30 13:21:54');
+	(85, '243', 'Raoul', 'Jaggi', 'raoul.jaggi@gmail.com', '6095537200', NULL, NULL, NULL, 'Chigbo', 'na', 'Raymour outlets Nassau', '2025-05-01 00:00:00', '700 Nassau Park Blvd, West Windsor Township, NJ 08550, USA', '7 Ternstedt Court, apt 105 Ewing Township, NJ, USA', 22.75, 22.75, 20.24, NULL, 0.00, 1, 0, 0.00, 0.00, 159.99, 0.00, 0.00, 0.00, 180.23, NULL, 'pi_3RJgwWIv2nL0m0UJ003s5fAM', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Raoul_1745971200_1-scaled.jpg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$159.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$159.99", "purchased_amount": "1322.11"}]', 'pending', NULL, NULL, '2025-04-30 12:10:38', '2025-04-30 12:10:38', '2025-04-30 13:54:16'),
+	(86, '241', 'Rolan', 'M Benavidez', 'rolan.benavidez@gmail.com', '09465283233', NULL, NULL, '33', 'test', 'rolan.benavidez@gmail.com', 'test', '2025-04-23 00:00:00', 'Tampo (Pob.), Botolan, Zambales, Philippines', 'San Juan, Botolan, Zambales, Philippines', 15.13, 15.13, 13.47, NULL, 0.00, 1, 0, 0.00, 0.00, 350.00, 0.00, 0.00, 0.00, 601.82, NULL, 'pi_3RGsdHIv2nL0m0UJ0wXjqJpR', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Rolan_1745366400_1.png', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$350.00", "crew_rate": "$350.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-05-02 02:20:05', '2025-05-02 02:20:05', '2025-05-02 02:21:49');
 
 -- Dumping structure for table dbrelocation.transaction_inventory_items
 CREATE TABLE IF NOT EXISTS `transaction_inventory_items` (
@@ -764,18 +768,9 @@ CREATE TABLE IF NOT EXISTS `transaction_inventory_items` (
   CONSTRAINT `transaction_inventory_items_transaction_id_foreign` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table dbrelocation.transaction_inventory_items: ~12 rows (approximately)
+-- Dumping data for table dbrelocation.transaction_inventory_items: ~2 rows (approximately)
 INSERT INTO `transaction_inventory_items` (`id`, `transaction_id`, `inventory_item_id`, `quantity`, `created_at`, `updated_at`) VALUES
-	(10, 1, 58, 1, '2025-04-28 23:17:29', '2025-04-28 23:17:29'),
-	(11, 1, 303, 0, '2025-04-28 23:17:48', '2025-04-28 23:44:36'),
-	(12, 1, 2, 2, '2025-04-28 23:19:50', '2025-04-28 23:40:37'),
-	(13, 1, 304, 0, '2025-04-28 23:20:03', '2025-04-28 23:44:36'),
-	(14, 1, 305, 0, '2025-04-28 23:20:04', '2025-04-28 23:44:37'),
-	(15, 1, 3, 2, '2025-04-28 23:25:20', '2025-04-29 06:30:54'),
-	(16, 1, 4, 0, '2025-04-28 23:28:20', '2025-04-28 23:29:27'),
-	(17, 1, 306, 0, '2025-04-28 23:29:59', '2025-04-28 23:44:38'),
 	(20, 80, 2, 0, '2025-04-30 07:05:10', '2025-04-30 07:05:17'),
-	(21, 1, 5, 3, '2025-04-30 08:14:31', '2025-04-30 08:14:31'),
 	(22, 84, 2, 1, '2025-04-30 11:45:27', '2025-04-30 11:45:27');
 
 -- Dumping structure for table dbrelocation.users
