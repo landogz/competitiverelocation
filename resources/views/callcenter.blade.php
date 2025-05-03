@@ -43,45 +43,95 @@
                             </thead>
                             <tbody>
                                 @forelse($leads as $lead)
-                                <tr data-source="{{ $lead->source }}" data-notes="{{ $lead->notes }}">
-                                    <td>{{ $lead->created_at->format('m/d/Y') }}</td>
-                                    <td>{{ $lead->name }}</td>
-                                    <td>
-                                        @if($lead->phone)
-                                            <a href="tel:{{ $lead->phone }}" class="clickable-link">
-                                                <i class="fas fa-phone-alt"></i>{{ $lead->phone }}
-                                            </a>
-                                        @else
-                                            -
+                                    @if(Auth::user()->privilege === 'agent')
+                                        {{-- Debug information --}}
+                                        <tr class="debug-info" style="display: none;">
+                                            <td colspan="7">
+                                                Debug: Lead Company: {{ $lead->company }} | User Last Name: {{ Auth::user()->last_name }}
+                                            </td>
+                                        </tr>
+                                        @if(strtolower($lead->company) === strtolower(Auth::user()->last_name))
+                                        <tr data-source="{{ $lead->source }}" data-notes="{{ $lead->notes }}">
+                                            <td>{{ $lead->created_at->format('m/d/Y') }}</td>
+                                            <td>{{ $lead->name }}</td>
+                                            <td>
+                                                @if($lead->phone)
+                                                    <a href="tel:{{ $lead->phone }}" class="clickable-link">
+                                                        <i class="fas fa-phone-alt"></i>{{ $lead->phone }}
+                                                    </a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>     
+                                            <td>
+                                                @if($lead->email)
+                                                    <a href="mailto:{{ $lead->email }}" class="clickable-link">
+                                                        <i class="fas fa-envelope"></i>{{ $lead->email }}
+                                                    </a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>        
+                                            <td>{{ $lead->company }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ $lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary'))) }}">
+                                                    {{ ucfirst($lead->status) }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">                                                
+                                                <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
                                         @endif
-                                    </td>     
-                                    <td>
-                                        @if($lead->email)
-                                            <a href="mailto:{{ $lead->email }}" class="clickable-link">
-                                                <i class="fas fa-envelope"></i>{{ $lead->email }}
-                                            </a>
-                                        @else
-                                            -
-                                        @endif
-                                    </td>        
-                                    <td>{{ $lead->company }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary'))) }}">
-                                            {{ ucfirst($lead->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">                                                
-                                        <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>                                                                         
+                                    @else
+                                        <tr data-source="{{ $lead->source }}" data-notes="{{ $lead->notes }}">
+                                            <td>{{ $lead->created_at->format('m/d/Y') }}</td>
+                                            <td>{{ $lead->name }}</td>
+                                            <td>
+                                                @if($lead->phone)
+                                                    <a href="tel:{{ $lead->phone }}" class="clickable-link">
+                                                        <i class="fas fa-phone-alt"></i>{{ $lead->phone }}
+                                                    </a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>     
+                                            <td>
+                                                @if($lead->email)
+                                                    <a href="mailto:{{ $lead->email }}" class="clickable-link">
+                                                        <i class="fas fa-envelope"></i>{{ $lead->email }}
+                                                    </a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>        
+                                            <td>{{ $lead->company }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ $lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary'))) }}">
+                                                    {{ ucfirst($lead->status) }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">                                                
+                                                <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @empty
                                 <tr>
                                     <td colspan="7" class="text-center">No leads found</td>
@@ -129,7 +179,19 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="company" class="form-label">Company</label>
-                                <input type="text" class="form-control" id="company" name="company">
+                                <select class="form-select" id="company" name="company" @if(Auth::user()->privilege === 'agent') disabled @endif>
+                                    <option value="">Select Company</option>
+                                    @if(Auth::user()->privilege === 'agent')
+                                        <option value="{{ Auth::user()->last_name }}" selected>{{ Auth::user()->last_name }}</option>
+                                    @else
+                                        @foreach(\App\Models\Agent::all() as $agent)
+                                            <option value="{{ $agent->company_name }}">{{ $agent->company_name }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                @if(Auth::user()->privilege === 'agent')
+                                    <input type="hidden" name="company" value="{{ Auth::user()->last_name }}">
+                                @endif
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -373,7 +435,10 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 data: {
-                    action: 'add_new'
+                    action: 'add_new',
+                    @if(Auth::user()->privilege === 'agent')
+                    company: '{{ Auth::user()->last_name }}'
+                    @endif
                 },
                 success: function(response) {
                     if (response.new_count > 0) {
@@ -426,6 +491,11 @@
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: function(d) {
+                    @if(Auth::user()->privilege === 'agent')
+                    d.company = '{{ Auth::user()->last_name }}';
+                    @endif
                 }
             },
             columns: [
@@ -456,7 +526,10 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 data: {
-                    action: 'add_new'
+                    action: 'add_new',
+                    @if(Auth::user()->privilege === 'agent')
+                    company: '{{ Auth::user()->last_name }}'
+                    @endif
                 },
                 success: function(response) {
                     if (response.new_count > 0) {
@@ -858,35 +931,11 @@
                 }
             });
             
-            $.ajax({
-                type: 'GET',
-                url: '{{ route("callcenter.index") }}',
-                success: function(response) {
-                    // Close loading state
-                    Swal.close();
-                    
-                    // Extract the table body from the response
-                    var newTableBody = $(response).find('#datatable_1 tbody').html();
-                    
-                    // Update the table body
-                    $('#datatable_1 tbody').html(newTableBody);
-                    
-                    // Reinitialize tooltips
-                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-                    tooltipTriggerList.map(function (tooltipTriggerEl) {
-                        return new bootstrap.Tooltip(tooltipTriggerEl)
-                    });
-                },
-                error: function(xhr) {
-                    // Show error message with SweetAlert2
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Failed to refresh data',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            });
+            // Reload the DataTable with the current filter
+            table.ajax.reload(null, false);
+            
+            // Close loading state
+            Swal.close();
         }
 
         // Function to load edit lead modal

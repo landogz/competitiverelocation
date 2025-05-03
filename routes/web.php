@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\CallCenterController;
+use App\Http\Controllers\SalesRepController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,9 +106,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/agents/sync', [AgentController::class, 'syncAgents'])->name('agents.syncAgents');
     Route::post('/agents/update', [AgentController::class, 'update'])->name('agents.update');
 
-    Route::get('/salesreps', function () {
-        return view('salesreps');
-    });
+    Route::get('/salesreps', [SalesRepController::class, 'index'])->name('salesreps.index');
 
     Route::get('/callcenter', [CallCenterController::class, 'index'])->name('callcenter.index');
     Route::get('/callcenter/create', [CallCenterController::class, 'create'])->name('callcenter.create');
@@ -208,4 +207,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/leads/sync', [CallCenterController::class, 'sync'])->name('leads.sync');
     Route::post('/leads/datatable', [CallCenterController::class, 'datatable'])->name('leads.datatable');
+
+    // Sales Representatives Routes
+    Route::get('/salesreps', [SalesRepController::class, 'index'])->name('salesreps.index');
+    Route::get('/salesreps/agents', [SalesRepController::class, 'getAgents'])->name('salesreps.agents');
+    Route::post('/salesreps', [SalesRepController::class, 'store'])->name('salesreps.store');
+    Route::get('/salesreps/{salesRep}', [SalesRepController::class, 'show'])->name('salesreps.show');
+    Route::put('/salesreps/{salesRep}', [SalesRepController::class, 'update'])->name('salesreps.update');
+    Route::delete('/salesreps/{salesRep}', [SalesRepController::class, 'destroy'])->name('salesreps.destroy');
 });

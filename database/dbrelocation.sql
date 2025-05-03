@@ -59,21 +59,18 @@ CREATE TABLE IF NOT EXISTS `agents` (
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `user_id` bigint unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `agents_external_id_unique` (`external_id`),
-  KEY `agents_user_id_foreign` (`user_id`),
-  CONSTRAINT `agents_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `agents_external_id_unique` (`external_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.agents: ~6 rows (approximately)
-INSERT INTO `agents` (`id`, `external_id`, `company_name`, `unique_url`, `contact_name`, `contact_title`, `address`, `city`, `state`, `zip_code`, `services`, `phone_number`, `email`, `company_website`, `corporate_sales`, `consumer_sales`, `local_sales`, `long_distance_sales`, `delivery_service_sales`, `total_sales`, `truck_size`, `truck_image`, `num_trucks`, `num_crews`, `affiliated_company`, `local_moving_service`, `delivery_service`, `labor_services`, `commercial_moving`, `carrierInterestReason`, `external_created_at`, `status`, `randomcodes`, `booking_agent`, `general_freight`, `is_active`, `created_at`, `updated_at`, `user_id`) VALUES
-	(32, '25', 'Sample Company', 'https://competitiverelocation.com/delivery-services/?agent=25&ref=sample-company', 'John Doe', 'Manager', '123 Main Street', 'New York', 'NY', '10001', '{"labor": false, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": true, "general_freight": true}', '123-456-7890', 'rolan.benavidez1@gmail.com', 'www.samplecompany.com', 50000.00, 30000.00, 10000.00, 15000.00, 20000.00, 125000.00, '20ft', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Sample-Company_1738454400_1.jpg, https://competitiverelocation.com/wp-content/uploads/2025/02/Sample-Company_1738454400_2.jpg', 2, 3, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:56', '2025-04-30 10:29:56', 21),
-	(33, '26', 'Landogz Web Solutions', 'https://competitiverelocation.com/delivery-services/?agent=26&ref=landogz-web-solutions', 'Rolan Jr M Benavidez', 'Developer', 'Purok 4', 'New York, NY, USA', 'New York', '2202', '{"labor": true, "delivery": true, "commercial": false, "local_moving": true, "booking_agent": false, "general_freight": true}', '09465283233', 'rolan.benavidez2@gmail.com', 'https://landogzwebsolutions.com/', 2000.00, 2000.00, 2000.00, 2000.00, 2000.00, 10000.00, '20ft', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Landogz-Web-Solutions_1738454400_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:57', '2025-04-30 10:29:57', 22),
-	(34, '27', 'dave the mover', 'https://competitiverelocation.com/delivery-services/?agent=27&ref=dave-the-mover', 'dave smith', 'owner', '25 n valley', 'Vineland, NJ, USA', 'New Jersey', '08332', '{"labor": false, "delivery": true, "commercial": false, "local_moving": false, "booking_agent": false, "general_freight": false}', '609-222-9282', 'crsmoving08@gmail.com', 'www.competitiverelocation.com', 0.00, 0.00, 100000.00, 0.00, 30000.00, 130000.00, '16', 'https://competitiverelocation.com/wp-content/uploads/2025/02/dave-the-mover_1738540800_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:57', '2025-04-30 10:29:57', 23),
-	(35, '28', 'Ladyworkx Trucks', 'https://competitiverelocation.com/delivery-services/?agent=28&ref=ladyworkx-trucks', 'Jay Randels', 'owner', '400 South Orange Avenue', 'Orlando, FL, USA', 'Florida', '32801', '{"labor": true, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": false, "general_freight": true}', '848 359 8030', 'love@competitiverelocation.com', 'www.competitiverelocation.com', 1.00, 1.00, 1.00, 23.00, 12.00, 12333.00, '26', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Ladyworkx-Trucks_1738627200_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:58', '2025-04-30 10:29:58', 24),
-	(36, '29', 'd&y moving', 'https://competitiverelocation.com/delivery-services/?agent=29&ref=d&y-moving', 'lamar reyes', 'owner', '23 main st', 'Glassboro, NJ, USA', 'New Jersey', '08028', '{"labor": false, "delivery": true, "commercial": false, "local_moving": true, "booking_agent": false, "general_freight": false}', '6092229282', 'crsmoving08@gmail.com', 'www.competitiverelocation.com', 100000.00, 100000.00, 250000.00, 0.00, 0.00, 450000.00, '16', 'https://competitiverelocation.com/wp-content/uploads/2025/02/dy-moving_1740355200_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:58', '2025-04-30 10:29:58', 23),
-	(37, '30', 'Move Makers Real Estate', 'https://competitiverelocation.com/delivery-services/?agent=30&ref=move-makers-real-estate', 'Phillip Graves', 'Program Manager', '600 West Annsbury Street', 'Philadelphia, PA, USA', 'Pennsylvania', '19140', '{"labor": true, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": true, "general_freight": false}', '2158689483', 'MoveMakers76@gmail.com', 'Www.MoveMakersRealty.com', 1.00, 1.00, 1.00, 1.00, 1.00, 5.00, '0', '', 1, 2, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-04-30 10:29:59', '2025-04-30 10:29:59', 25);
+INSERT INTO `agents` (`id`, `external_id`, `company_name`, `unique_url`, `contact_name`, `contact_title`, `address`, `city`, `state`, `zip_code`, `services`, `phone_number`, `email`, `company_website`, `corporate_sales`, `consumer_sales`, `local_sales`, `long_distance_sales`, `delivery_service_sales`, `total_sales`, `truck_size`, `truck_image`, `num_trucks`, `num_crews`, `affiliated_company`, `local_moving_service`, `delivery_service`, `labor_services`, `commercial_moving`, `carrierInterestReason`, `external_created_at`, `status`, `randomcodes`, `booking_agent`, `general_freight`, `is_active`, `created_at`, `updated_at`) VALUES
+	(44, '25', 'Sample Company', 'https://competitiverelocation.com/delivery-services/?agent=25&ref=sample-company', 'John Doe', 'Manager', '123 Main Street', 'New York', 'NY', '10001', '{"labor": false, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": true, "general_freight": true}', '123-456-7890', 'rolan.benavidez1@gmail.com', 'www.samplecompany.com', 50000.00, 30000.00, 10000.00, 15000.00, 20000.00, 125000.00, '20ft', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Sample-Company_1738454400_1.jpg, https://competitiverelocation.com/wp-content/uploads/2025/02/Sample-Company_1738454400_2.jpg', 2, 3, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:16', '2025-05-02 09:23:16'),
+	(45, '26', 'Landogz Web Solutions', 'https://competitiverelocation.com/delivery-services/?agent=26&ref=landogz-web-solutions', 'Rolan Jr M Benavidez', 'Developer', 'Purok 4', 'New York, NY, USA', 'New York', '2202', '{"labor": true, "delivery": true, "commercial": false, "local_moving": true, "booking_agent": false, "general_freight": true}', '09465283233', 'rolan.benavidez2@gmail.com', 'https://landogzwebsolutions.com/', 2000.00, 2000.00, 2000.00, 2000.00, 2000.00, 10000.00, '20ft', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Landogz-Web-Solutions_1738454400_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(46, '27', 'dave the mover', 'https://competitiverelocation.com/delivery-services/?agent=27&ref=dave-the-mover', 'dave smith', 'owner', '25 n valley', 'Vineland, NJ, USA', 'New Jersey', '08332', '{"labor": false, "delivery": true, "commercial": false, "local_moving": false, "booking_agent": false, "general_freight": false}', '609-222-9282', 'crsmoving08@gmail.com', 'www.competitiverelocation.com', 0.00, 0.00, 100000.00, 0.00, 30000.00, 130000.00, '16', 'https://competitiverelocation.com/wp-content/uploads/2025/02/dave-the-mover_1738540800_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(47, '28', 'Ladyworkx Trucks', 'https://competitiverelocation.com/delivery-services/?agent=28&ref=ladyworkx-trucks', 'Jay Randels', 'owner', '400 South Orange Avenue', 'Orlando, FL, USA', 'Florida', '32801', '{"labor": true, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": false, "general_freight": true}', '848 359 8030', 'love@competitiverelocation.com', 'www.competitiverelocation.com', 1.00, 1.00, 1.00, 23.00, 12.00, 12333.00, '26', 'https://competitiverelocation.com/wp-content/uploads/2025/02/Ladyworkx-Trucks_1738627200_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(48, '29', 'd&y moving', 'https://competitiverelocation.com/delivery-services/?agent=29&ref=d&y-moving', 'lamar reyes', 'owner', '23 main st', 'Glassboro, NJ, USA', 'New Jersey', '08028', '{"labor": false, "delivery": true, "commercial": false, "local_moving": true, "booking_agent": false, "general_freight": false}', '6092229282', 'crsmoving09@gmail.com', 'www.competitiverelocation.com', 100000.00, 100000.00, 250000.00, 0.00, 0.00, 450000.00, '16', 'https://competitiverelocation.com/wp-content/uploads/2025/02/dy-moving_1740355200_1.jpg', 1, 1, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:18', '2025-05-02 11:45:20'),
+	(49, '30', 'Move Makers Real Estate', 'https://competitiverelocation.com/delivery-services/?agent=30&ref=move-makers-real-estate', 'Phillip Graves', 'Program Manager', '600 West Annsbury Street', 'Philadelphia, PA, USA', 'Pennsylvania', '19140', '{"labor": true, "delivery": true, "commercial": true, "local_moving": true, "booking_agent": true, "general_freight": false}', '2158689483', 'MoveMakers76@gmail.com', 'Www.MoveMakersRealty.com', 1.00, 1.00, 1.00, 1.00, 1.00, 5.00, '0', '', 1, 2, NULL, 'no', 'no', 'no', 'no', NULL, NULL, 'approved', NULL, 'no', 'no', 1, '2025-05-02 09:23:18', '2025-05-02 09:23:18');
 
 -- Dumping structure for table dbrelocation.categories
 CREATE TABLE IF NOT EXISTS `categories` (
@@ -86,8 +83,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
 
 -- Dumping data for table dbrelocation.categories: ~0 rows (approximately)
 INSERT INTO `categories` (`id`, `name`, `created_at`, `updated_at`) VALUES
-	(1, 'Houses', '2025-04-28 18:07:43', '2025-04-28 18:29:40'),
-	(2, 'kusina', '2025-04-28 22:58:48', '2025-04-28 22:58:48');
+	(1, 'Houses', '2025-04-28 18:07:43', '2025-04-28 18:29:40');
 
 -- Dumping structure for table dbrelocation.email_templates
 CREATE TABLE IF NOT EXISTS `email_templates` (
@@ -458,12 +454,16 @@ CREATE TABLE IF NOT EXISTS `leads` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table dbrelocation.leads: ~1 rows (approximately)
+-- Dumping data for table dbrelocation.leads: ~0 rows (approximately)
 INSERT INTO `leads` (`id`, `name`, `phone`, `email`, `company`, `notes`, `status`, `source`, `created_at`, `updated_at`) VALUES
 	(7, 'Rolan Jr M Benavidez', '09465283233', 'rolan.benavidez@gmail.com', 'Competitive Relocation', 'test', 'qualified', 'social', '2025-04-29 06:40:43', '2025-04-29 07:15:31'),
-	(10, 'Rolan M Benavidez', '09387077940', 'rolan.benavidez@gmail.com', 'd&y moving', NULL, 'new', 'website', '2025-05-02 02:39:32', '2025-05-02 02:39:32');
+	(10, 'Rolan M Benavidez', '09387077940', 'rolan.benavidez@gmail.com', 'd&y moving', NULL, 'new', 'website', '2025-05-02 02:39:32', '2025-05-02 02:39:32'),
+	(11, 'testd', '09461624116', 'rolan.benavidez1@gmail.com', 'test', NULL, 'new', 'referral', '2025-05-02 04:19:24', '2025-05-02 04:19:24'),
+	(13, 'Michael Mumper', '2156883060', 'mowman23@aol.com', NULL, NULL, 'new', 'website', '2025-05-02 11:47:14', '2025-05-02 11:47:14'),
+	(14, 'Francis Diannone', '6107897557', 'froncee@aol.com', NULL, NULL, 'new', 'website', '2025-05-02 11:47:14', '2025-05-02 11:47:14'),
+	(15, 'Rolan Jr M Benavidez', '09465283233', 'rolan.benavidez@gmail.com', 'Sample Company', NULL, 'new', 'website', '2025-05-02 12:37:27', '2025-05-02 12:37:27');
 
 -- Dumping structure for table dbrelocation.lead_logs
 CREATE TABLE IF NOT EXISTS `lead_logs` (
@@ -477,7 +477,7 @@ CREATE TABLE IF NOT EXISTS `lead_logs` (
   PRIMARY KEY (`id`),
   KEY `lead_logs_lead_id_foreign` (`lead_id`),
   CONSTRAINT `lead_logs_lead_id_foreign` FOREIGN KEY (`lead_id`) REFERENCES `leads` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.lead_logs: ~2 rows (approximately)
 INSERT INTO `lead_logs` (`id`, `lead_id`, `type`, `content`, `user_id`, `created_at`, `updated_at`) VALUES
@@ -487,7 +487,9 @@ INSERT INTO `lead_logs` (`id`, `lead_id`, `type`, `content`, `user_id`, `created
 	(16, 7, 'call', 'call again in 2 weeks', '1', '2025-04-30 07:44:19', '2025-04-30 07:44:19'),
 	(17, 10, 'call', 'call next week', '1', '2025-05-02 02:41:42', '2025-05-02 02:41:42'),
 	(18, 10, 'email', 'email 1 week', '1', '2025-05-02 02:45:23', '2025-05-02 02:45:23'),
-	(19, 10, 'call', 'tetete', '1', '2025-05-02 02:47:05', '2025-05-02 02:47:05');
+	(19, 10, 'call', 'tetete', '1', '2025-05-02 02:47:05', '2025-05-02 02:47:05'),
+	(20, 11, 'note', 'Lead created', '1', '2025-05-02 04:19:24', '2025-05-02 04:19:24'),
+	(21, 15, 'note', 'Lead created', '1', '2025-05-02 12:37:27', '2025-05-02 12:37:27');
 
 -- Dumping structure for table dbrelocation.lead_sources
 CREATE TABLE IF NOT EXISTS `lead_sources` (
@@ -509,7 +511,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.migrations: ~21 rows (approximately)
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
@@ -538,7 +540,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 	(23, '2025_04_29_113551_create_leads_table', 6),
 	(24, '2025_04_29_113556_create_lead_logs_table', 6),
 	(25, '2025_04_29_135750_remove_assigned_to_from_leads', 7),
-	(26, '2025_04_30_142613_add_user_id_to_agents_table', 8);
+	(26, '2025_04_30_142613_add_user_id_to_agents_table', 8),
+	(27, '2024_03_21_000000_create_sales_reps_table', 9),
+	(28, '2025_05_02_204721_update_sales_reps_name_fields', 10);
 
 -- Dumping structure for table dbrelocation.password_resets
 CREATE TABLE IF NOT EXISTS `password_resets` (
@@ -559,6 +563,9 @@ CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.password_reset_tokens: ~0 rows (approximately)
+INSERT INTO `password_reset_tokens` (`email`, `token`, `created_at`) VALUES
+	('rolan.benavidez1@gmail.com', '$2y$12$ybMoBiivwnybA2qNAQLtB.hqxbk0x5jOLYuchCiepX3pcadqO6Hbu', '2025-05-03 01:08:28'),
+	('rolan1.benavidez@gmail.com', '$2y$12$fVnsn.vtQgp1WG0W5mjzh.1wAmAzq..ol5ojG9zujn2yWBaHN7EDK', '2025-05-03 01:10:41');
 
 -- Dumping structure for table dbrelocation.personal_access_tokens
 CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
@@ -578,6 +585,27 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.personal_access_tokens: ~0 rows (approximately)
+
+-- Dumping structure for table dbrelocation.sales_reps
+CREATE TABLE IF NOT EXISTS `sales_reps` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `first_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `position` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `office` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `agent_id` bigint unsigned NOT NULL,
+  `user_id` bigint DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `sales_reps_email_unique` (`email`),
+  KEY `sales_reps_agent_id_foreign` (`agent_id`),
+  CONSTRAINT `sales_reps_agent_id_foreign` FOREIGN KEY (`agent_id`) REFERENCES `agents` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table dbrelocation.sales_reps: ~0 rows (approximately)
 
 -- Dumping structure for table dbrelocation.sms_logs
 CREATE TABLE IF NOT EXISTS `sms_logs` (
@@ -665,11 +693,11 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `transactions_transaction_id_unique` (`transaction_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=87 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.transactions: ~81 rows (approximately)
 INSERT INTO `transactions` (`id`, `transaction_id`, `firstname`, `lastname`, `email`, `phone`, `lead_source`, `lead_type`, `assigned_agent`, `sales_name`, `sales_email`, `sales_location`, `date`, `pickup_location`, `delivery_location`, `miles`, `add_mile`, `mile_rate`, `service`, `service_rate`, `no_of_items`, `no_of_crew`, `crew_rate`, `delivery_rate`, `subtotal`, `software_fee`, `truck_fee`, `downpayment`, `grand_total`, `coupon_code`, `payment_id`, `uploaded_image`, `services`, `status`, `insurance_number`, `insurance_document`, `last_synced_at`, `created_at`, `updated_at`) VALUES
-	(2, '239', 'Lisa', 'Patti-Diaz i', 'lpdstarstruck03@yahoo.com', '6097900364', '1', 'local', '1', 'Lamar Reyes', 'lamar@competitiverelocation.com', 'Mt.Laurel', '2025-04-14 00:00:00', '114 Bastian Drive, Mount Laurel Township, NJ, USA', 'Removal', 0.00, 0.00, 0.00, NULL, 0.00, 1, 0, 0.00, 0.00, 125.00, 0.00, 0.00, 0.00, 125.00, NULL, 'pi_3RCLkbIv2nL0m0UJ0N7lKp7w', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Lisa_1744243200_1-scaled.jpg', '[{"id": null, "name": "REMOVAL", "rate": "$125.00", "subtotal": "$125.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
+	(2, '239', 'Lisa', 'Patti-Diaz i', 'lpdstarstruck03@yahoo.com', '6097900364', '1', 'local', '45', 'Lamar Reyes', 'lamar@competitiverelocation.com', 'Mt.Laurel', '2025-04-14 00:00:00', '114 Bastian Drive, Mount Laurel Township, NJ, USA', 'Removal', 0.00, 0.00, 0.00, NULL, 0.00, 1, 0, 0.00, 0.00, 125.00, 0.00, 0.00, 0.00, 125.00, NULL, 'pi_3RCLkbIv2nL0m0UJ0N7lKp7w', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Lisa_1744243200_1-scaled.jpg', '[{"id": null, "name": "REMOVAL", "rate": "$125.00", "subtotal": "$125.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-05-03 01:04:31'),
 	(3, '238', 'Belle', 'Sparango', 'isparango@gmail.com', '2678844909', NULL, NULL, NULL, 'Lamar', 'N/A', 'N/A', '2025-06-04 00:00:00', 'CubeSmart Self Storage, Forge Drive, Newark, DE, USA', '49 Choate Street, Newark, DE, USA', 3.37, 0.00, 0.00, NULL, 0.00, 12, 0, 0.00, 0.00, 325.00, 0.00, 0.00, 0.00, 227.50, NULL, 'pi_3RBiHqIv2nL0m0UJ2S1QXmHS', '', '[{"id": null, "name": "COLLEGE ROOM MOVE", "rate": "$325.00", "subtotal": "$325.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
 	(4, '233', 'Melissa', 'Miller', 'missm921@aol.com', '7329105034', NULL, NULL, NULL, 'Lamar', 'crsmoving08@gmail.com', 'Edison', '2025-04-05 00:00:00', 'Edison Lock-Up, Old Post Road, Edison, NJ, USA', '3000 Ford Road, Bristol, PA, USA', 104.85, 104.85, 93.31, NULL, 0.00, 50, 0, 0.00, 0.00, 250.00, 0.00, 0.00, 0.00, 570.36, NULL, 'pi_3RAAvcIv2nL0m0UJ0ngcHRNc', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Melissa_1743724800_1-scaled.jpg', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$250.00", "crew_rate": "$250.00", "no_of_crew": "3", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
 	(5, '232', 'Wendy', 'Carreon', 'wendy.carreon@verizon.net', '856-745-5645', NULL, NULL, NULL, 'Lamar D Reyes Sr.', 'lamar@competitiverelocation', '', '2025-03-19 00:00:00', '130 Estaugh Avenue, Haddonfield, NJ, USA', '', 0.00, 0.00, 0.00, NULL, 0.00, 1, 0, 0.00, 0.00, 175.00, 0.00, 0.00, 0.00, 175.00, NULL, 'pi_3R3kiuIv2nL0m0UJ0zYaqjjE', 'https://competitiverelocation.com/wp-content/uploads/2025/03/Wendy_1742169600_1-scaled.jpg', '[{"id": null, "name": "REMOVAL", "rate": "$175.00", "subtotal": "$175.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:58', '2025-04-24 18:37:58', '2025-04-30 10:05:58'),
@@ -751,7 +779,8 @@ INSERT INTO `transactions` (`id`, `transaction_id`, `firstname`, `lastname`, `em
 	(81, '140', 'Bernaleen Grace', 'Magbanua', 'love@competitiverelocation.com', '0908-107-3313', NULL, NULL, NULL, 'Maria', 'd@gmail.com', 'Delaware', '2025-01-03 00:00:00', '13 Galaxy Court, Sewell, NJ, USA', '2750 Fashion Center Boulevard, New Castle, DE, USA', 73.88, 73.88, 251.93, NULL, 0.00, 2, 0, 0.00, 0.00, 397.50, 0.00, 0.00, 0.00, 649.43, NULL, NULL, '', '[{"id": null, "name": "REMOVAL", "rate": "$175.00", "subtotal": "$175.00", "crew_rate": "$0.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}, {"id": null, "name": "MATTRESS REMOVAL", "rate": "$125.00", "subtotal": "$222.50", "crew_rate": "$97.50", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-04-30 10:05:59', '2025-04-24 18:37:58', '2025-04-30 10:05:59'),
 	(84, '242', 'Lady', 'Kinslow', '02.barns_throes@icloud.com', '4843669579', NULL, NULL, NULL, 'Naz', 'Mhuda@raymourflanigan.com', '400 S State Road Springfield Pa 19064', '2025-04-29 00:00:00', '400 South State Road, Springfield, PA, USA', '640 Brooklyn Street, Philadelphia, PA, USA', 18.29, 18.29, 16.28, NULL, 0.00, 3, 0, 0.00, 0.00, 79.99, 0.00, 0.00, 0.00, 96.27, NULL, 'pi_3RIzwdIv2nL0m0UJ2VCLYHa1', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Lady_1745798400_1-scaled.jpeg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$79.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$79.99", "purchased_amount": "530.00"}]', 'pending', NULL, NULL, '2025-04-30 10:23:49', '2025-04-30 10:23:49', '2025-04-30 13:18:57'),
 	(85, '243', 'Raoul', 'Jaggi', 'raoul.jaggi@gmail.com', '6095537200', NULL, NULL, NULL, 'Chigbo', 'na', 'Raymour outlets Nassau', '2025-05-01 00:00:00', '700 Nassau Park Blvd, West Windsor Township, NJ 08550, USA', '7 Ternstedt Court, apt 105 Ewing Township, NJ, USA', 22.75, 22.75, 20.24, NULL, 0.00, 1, 0, 0.00, 0.00, 159.99, 0.00, 0.00, 0.00, 180.23, NULL, 'pi_3RJgwWIv2nL0m0UJ003s5fAM', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Raoul_1745971200_1-scaled.jpg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$159.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$159.99", "purchased_amount": "1322.11"}]', 'pending', NULL, NULL, '2025-04-30 12:10:38', '2025-04-30 12:10:38', '2025-04-30 13:54:16'),
-	(86, '241', 'Rolan', 'M Benavidez', 'rolan.benavidez@gmail.com', '09465283233', NULL, NULL, '33', 'test', 'rolan.benavidez@gmail.com', 'test', '2025-04-23 00:00:00', 'Tampo (Pob.), Botolan, Zambales, Philippines', 'San Juan, Botolan, Zambales, Philippines', 15.13, 15.13, 13.47, NULL, 0.00, 1, 0, 0.00, 0.00, 350.00, 0.00, 0.00, 0.00, 601.82, NULL, 'pi_3RGsdHIv2nL0m0UJ0wXjqJpR', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Rolan_1745366400_1.png', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$350.00", "crew_rate": "$350.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-05-02 02:20:05', '2025-05-02 02:20:05', '2025-05-02 02:21:49');
+	(86, '241', 'Rolan', 'M Benavidez', 'rolan.benavidez@gmail.com', '09465283233', NULL, NULL, '33', 'test', 'rolan.benavidez@gmail.com', 'test', '2025-04-23 00:00:00', 'Tampo (Pob.), Botolan, Zambales, Philippines', 'San Juan, Botolan, Zambales, Philippines', 15.13, 15.13, 13.47, NULL, 0.00, 1, 0, 0.00, 0.00, 350.00, 0.00, 0.00, 0.00, 601.82, NULL, 'pi_3RGsdHIv2nL0m0UJ0wXjqJpR', 'https://competitiverelocation.com/wp-content/uploads/2025/04/Rolan_1745366400_1.png', '[{"id": null, "name": "MOVING SERVICES", "rate": "$0.00", "subtotal": "$350.00", "crew_rate": "$350.00", "no_of_crew": "2", "delivery_cost": "$0.00", "purchased_amount": "0.00"}]', 'pending', NULL, NULL, '2025-05-02 02:20:05', '2025-05-02 02:20:05', '2025-05-02 02:21:49'),
+	(87, '244', 'Michael', 'Mumper', 'mowman23@aol.com', '2156883060', NULL, NULL, '0', 'Dennis Haller', 'DHaller@raymourflanigan.com', '515 Route 73, Marlon NJ 08053', '2025-05-14 00:00:00', '515 Route 73 South, Marlton, NJ, USA', 'North Wildwood, NJ 08260, USA', 154.82, 154.82, 137.79, NULL, 0.00, 2, 0, 0.00, 0.00, 79.99, 0.00, 0.00, 0.00, 217.78, NULL, 'pi_3RKMEWIv2nL0m0UJ1tSdPSnU', 'https://competitiverelocation.com/wp-content/uploads/2025/05/Michael_1746144000_1-scaled.jpg', '[{"id": null, "name": "DELIVERY", "rate": "$0.00", "subtotal": "$79.99", "crew_rate": "$0.00", "no_of_crew": "0", "delivery_cost": "$79.99", "purchased_amount": "719.94"}]', 'pending', NULL, NULL, '2025-05-02 08:57:48', '2025-05-02 08:57:48', '2025-05-02 08:57:48');
 
 -- Dumping structure for table dbrelocation.transaction_inventory_items
 CREATE TABLE IF NOT EXISTS `transaction_inventory_items` (
@@ -766,12 +795,13 @@ CREATE TABLE IF NOT EXISTS `transaction_inventory_items` (
   KEY `transaction_inventory_items_inventory_item_id_foreign` (`inventory_item_id`),
   CONSTRAINT `transaction_inventory_items_inventory_item_id_foreign` FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items` (`id`) ON DELETE CASCADE,
   CONSTRAINT `transaction_inventory_items_transaction_id_foreign` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table dbrelocation.transaction_inventory_items: ~2 rows (approximately)
 INSERT INTO `transaction_inventory_items` (`id`, `transaction_id`, `inventory_item_id`, `quantity`, `created_at`, `updated_at`) VALUES
 	(20, 80, 2, 0, '2025-04-30 07:05:10', '2025-04-30 07:05:17'),
-	(22, 84, 2, 1, '2025-04-30 11:45:27', '2025-04-30 11:45:27');
+	(22, 84, 2, 1, '2025-04-30 11:45:27', '2025-04-30 11:45:27'),
+	(23, 87, 2, 0, '2025-05-02 09:06:55', '2025-05-02 09:07:01');
 
 -- Dumping structure for table dbrelocation.users
 CREATE TABLE IF NOT EXISTS `users` (
@@ -779,7 +809,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `first_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `last_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `privilege` enum('admin','manager','agent','user') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
+  `privilege` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
+  `agent_id` int DEFAULT '0',
   `position` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `profile_image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -796,16 +827,17 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table dbrelocation.users: ~6 rows (approximately)
-INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `privilege`, `position`, `profile_image`, `address`, `city`, `state`, `zip_code`, `phone`, `email_verified_at`, `password`, `remember_token`, `profile_photo`, `bio`, `created_at`, `updated_at`) VALUES
-	(1, 'Rolan', 'Benavidez', 'rolan1.benavidez@gmail.com', 'user', NULL, 'profile-images/profile-1-1745938890.jpg', 'Purok 4', 'BOTOLAN', 'ZAMBALES', '2202', '09465283233', '2025-04-24 18:37:23', '$2y$12$dYMLZWNwZN4Up7h7RxgjAO9Rm2AFfb0rJZVbh7PANkX6neZrSqJ2G', NULL, NULL, 'dsdfsdfdsfdsf', '2025-04-24 18:37:23', '2025-04-30 07:14:52'),
-	(21, 'John Doe', 'Sample Company', 'rolan.benavidez1@gmail.com', 'agent', NULL, NULL, '123 Main Street', 'New York', 'NY', '10001', '123-456-7890', NULL, '$2y$12$CVbf23vmvjvgdnPALjyb9u1W3Wrz.MEGopb0KlslK7L2X/4V4o.Z6', NULL, NULL, NULL, '2025-04-30 10:29:56', '2025-04-30 10:29:56'),
-	(22, 'Rolan Jr M Benavidez', 'Landogz Web Solutions', 'rolan.benavidez2@gmail.com', 'agent', NULL, NULL, 'Purok 4', 'New York, NY, USA', 'New York', '2202', '09465283233', NULL, '$2y$12$.u.4CqxlGE7RJTcPZUPFp.cWikQwZwMj6HCJZE9ybE9lUBznv78OO', NULL, NULL, NULL, '2025-04-30 10:29:57', '2025-04-30 10:29:57'),
-	(23, 'dave smith', 'dave the mover', 'crsmoving08@gmail.com', 'agent', NULL, NULL, '25 n valley', 'Vineland, NJ, USA', 'New Jersey', '08332', '609-222-9282', NULL, '$2y$12$En2CIt9nx9WTxSumRJdpXeZyJ6.RV1QxQcxztT4O/De0MPSivcy1S', NULL, NULL, NULL, '2025-04-30 10:29:57', '2025-04-30 10:29:57'),
-	(24, 'Jay Randels', 'Ladyworkx Trucks', 'love@competitiverelocation.com', 'agent', NULL, NULL, '400 South Orange Avenue', 'Orlando, FL, USA', 'Florida', '32801', '848 359 8030', NULL, '$2y$12$.Da6WFqHnjCJYUae9M1NEu6E9YylFn1eVCdsLVZK2jgcoeHtjF66K', NULL, NULL, NULL, '2025-04-30 10:29:58', '2025-04-30 10:29:58'),
-	(25, 'Phillip Graves', 'Move Makers Real Estate', 'MoveMakers76@gmail.com', 'agent', NULL, NULL, '600 West Annsbury Street', 'Philadelphia, PA, USA', 'Pennsylvania', '19140', '2158689483', NULL, '$2y$12$1v3/XaorIYyxXN9ZvzIZQ.g/y5YvzjGE6QyTcfsAZx.9TfRwJg7vq', NULL, NULL, NULL, '2025-04-30 10:29:59', '2025-04-30 10:29:59');
+-- Dumping data for table dbrelocation.users: ~7 rows (approximately)
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `privilege`, `agent_id`, `position`, `profile_image`, `address`, `city`, `state`, `zip_code`, `phone`, `email_verified_at`, `password`, `remember_token`, `profile_photo`, `bio`, `created_at`, `updated_at`) VALUES
+	(1, 'Rolan', 'Benavidez', 'rolan1.benavidez@gmail.com', 'user', 0, NULL, 'profile-images/profile-1-1745938890.jpg', 'Purok 4', 'BOTOLAN', 'ZAMBALES', '2202', '09465283233', '2025-04-24 18:37:23', '$2y$12$dYMLZWNwZN4Up7h7RxgjAO9Rm2AFfb0rJZVbh7PANkX6neZrSqJ2G', NULL, NULL, 'dsdfsdfdsfdsf', '2025-04-24 18:37:23', '2025-04-30 07:14:52'),
+	(26, 'John Doe', 'Sample Company', 'rolan.benavidez1@gmail.com', 'agent', 0, NULL, NULL, '123 Main Street', 'New York', 'NY', '10001', '123-456-7890', NULL, '$2y$12$A.Jj6Y9beRdem7DHfkVxxea8RCo7syuaMJia5KS.k9DbD.VFueTpC', NULL, NULL, NULL, '2025-05-02 09:23:16', '2025-05-02 09:23:16'),
+	(27, 'Rolan Jr M Benavidez', 'Landogz Web Solutions', 'rolan.benavidez2@gmail.com', 'agent', 0, NULL, NULL, 'Purok 4', 'New York, NY, USA', 'New York', '2202', '09465283233', NULL, '$2y$12$v/G7eltliVO5pmpKU6BoTeftkW1xF2pLJIEAMTSghyQYh5RFQhC46', NULL, NULL, NULL, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(28, 'dave smith', 'dave the mover', 'crsmoving08@gmail.com', 'agent', 0, NULL, NULL, '25 n valley', 'Vineland, NJ, USA', 'New Jersey', '08332', '609-222-9282', NULL, '$2y$12$NLNpHra3QXaSE3HdzEgluOByhNBvSSWlOFboSTDhXCQ1Unbr2LN1y', NULL, NULL, NULL, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(29, 'Jay Randels', 'Ladyworkx Trucks', 'love@competitiverelocation.com', 'agent', 0, NULL, NULL, '400 South Orange Avenue', 'Orlando, FL, USA', 'Florida', '32801', '848 359 8030', NULL, '$2y$12$xF6GlAkapmua8h8z0Tr6YOqEEFXAeRGyQdsaqQ29zAEIb587UKa6C', NULL, NULL, NULL, '2025-05-02 09:23:17', '2025-05-02 09:23:17'),
+	(30, 'lamar reyes', 'd&y moving', 'crsmoving09@gmail.com', 'agent', 0, NULL, NULL, '23 main st', 'Glassboro, NJ, USA', 'New Jersey', '08028', '6092229282', NULL, '$2y$12$nyQBdLrCArhPEIUSw/f4OeEAKHyLrdNQ9sNOWA55w6FNoKmq3vs6y', NULL, NULL, NULL, '2025-05-02 09:23:18', '2025-05-02 09:23:18'),
+	(31, 'Phillip Graves', 'Move Makers Real Estate', 'MoveMakers76@gmail.com', 'agent', 0, NULL, NULL, '600 West Annsbury Street', 'Philadelphia, PA, USA', 'Pennsylvania', '19140', '2158689483', NULL, '$2y$12$xL1JwTqzHVJQdj1fgRReqOqjBtzmQP0GSTmzcAxQgZc6qqIYult.2', NULL, NULL, NULL, '2025-05-02 09:23:18', '2025-05-02 09:23:18');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

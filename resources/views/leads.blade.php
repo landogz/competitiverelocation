@@ -89,7 +89,7 @@
                         <li class="nav-item waves-effect waves-light" role="presentation">
                             <a class="nav-link" data-bs-toggle="tab" href="#profile-1" role="tab" aria-selected="false" tabindex="-1">Local Info</a>
                         </li>
-                        <li class="nav-item waves-effect waves-light" role="presentation">
+                        <li class="nav-item waves-effect waves-light" role="presentation">  
                             <a class="nav-link" data-bs-toggle="tab" href="#settings-1" role="tab" aria-selected="false" tabindex="-1">Insurance</a>
                         </li>
                     </ul>
@@ -252,27 +252,52 @@
                                             <div class="card-body pt-0">
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">Subtotal</label>
-                                                    <input type="text" class="form-control" name="subtotal" value="{{ isset($transaction) ? number_format($transaction->subtotal, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="subtotal" value="{{ isset($transaction) ? number_format($transaction->subtotal, 2) : '0.00' }}" readonly>                   
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3 mt-3">
+                                                    <label class="form-label">Added Mile Rate</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="added_mile_rate" value="{{ isset($transaction) ? number_format($transaction->added_mile_rate, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">Software Management Fee</label>
-                                                    <input type="text" class="form-control" name="software_fee" value="{{ isset($transaction) ? number_format($transaction->software_fee, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="software_fee" value="{{ isset($transaction) ? number_format($transaction->software_fee, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">Truck Fee</label>
-                                                    <input type="text" class="form-control" name="truck_fee" value="{{ isset($transaction) ? number_format($transaction->truck_fee, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="truck_fee" value="{{ isset($transaction) ? number_format($transaction->truck_fee, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">Estimated Total</label>
-                                                    <input type="text" class="form-control" name="grand_total" value="{{ isset($transaction) ? number_format($transaction->grand_total, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="grand_total" value="{{ isset($transaction) ? number_format($transaction->grand_total, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">DownPayment</label>
-                                                    <input type="text" class="form-control" name="downpayment" value="{{ isset($transaction) ? number_format($transaction->downpayment, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="downpayment" value="{{ isset($transaction) ? number_format($transaction->downpayment, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                                 <div class="mb-3 mt-3">
                                                     <label class="form-label">Remaining Balance</label>
-                                                    <input type="text" class="form-control" name="remaining_balance" value="{{ isset($transaction) ? number_format($transaction->grand_total - $transaction->downpayment, 2) : '0.00' }}" readonly>                   
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" name="remaining_balance" value="{{ isset($transaction) ? number_format($transaction->grand_total - $transaction->downpayment, 2) : '0.00' }}" readonly>                   
+                                                    </div>
                                                 </div>
                                             </div><!--end card-body-->   
                                     </div><!--end col-->                                    
@@ -745,23 +770,56 @@ function calculateFees() {
         }
     }
 
+    // Get miles for added mile rate calculation
+    const milesInput = document.querySelector('[name="miles"]');
+    const distanceInMiles = milesInput ? parseFloat(milesInput.value) || 0 : 0;
+    let addedMileRate = 0;
+
+    // Calculate added mile rate for distances over 12.5 miles
+    if (distanceInMiles > 12.5) {
+        addedMileRate = distanceInMiles * 0.89; // $0.89 per mile charge
+    }
+
     // Calculate fees based on service type
     let truckFee = 0;
     let softwareFee = 0;
-    let grandTotal = subtotal;
+    let grandTotal = subtotal + addedMileRate;
     let downPayment = 0;
     let remainingBalance = 0;
 
     if (isMovingService) {
         truckFee = 198.80;
         softwareFee = (subtotal + truckFee) * 0.12;
-        grandTotal = subtotal + softwareFee + truckFee;
+        grandTotal = subtotal + softwareFee + truckFee + addedMileRate;
         downPayment = grandTotal * 0.315;
         remainingBalance = grandTotal - downPayment;
     }
 
+    // Show/hide fields based on service type
+    const addedMileRateField = document.querySelector('[name="added_mile_rate"]').closest('.mb-3');
+    const truckFeeField = document.querySelector('[name="truck_fee"]').closest('.mb-3');
+    const softwareFeeField = document.querySelector('[name="software_fee"]').closest('.mb-3');
+    const downPaymentField = document.querySelector('[name="downpayment"]').closest('.mb-3');
+    const remainingBalanceField = document.querySelector('[name="remaining_balance"]').closest('.mb-3');
+
+    // Always show Added Mile Rate
+    addedMileRateField.style.display = 'block';
+
+    if (isMovingService) {
+        truckFeeField.style.display = 'block';
+        softwareFeeField.style.display = 'block';
+        downPaymentField.style.display = 'block';
+        remainingBalanceField.style.display = 'block';
+    } else {
+        truckFeeField.style.display = 'none';
+        softwareFeeField.style.display = 'none';
+        downPaymentField.style.display = 'none';
+        remainingBalanceField.style.display = 'none';
+    }
+
     // Update the fields with formatted values
     document.querySelector('[name="subtotal"]').value = subtotal.toFixed(2);
+    document.querySelector('[name="added_mile_rate"]').value = addedMileRate.toFixed(2);
     document.querySelector('[name="software_fee"]').value = softwareFee.toFixed(2);
     document.querySelector('[name="truck_fee"]').value = truckFee.toFixed(2);
     document.querySelector('[name="grand_total"]').value = grandTotal.toFixed(2);
@@ -771,7 +829,7 @@ function calculateFees() {
 
 // Add event listeners to recalculate when service-related fields change
 document.addEventListener('DOMContentLoaded', function() {
-    const serviceInputs = document.querySelectorAll('[name="service"], [name="service_rate"], [name="crew_rate"], [name="no_of_items"]');
+    const serviceInputs = document.querySelectorAll('[name="service"], [name="service_rate"], [name="crew_rate"], [name="no_of_items"], [name="miles"]');
     serviceInputs.forEach(input => {
         input.addEventListener('change', calculateFees);
         input.addEventListener('input', calculateFees);

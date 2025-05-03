@@ -541,6 +541,26 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
         });
     });
 
+    // Perform silent sync on page load
+    function silentSync() {
+        $.ajax({
+            url: "{{ route('agents.syncAgents') }}",
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Reload table data silently if new agents were added
+                    table.ajax.reload(null, false);
+                }
+            },
+            error: function(xhr) {
+                console.log('Silent sync failed:', xhr.responseJSON?.message || 'Unknown error');
+            }
+        });
+    }
+
     // Manual sync button
     $('#syncButton').on('click', function() {
         var button = $(this);
@@ -550,13 +570,24 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
         $.ajax({
             url: "{{ route('agents.syncAgents') }}",
             method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
             success: function(response) {
-                table.ajax.reload();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: response.message
-                });
+                if (response.success) {
+                    table.ajax.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.message
+                    });
+                }
             },
             error: function(xhr) {
                 Swal.fire({

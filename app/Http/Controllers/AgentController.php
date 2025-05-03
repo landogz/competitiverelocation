@@ -144,7 +144,6 @@ class AgentController extends Controller
                 // Create new agent
                 $agent = Agent::create([
                     'external_id' => $apiAgent['id'],
-                    'user_id' => $user->id,
                     'company_name' => $apiAgent['company_name'],
                     'company_website' => $apiAgent['company_website'] ?? null,
                     'contact_name' => $apiAgent['contact_name'] ?? null,

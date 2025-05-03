@@ -293,68 +293,14 @@
                             </a>
                         </li><!--end nav-item-->
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="#sidebarAnalytics" data-bs-toggle="collapse" role="button"
-                                aria-expanded="false" aria-controls="sidebarAnalytics"> 
-                                <i class="iconoir-reports menu-icon"></i>                                       
-                                <span>Leads</span>
-                            </a>
-                            <div class="collapse " id="sidebarAnalytics">
-                                <ul class="nav flex-column">
-                                    <li class="nav-item">
-                                        {{-- <a href="{{ url('/leads') }}" class="nav-link" data-bs-toggle="modal" data-bs-target="#bd-example-modal-xl">New</a> --}}
-                                        <!-- <a class="nav-link" data-bs-toggle="modal" data-bs-target="#new-leads">New</a> -->
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/local') }}" class="nav-link ">Local</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/longdistance') }}" class="nav-link ">Long Distance</a>
-                                    </li><!--end nav-item-->
-                                </ul><!--end nav-->
-                            </div>
-                        </li><!--end nav-item-->   
-
-                        <li class="nav-item">
-                            <a class="nav-link" href="#services" data-bs-toggle="collapse" role="button"
-                                aria-expanded="false" aria-controls="sidebarAnalytics"> 
-                                <i class="iconoir-cart-alt menu-icon"></i>                                       
-                                <span>Services</span>
-                            </a>
-                            <div class="collapse " id="services">
-                                <ul class="nav flex-column">
-                                    <li class="nav-item">
-                                        <a href="{{ url('/delivery') }}" class="nav-link ">DELIVERY SERVICE</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/furniture') }}" class="nav-link ">FURNITURE REMOVAL</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/moving') }}" class="nav-link ">MOVING SERVICE</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/mattress') }}" class="nav-link ">MATTRESS REMOVAL</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/rearranging') }}" class="nav-link ">RE ARRANGING SERVICE</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/cleaning') }}" class="nav-link ">CLEANING</a>
-                                    </li><!--end nav-item-->
-                                    <li class="nav-item">
-                                        <a href="{{ url('/housting') }}" class="nav-link ">HOUSTING</a>
-                                    </li><!--end nav-item-->
-                                </ul><!--end nav-->
-                            </div>
-                        </li><!--end nav-item-->   
-
-                        
+                        @if(Auth::user()->privilege !== 'agent')
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/agents') }}">
                                 <i class="fab fa-github-alt menu-icon"></i>
                                 <span>Agent List</span>
                             </a>
                         </li><!--end nav-item-->
+                        @endif
 
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/salesreps') }}">
@@ -364,22 +310,13 @@
                         </li><!--end nav-item-->
 
                         <li class="nav-item">
-                            <a class="nav-link" href="#callceter" data-bs-toggle="collapse" role="button"
-                                aria-expanded="false" aria-controls="callceter"> 
-                                <i class="fas fa-headphones menu-icon"></i>                                       
-                                <span>Call Center</span>
+                            <a class="nav-link" href="{{ url('/callcenter') }}">
+                            <i class="fas fa-headphones menu-icon"></i>                                    
+                            <span>Call Center</span>
                             </a>
-                            <div class="collapse " id="callceter">
-                                <ul class="nav flex-column">
-                                    <li class="nav-item">
-                                        <a href="{{ url('/callcenter') }}" class="nav-link ">List</a>
-                                    </li><!--end nav-item-->
-                                    
-                                </ul><!--end nav-->
-                            </div>
-                        </li><!--end nav-item--> 
+                        </li><!--end nav-item-->
 
-
+                        @if(Auth::user()->privilege !== 'agent')
                         <li class="nav-item">
                             <a class="nav-link" href="#sales" data-bs-toggle="collapse" role="button"
                                 aria-expanded="false" aria-controls="sales"> 
@@ -405,7 +342,6 @@
                                 <span>Service Rates</span>
                             </a>
                         </li><!--end nav-item-->
-
 
                         <li class="nav-item">
                             <a class="nav-link" href="#settings" data-bs-toggle="collapse" role="button"
@@ -433,6 +369,7 @@
                                 </ul><!--end nav-->
                             </div>
                         </li><!--end nav-item-->  
+                        @endif
                               
                         
                     </ul><!--end navbar-nav--->

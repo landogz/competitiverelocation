@@ -201,6 +201,11 @@ class CallCenterController extends Controller
     {
         $query = Lead::withCount('logs');
 
+        // Apply privilege-based filtering
+        if (Auth::user()->privilege === 'agent') {
+            $query->where('company', Auth::user()->last_name);
+        }
+
         // Apply search filter
         if ($request->has('search') && !empty($request->search['value'])) {
             $search = $request->search['value'];
