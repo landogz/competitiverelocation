@@ -97,35 +97,72 @@
 
 <!-- Add/Edit Inventory Item Modal -->
 <div class="modal fade" id="inventoryItemModal" tabindex="-1" aria-labelledby="inventoryItemModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="inventoryItemModalLabel">Add Inventory Item</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="inventoryItemModalLabel">
+                    <i class="fas fa-box me-2"></i>Add Inventory Item
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="inventoryItemForm">
                     @csrf
                     <input type="hidden" id="inventoryItemId">
-                    <div class="mb-3">
-                        <label for="item" class="form-label">Item Name</label>
-                        <input type="text" class="form-control" id="item" name="item" required>
+                    
+                    <!-- Item Name -->
+                    <div class="mb-4">
+                        <label for="item" class="form-label fw-semibold">
+                            <i class="fas fa-tag me-1 text-primary"></i>Item Name
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-box text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="item" name="item" placeholder="Enter item name" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="category_id" class="form-label">Category</label>
-                        <select class="form-select" id="category_id" name="category_id" required>
-                            <option value="">Select Category</option>
-                        </select>
+
+                    <!-- Category Selection -->
+                    <div class="mb-4">
+                        <label for="category_id" class="form-label fw-semibold">
+                            <i class="fas fa-folder me-1 text-primary"></i>Category
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-folder-open text-muted"></i>
+                            </span>
+                            <select class="form-select border-start-0 ps-0" id="category_id" name="category_id" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="cubic_ft" class="form-label">Cubic Ft.</label>
-                        <input type="number" step="0.01" class="form-control" id="cubic_ft" name="cubic_ft" required>
+
+                    <!-- Cubic Feet -->
+                    <div class="mb-4">
+                        <label for="cubic_ft" class="form-label fw-semibold">
+                            <i class="fas fa-cube me-1 text-primary"></i>Cubic Feet
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-ruler-combined text-muted"></i>
+                            </span>
+                            <input type="number" step="0.01" class="form-control border-start-0 ps-0" id="cubic_ft" name="cubic_ft" placeholder="Enter cubic feet" required>
+                            <span class="input-group-text bg-light border-start-0">ft³</span>
+                        </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveInventoryItemBtn">Save</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveInventoryItemBtn">
+                    <i class="fas fa-save me-1"></i>Save Item
+                </button>
             </div>
         </div>
     </div>
@@ -422,6 +459,121 @@ body {
     
     .card-header .d-flex > div:last-child {
         width: 100%;
+    }
+}
+
+/* Modal Custom Styling */
+.modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: none;
+    padding: 1.25rem;
+}
+
+/* Form Input Styling */
+.form-label {
+    color: #495057;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+}
+
+.input-group-text {
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #6c757d;
+}
+
+.input-group .form-control:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.input-group .form-control:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.btn-light {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    color: #495057;
+}
+
+.btn-light:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    color: #212529;
+}
+
+/* Required Field Indicator */
+.text-danger {
+    color: #dc3545;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+/* Icon Styling */
+.fas {
+    font-size: 0.875rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem;
     }
 }
 </style>

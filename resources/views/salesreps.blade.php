@@ -224,62 +224,84 @@
 
 <!-- Create Sales Rep Modal -->
 <div class="modal fade" id="createSalesRepModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add Sales Representative</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Add Sales Representative
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="createSalesRepForm">
                 @csrf
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" name="first_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" name="last_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Position</label>
-                        <input type="text" class="form-control" name="position" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Office</label>
-                        <input type="text" class="form-control" name="office" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="text" class="form-control" name="phone" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Company</label>
-                        <select class="form-control" name="agent_id" id="agent_id_select_create" required @if(Auth::user()->privilege === 'agent') disabled @endif>
-                            <option value="">Select Company</option>
-                            @if(Auth::user()->privilege === 'agent')
-                                @php
-                                    $agent = \App\Models\Agent::where('company_name', Auth::user()->last_name)->first();
-                                @endphp
-                                <option value="{{ $agent?->id ?? '' }}" selected>{{ $agent?->company_name ?? 'Unknown Company' }}</option>
-                            @else
-                                @foreach($agents as $agent)
-                                    <option value="{{ $agent->id }}">{{ $agent->company_name }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                        @if(Auth::user()->privilege === 'agent')
-                            <input type="hidden" name="agent_id" id="agent_id_hidden_create" value="{{ $agent?->id ?? '' }}">
-                        @endif
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="last_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Position <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="position" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Office <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="office" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Phone <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="phone" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Company <span class="text-danger">*</span></label>
+                                <select class="form-select" name="agent_id" id="agent_id_select_create" required @if(Auth::user()->privilege === 'agent') disabled @endif>
+                                    <option value="">Select Company</option>
+                                    @if(Auth::user()->privilege === 'agent')
+                                        @php
+                                            $agent = \App\Models\Agent::where('company_name', Auth::user()->last_name)->first();
+                                        @endphp
+                                        <option value="{{ $agent?->id ?? '' }}" selected>{{ $agent?->company_name ?? 'Unknown Company' }}</option>
+                                    @else
+                                        @foreach($agents as $agent)
+                                            <option value="{{ $agent->id }}">{{ $agent->company_name }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                @if(Auth::user()->privilege === 'agent')
+                                    <input type="hidden" name="agent_id" id="agent_id_hidden_create" value="{{ $agent?->id ?? '' }}">
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Add Representative</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Add Representative
+                    </button>
                 </div>
             </form>
         </div>

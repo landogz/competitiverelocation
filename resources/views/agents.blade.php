@@ -91,141 +91,185 @@ table.dataTable tr.dt-hasChild td.dt-control:before {
 <!-- Edit Agent Modal -->
 <div class="modal fade" id="editAgentModal" tabindex="-1" aria-labelledby="editAgentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editAgentModalLabel">Edit Agent</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editAgentModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Agent
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="editAgentForm">
                     <input type="hidden" id="agent_id" name="agent_id">
-                    <div class="row">
+                    <div class="row g-4">
                         <!-- Company Information -->
                         <div class="col-md-6">
-                            <h6 class="mb-3">Company Information</h6>
-                            <div class="mb-3">
-                                <label for="company_name" class="form-label">Company Name</label>
-                                <input type="text" class="form-control" id="company_name" name="company_name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="company_website" class="form-label">Company Website</label>
-                                <input type="url" class="form-control" id="company_website" name="company_website">
-                            </div>
-                            <div class="mb-3">
-                                <label for="is_active" class="form-label">Status</label>
-                                <select class="form-select" id="is_active" name="is_active">
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
-                                </select>
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building me-2"></i>Company Information
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="company_name" name="company_name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="company_website" class="form-label">Company Website</label>
+                                        <input type="url" class="form-control" id="company_website" name="company_website">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="is_active" class="form-label">Status <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="is_active" name="is_active" required>
+                                            <option value="1">Active</option>
+                                            <option value="0">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Contact Information -->
                         <div class="col-md-6">
-                            <h6 class="mb-3">Contact Information</h6>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="contact_name" class="form-label">Contact Name</label>
-                                    <input type="text" class="form-control" id="contact_name" name="contact_name">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-address-card me-2"></i>Contact Information
+                                    </h6>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="contact_title" class="form-label">Contact Title</label>
-                                    <input type="text" class="form-control" id="contact_title" name="contact_title">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="phone_number" class="form-label">Phone Number</label>
-                                    <input type="text" class="form-control" id="phone_number" name="phone_number">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="contact_name" class="form-label">Contact Name</label>
+                                            <input type="text" class="form-control" id="contact_name" name="contact_name">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="contact_title" class="form-label">Contact Title</label>
+                                            <input type="text" class="form-control" id="contact_title" name="contact_title">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" name="email">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="phone_number" class="form-label">Phone Number</label>
+                                            <input type="text" class="form-control" id="phone_number" name="phone_number">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Address Information -->
                         <div class="col-12">
-                            <h6 class="mb-3">Address Information</h6>
-                            <div class="row">
-                                <div class="col-12 mb-3">
-                                    <label for="address" class="form-label">Address</label>
-                                    <input type="text" class="form-control" id="address" name="address">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                                    </h6>
                                 </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="city" class="form-label">City</label>
-                                    <input type="text" class="form-control" id="city" name="city">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="state" class="form-label">State</label>
-                                    <input type="text" class="form-control" id="state" name="state">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="zip_code" class="form-label">ZIP Code</label>
-                                    <input type="text" class="form-control" id="zip_code" name="zip_code">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label for="address" class="form-label">Address</label>
+                                            <input type="text" class="form-control" id="address" name="address">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city" name="city">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="state" class="form-label">State</label>
+                                            <input type="text" class="form-control" id="state" name="state">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="zip_code" class="form-label">ZIP Code</label>
+                                            <input type="text" class="form-control" id="zip_code" name="zip_code">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Business Details -->
                         <div class="col-md-6">
-                            <h6 class="mb-3">Business Details</h6>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="num_trucks" class="form-label">Number of Trucks</label>
-                                    <input type="number" class="form-control" id="num_trucks" name="num_trucks" min="0">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-truck me-2"></i>Business Details
+                                    </h6>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="truck_size" class="form-label">Truck Size</label>
-                                    <input type="text" class="form-control" id="truck_size" name="truck_size">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="num_crews" class="form-label">Number of Crews</label>
-                                    <input type="number" class="form-control" id="num_crews" name="num_crews" min="0">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="num_trucks" class="form-label">Number of Trucks</label>
+                                            <input type="number" class="form-control" id="num_trucks" name="num_trucks" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="truck_size" class="form-label">Truck Size</label>
+                                            <input type="text" class="form-control" id="truck_size" name="truck_size">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="num_crews" class="form-label">Number of Crews</label>
+                                            <input type="number" class="form-control" id="num_crews" name="num_crews" min="0">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Sales Information -->
                         <div class="col-md-6">
-                            <h6 class="mb-3">Sales Information</h6>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="corporate_sales" class="form-label">Corporate Sales</label>
-                                    <input type="number" class="form-control" id="corporate_sales" name="corporate_sales" min="0">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-chart-line me-2"></i>Sales Information
+                                    </h6>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="consumer_sales" class="form-label">Consumer Sales</label>
-                                    <input type="number" class="form-control" id="consumer_sales" name="consumer_sales" min="0">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="local_sales" class="form-label">Local Sales</label>
-                                    <input type="number" class="form-control" id="local_sales" name="local_sales" min="0">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="long_distance_sales" class="form-label">Long Distance Sales</label>
-                                    <input type="number" class="form-control" id="long_distance_sales" name="long_distance_sales" min="0">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="delivery_service_sales" class="form-label">Delivery Service Sales</label>
-                                    <input type="number" class="form-control" id="delivery_service_sales" name="delivery_service_sales" min="0">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="total_sales" class="form-label">Total Sales</label>
-                                    <input type="number" class="form-control" id="total_sales" name="total_sales" min="0">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="corporate_sales" class="form-label">Corporate Sales</label>
+                                            <input type="number" class="form-control" id="corporate_sales" name="corporate_sales" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="consumer_sales" class="form-label">Consumer Sales</label>
+                                            <input type="number" class="form-control" id="consumer_sales" name="consumer_sales" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="local_sales" class="form-label">Local Sales</label>
+                                            <input type="number" class="form-control" id="local_sales" name="local_sales" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="long_distance_sales" class="form-label">Long Distance Sales</label>
+                                            <input type="number" class="form-control" id="long_distance_sales" name="long_distance_sales" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="delivery_service_sales" class="form-label">Delivery Service Sales</label>
+                                            <input type="number" class="form-control" id="delivery_service_sales" name="delivery_service_sales" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="total_sales" class="form-label">Total Sales</label>
+                                            <input type="number" class="form-control" id="total_sales" name="total_sales" min="0">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="saveAgentChanges">Save changes</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+                <button type="button" class="btn btn-primary" id="saveAgentChanges">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
             </div>
-                                    </div>
-                                    </div>
+        </div>
+    </div>
 </div>
 
 <script>

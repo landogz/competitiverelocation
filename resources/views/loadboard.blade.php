@@ -194,29 +194,74 @@
 
 <!-- Transaction Modals -->
 @foreach($transactions as $transaction)
+@php
+    // Prefer joined field if available
+    $leadSourceName = $transaction->lead_source_title ?? null;
+    if (!$leadSourceName) {
+        $leadSourceName = (!empty($transaction->lead_source) && isset($leadSources[$transaction->lead_source])) ? $leadSources[$transaction->lead_source] : 'N/A';
+    }
+
+    $leadTypeLabel = $transaction->lead_type === 'local' ? 'Local' : ($transaction->lead_type === 'long_distance' ? 'Long Distance' : 'N/A');
+
+    // Prefer joined field if available
+    $agentName = $transaction->assigned_agent_company_name ?? null;
+    if (!$agentName) {
+        $agentName = (!empty($transaction->assigned_agent) && isset($agents[$transaction->assigned_agent])) ? $agents[$transaction->assigned_agent] : 'N/A';
+    }
+
+    // Get services data
+    $services = is_string($transaction->services) ? json_decode($transaction->services, true) : $transaction->services;
+    $totalSubtotal = 0;
+    $isMovingService = false;
+    
+    // Calculate total from services and check if it's moving services
+    if (is_array($services) && count($services) > 0) {
+        foreach ($services as $service) {
+            $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
+            if (strtoupper($service['name']) === 'MOVING SERVICES') {
+                $isMovingService = true;
+            }
+        }
+    } else {
+        $totalSubtotal = $transaction->subtotal;
+        $isMovingService = strtoupper($transaction->service) === 'MOVING SERVICES';
+    }
+    
+    // Calculate added mile rate
+    $distanceInMiles = floatval($transaction->miles);
+    $addedMiles = 0;
+    $addedMileRate = 0;
+    
+    if ($distanceInMiles > 12.5) {
+        $addedMiles = $distanceInMiles;
+        $addedMileRate = $addedMiles * 0.89; // $0.89 per mile charge
+    }
+    
+    // Calculate fees based on moving services logic
+    if ($isMovingService) {
+        $baseTruckFee = 198.80;
+        $softwareFee = ($totalSubtotal + $baseTruckFee) * 0.12;
+        $truckFee = $baseTruckFee;
+        $grandTotal = $totalSubtotal + $softwareFee + $truckFee + $addedMileRate;
+        $downPayment = $grandTotal * 0.315;
+        $remainingBalance = $grandTotal - $downPayment;
+    } else {
+        $truckFee = $transaction->truck_fee;
+        $softwareFee = $transaction->software_fee;
+        $grandTotal = $transaction->grand_total;
+    }
+@endphp
 <div class="modal fade" id="transactionModal{{ $transaction->id }}" tabindex="-1" aria-labelledby="transactionModalLabel{{ $transaction->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="transactionModalLabel{{ $transaction->id }}">Transaction Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="transactionModalLabel{{ $transaction->id }}">
+                    <i class="fas fa-file-invoice me-2"></i>Transaction Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                            @php
-                                // Prefer joined field if available
-                                $leadSourceName = $transaction->lead_source_title ?? null;
-                                if (!$leadSourceName) {
-                                    $leadSourceName = (!empty($transaction->lead_source) && isset($leadSources[$transaction->lead_source])) ? $leadSources[$transaction->lead_source] : 'N/A';
-                                }
-
-                                $leadTypeLabel = $transaction->lead_type === 'local' ? 'Local' : ($transaction->lead_type === 'long_distance' ? 'Long Distance' : 'N/A');
-
-                                // Prefer joined field if available
-                                $agentName = $transaction->assigned_agent_company_name ?? null;
-                                if (!$agentName) {
-                                    $agentName = (!empty($transaction->assigned_agent) && isset($agents[$transaction->assigned_agent])) ? $agents[$transaction->assigned_agent] : 'N/A';
-                                }
-                            @endphp
+            <div class="modal-body p-4">
+                <!-- Lead Info Section -->
                 <div class="lead-info-section mb-4">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -252,16 +297,16 @@
                                 </div>
                             </div>
                         </div>
-                        </div>
+                    </div>
                 </div>
-                
-            <hr>
+
                 <div class="row g-4">
+                    <!-- Customer Information -->
                     <div class="col-md-6">
                         <div class="info-section-card">
                             <div class="section-header">
                                 <i class="fas fa-user-circle"></i>
-                        <h6>Customer Information</h6>
+                                <h6>Customer Information</h6>
                             </div>
                             <div class="info-list">
                                 <div class="info-item">
@@ -298,11 +343,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Sales Information -->
                     <div class="col-md-6">
                         <div class="info-section-card">
                             <div class="section-header">
                                 <i class="fas fa-user-tie"></i>
-                        <h6>Sales Information</h6>
+                                <h6>Sales Information</h6>
                             </div>
                             <div class="info-list">
                                 <div class="info-item">
@@ -337,27 +384,25 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <hr>
-                <div class="row g-4">
+
+                    <!-- Service Details -->
                     <div class="col-md-6">
                         <div class="info-section-card">
                             <div class="section-header">
                                 <i class="fas fa-truck-loading"></i>
-                        <h6>Service Details</h6>
+                                <h6>Service Details</h6>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-sm table-borderless mb-0">
-                        <thead>
-                            <tr>
+                                    <thead>
+                                        <tr>
                                             <th>Service</th>
                                             <th class="text-end">Rate</th>
                                             <th class="text-end">Crew</th>
                                             <th class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                         @php
                                             $services = is_string($transaction->services) ? json_decode($transaction->services, true) : $transaction->services;
                                             $totalItems = 0;
@@ -375,7 +420,7 @@
                                                 <td class="text-end">{{ $service['rate'] }}</td>
                                                 <td class="text-end">{{ $service['no_of_crew'] }}</td>
                                                 <td class="text-end">{{ $service['subtotal'] }}</td>
-                            </tr>
+                                            </tr>
                                         @endforeach
                                     </tbody>
                                     <tfoot>
@@ -383,17 +428,19 @@
                                             <td colspan="2">Total</td>
                                             <td class="text-end">{{ $totalCrew }}</td>
                                             <td class="text-end">${{ number_format($totalSubtotal, 2) }}</td>
-                            </tr>
+                                        </tr>
                                     </tfoot>
-                    </table>
+                                </table>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Financial Details -->
                     <div class="col-md-6">
                         <div class="info-section-card">
                             <div class="section-header">
                                 <i class="fas fa-calculator"></i>
-                        <h6>Financial Details</h6>
+                                <h6>Financial Details</h6>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-sm table-borderless mb-0">
@@ -402,95 +449,37 @@
                                             <td>Subtotal</td>
                                             <td class="text-end">${{ number_format($totalSubtotal, 2) }}</td>
                                         </tr>
-                                        
-                        @php
-                            // Get services data
-                            $services = is_string($transaction->services) ? json_decode($transaction->services, true) : $transaction->services;
-                            $totalSubtotal = 0;
-                            $isMovingService = false;
-                            
-                            // Calculate total from services and check if it's moving services
-                            if (is_array($services) && count($services) > 0) {
-                                foreach ($services as $service) {
-                                    $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
-                                    if (strtoupper($service['name']) === 'MOVING SERVICES') {
-                                        $isMovingService = true;
-                                    }
-                                }
-                            } else {
-                                $totalSubtotal = $transaction->subtotal;
-                                $isMovingService = strtoupper($transaction->service) === 'MOVING SERVICES';
-                            }
-                            
-                            // Calculate added mile rate
-                            $distanceInMiles = floatval($transaction->miles);
-                            $addedMiles = 0;
-                            $addedMileRate = 0;
-                            
-                            if ($distanceInMiles > 12.5) {
-                                $addedMiles = $distanceInMiles;
-                                $addedMileRate = $addedMiles * 0.89; // $0.89 per mile charge
-                            }
-                            
-                            // Calculate fees based on moving services logic
-                            if ($isMovingService) {
-                                $baseTruckFee = 198.80;
-                                $softwareFee = ($totalSubtotal + $baseTruckFee) * 0.12;
-                                $truckFee = $baseTruckFee;
-                                $grandTotal = $totalSubtotal + $softwareFee + $truckFee + $addedMileRate;
-                                $downPayment = $grandTotal * 0.315;
-                                $remainingBalance = $grandTotal - $downPayment;
-                            } else {
-                                $truckFee = $transaction->truck_fee;
-                                $softwareFee = $transaction->software_fee;
-                                $grandTotal = $transaction->grand_total;
-                            }
-                        @endphp
-                        
-                        <tr>
-                                <td>Added Mile Rate</td>
-                                <td class="text-end">${{ number_format($addedMileRate, 2) }}</td>
-                            </tr>
-                        @if($isMovingService)
-                            <!-- <tr>
-                                <td>Added Mile Rate</td>
-                                <td class="text-end">${{ number_format($addedMileRate, 2) }}</td>
-                            </tr> -->
-                            <tr>
-                                <td>Software Management Fee</td>
-                                <td class="text-end">${{ number_format($softwareFee, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Truck Fee</td>
-                                <td class="text-end">${{ number_format($truckFee, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Estimated Total</td>
-                                <td class="text-end">${{ number_format($grandTotal, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Down Payment (31.5%)</td>
-                                <td class="text-end">${{ number_format($downPayment, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Remaining Balance</td>
-                                <td class="text-end">${{ number_format($remainingBalance, 2) }}</td>
-                            </tr>
-                        @else
-
-                            <!-- <tr>
-                                <td>Software Management Fee</td>
-                                <td class="text-end">${{ number_format($softwareFee, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Truck Fee</td>
-                                <td class="text-end">${{ number_format($truckFee, 2) }}</td>
-                            </tr> -->
-                            <tr>
-                                <td>Grand Total</td>
-                                <td class="text-end">${{ number_format($grandTotal, 2) }}</td>
-                            </tr>
-                        @endif
+                                        <tr>
+                                            <td>Added Mile Rate</td>
+                                            <td class="text-end">${{ number_format($addedMileRate, 2) }}</td>
+                                        </tr>
+                                        @if($isMovingService)
+                                            <tr>
+                                                <td>Software Management Fee</td>
+                                                <td class="text-end">${{ number_format($softwareFee, 2) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Truck Fee</td>
+                                                <td class="text-end">${{ number_format($truckFee, 2) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Estimated Total</td>
+                                                <td class="text-end">${{ number_format($grandTotal, 2) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Down Payment (31.5%)</td>
+                                                <td class="text-end">${{ number_format($downPayment, 2) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Remaining Balance</td>
+                                                <td class="text-end">${{ number_format($remainingBalance, 2) }}</td>
+                                            </tr>
+                                        @else
+                                            <tr>
+                                                <td>Grand Total</td>
+                                                <td class="text-end">${{ number_format($grandTotal, 2) }}</td>
+                                            </tr>
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>
@@ -502,37 +491,42 @@
                             @endif
                         </div>
                     </div>
-                </div>
-                
-                @if($transaction->uploaded_image)
-                <hr>
-                <div class="row">
+
+                    @if($transaction->uploaded_image)
+                    <!-- Uploaded Images -->
                     <div class="col-12">
-                        <h6>Uploaded Images</h6>
-                        <div class="d-flex gap-2 flex-wrap mt-3">
-                            @php
-                                $images = explode(',', $transaction->uploaded_image);
-                            @endphp
-                            @foreach($images as $image)
-                                @if(trim($image))
-                                    <a href="{{ trim($image) }}" 
+                        <div class="info-section-card">
+                            <div class="section-header">
+                                <i class="fas fa-images"></i>
+                                <h6>Uploaded Images</h6>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-3">
+                                @php
+                                    $images = explode(',', $transaction->uploaded_image);
+                                @endphp
+                                @foreach($images as $image)
+                                    @if(trim($image))
+                                        <a href="{{ trim($image) }}" 
                                            class="lightbox-image"
                                            data-lightbox="gallery-{{ $transaction->id }}" 
                                            data-title="{{ $transaction->firstname }} {{ $transaction->lastname }} - {{ $transaction->service }}">
-                                        <img src="{{ trim($image) }}" 
-                                             alt="Transaction Image" 
-                                             class="img-thumbnail"
-                                             style="height: 100px; object-fit: cover; cursor: pointer;">
-                                    </a>
-                                @endif
-                            @endforeach
+                                            <img src="{{ trim($image) }}" 
+                                                 alt="Transaction Image" 
+                                                 class="img-thumbnail"
+                                                 style="height: 100px; object-fit: cover; cursor: pointer;">
+                                        </a>
+                                    @endif
+                                @endforeach
+                            </div>
                         </div>
                     </div>
+                    @endif
                 </div>
-                @endif
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
             </div>
         </div>
     </div>
@@ -822,14 +816,14 @@
     /* Lead Info Section Styling */
     .lead-info-section {
         background: #f8f9fa;
-        border-radius: 10px;
+        border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
     .info-card {
         background: white;
-        border-radius: 10px;
+        border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         height: 100%;
@@ -842,24 +836,25 @@
     }
 
     .info-icon {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         background: #e7f5ff;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 1rem;
+        flex-shrink: 0;
     }
 
     .info-icon i {
         color: #0d6efd;
-        font-size: 1.25rem;
+        font-size: 0.875rem;
     }
 
     .info-content {
         display: flex;
         flex-direction: column;
+        gap: 0.25rem;
     }
 
     .info-label {
@@ -867,13 +862,12 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         color: #6c757d;
-        margin-bottom: 0.25rem;
     }
 
     .info-value {
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 0.875rem;
         color: #212529;
+        font-weight: 500;
     }
 
     .section-title {
@@ -918,7 +912,7 @@
         margin-top: 1rem;
         padding: 0.75rem;
         background: #e7f5ff;
-        border-radius: 6px;
+        border-radius: 0.5rem;
         color: #0d6efd;
         font-size: 0.75rem;
         display: flex;
@@ -942,17 +936,17 @@
     }
 
     .modal-header {
-        border-bottom: 1px solid #dee2e6;
-        padding: 1rem;
+        border-bottom: none;
+        padding: 1.25rem;
     }
 
     .modal-body {
-        padding: 1rem;
+        padding: 1.5rem;
     }
 
     .modal-footer {
-        border-top: 1px solid #dee2e6;
-        padding: 1rem;
+        border-top: none;
+        padding: 1.25rem;
     }
 
     /* Table Styling */
@@ -969,7 +963,7 @@
     /* Info Section Card Styling */
     .info-section-card {
         background: white;
-        border-radius: 10px;
+        border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         height: 100%;
@@ -1007,7 +1001,7 @@
         gap: 1rem;
         padding: 0.75rem;
         background: #f8f9fa;
-        border-radius: 8px;
+        border-radius: 0.5rem;
         transition: background-color 0.2s ease;
     }
 

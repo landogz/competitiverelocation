@@ -85,6 +85,9 @@
                                                 <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
+                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -126,6 +129,9 @@
                                                 <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
+                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -154,26 +160,26 @@
                 <h5 class="modal-title" id="createLeadModalLabel"><i class="fas fa-plus-circle me-2"></i>Add New Lead</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('callcenter.store') }}" method="POST">
+            <form id="createLeadForm" action="{{ route('callcenter.store') }}" method="POST" onsubmit="return false;">
                 @csrf
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="name" name="name" required>
+                                <input type="text" class="form-control" id="name" name="name" required minlength="2" maxlength="255">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="phone" class="form-label">Phone <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="phone" name="phone" required>
+                                <input type="text" class="form-control" id="phone" name="phone" required minlength="5" maxlength="20">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email">
+                                <input type="email" class="form-control" id="email" name="email" maxlength="255">
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -198,6 +204,7 @@
                             <div class="form-group">
                                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-select" id="status" name="status" required>
+                                    <option value="">Select Status</option>
                                     <option value="new">New</option>
                                     <option value="contacted">Contacted</option>
                                     <option value="qualified">Qualified</option>
@@ -222,7 +229,7 @@
                         <div class="col-12">
                             <div class="form-group">
                                 <label for="notes" class="form-label">Notes</label>
-                                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="1000"></textarea>
                             </div>
                         </div>
                     </div>
@@ -231,7 +238,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Close
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="button" class="btn btn-primary" id="submitLeadForm">
                         <i class="fas fa-save me-1"></i>Save Lead
                     </button>
                 </div>
@@ -409,7 +416,24 @@
 </style>
 
 <script>
+    // Declare table variable in a higher scope
+    var table;
+
     $(document).ready(function() {
+        // Prevent form submission on enter key
+        $('#createLeadForm').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Handle form submission only through the submit button
+        $('#createLeadForm').on('submit', function(e) {
+            e.preventDefault(); // Prevent the default form submission
+            return false;
+        });
+
         // Toast function for silent sync
         function showToast(message) {
             Swal.fire({
@@ -450,9 +474,6 @@
                         $('#newLeads').text(parseInt($('#newLeads').text()) + response.new_count);
                         $('#contactedLeads').text(parseInt($('#contactedLeads').text()) + response.new_count);
                         $('#qualifiedLeads').text(parseInt($('#qualifiedLeads').text()) + response.new_count);
-
-                        // Show toast notification
-                        showToast(`${response.new_count} new lead${response.new_count > 1 ? 's' : ''} added`);
                     }
                 },
                 error: function(xhr) {
@@ -461,7 +482,7 @@
             });
         }
 
-        // Add custom styles for toast
+        // Remove custom styles for toast
         $('<style>')
             .text(`
                 .colored-toast.swal2-icon-success {
@@ -481,7 +502,7 @@
             .appendTo('head');
 
         // Initialize DataTable
-        var table = $('#datatable_1').DataTable({
+        table = $('#datatable_1').DataTable({
             processing: true,
             serverSide: true,
             pageLength: 10,
@@ -505,9 +526,39 @@
                 { data: 'email', name: 'email' },
                 { data: 'company', name: 'company' },
                 { data: 'status', name: 'status' },
-                { data: 'actions', name: 'actions', orderable: false, searchable: false }
+                { 
+                    data: 'actions', 
+                    name: 'actions', 
+                    orderable: false, 
+                    searchable: false,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                        return data;
+                    }
+                }
             ],
-            order: [[0, 'desc']]
+            order: [[0, 'desc']],
+            drawCallback: function() {
+                // Reinitialize tooltips after each table draw
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            }
         });
 
         // Perform silent sync after DataTable initialization
@@ -570,13 +621,50 @@
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
 
-        // Handle Create Lead form submission via AJAX
-        $('#createLeadModal form').on('submit', function(e) {
+        // Handle Create Lead form submission
+        $('#submitLeadForm').on('click', function(e) {
             e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
+            e.stopPropagation();
             
-            // Show loading state with SweetAlert2
+            var form = $('#createLeadForm');
+            
+            // Validate required fields
+            var name = $('#name').val().trim();
+            var phone = $('#phone').val().trim();
+            var status = $('#status').val();
+            
+            // Additional validation to prevent empty submissions
+            if (!name || name.length < 2) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Please enter a valid name (at least 2 characters)',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+            
+            if (!phone || phone.length < 5) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Please enter a valid phone number',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+            
+            if (!status) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Please select a status',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+            
+            // Show loading state
             Swal.fire({
                 title: 'Creating Lead',
                 text: 'Please wait while we save the data...',
@@ -588,39 +676,83 @@
                 }
             });
             
+            // Create FormData object
+            var formData = new FormData();
+            
+            // Add form fields with additional validation
+            formData.append('name', name);
+            formData.append('phone', phone);
+            formData.append('email', $('#email').val().trim());
+            formData.append('company', $('#company').val().trim());
+            formData.append('status', status);
+            formData.append('source', $('#source').val().trim());
+            formData.append('notes', $('#notes').val().trim());
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+            
+            // Disable the submit button to prevent double submissions
+            $('#submitLeadForm').prop('disabled', true);
+            
             $.ajax({
                 type: 'POST',
-                url: url,
-                data: form.serialize(),
+                url: form.attr('action'),
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
-                    // Show success message with SweetAlert2
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: 'Lead created successfully',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        // Close the modal
-                        $('#createLeadModal').modal('hide');
-                        
-                        // Reload the table data without refreshing the page
-                        reloadTableData();
-                        
-                        // Reset the form
-                        form[0].reset();
-                    });
+                    if (response.success) {
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Close the modal
+                            $('#createLeadModal').modal('hide');
+                            
+                            // Reload the table data
+                            table.ajax.reload();
+                            
+                            // Reset the form
+                            form[0].reset();
+                            
+                            // Re-enable the submit button
+                            $('#submitLeadForm').prop('disabled', false);
+                        });
+                    } else {
+                        throw new Error(response.message);
+                    }
                 },
                 error: function(xhr) {
-                    // Show error message with SweetAlert2
+                    let errorMessage = 'Failed to create lead';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                    }
+                    
+                    // Show error message
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: xhr.responseJSON?.message || 'Failed to create lead',
+                        text: errorMessage,
                         confirmButtonText: 'OK'
                     });
+                    
+                    // Re-enable the submit button
+                    $('#submitLeadForm').prop('disabled', false);
                 }
             });
+            
+            return false;
+        });
+
+        // Reset form when modal is closed
+        $('#createLeadModal').on('hidden.bs.modal', function () {
+            $('#createLeadForm')[0].reset();
+            $('#submitLeadForm').prop('disabled', false);
         });
 
         // Handle view logs button click
@@ -741,7 +873,21 @@
         // Handle delete button click
         $(document).on('click', '.delete-lead-btn', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             var leadId = $(this).data('lead-id');
+            
+            if (!leadId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Invalid lead ID',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+            
+            // Construct the delete URL directly
+            var deleteUrl = '/callcenter/' + leadId;
             
             // Show confirmation dialog with SweetAlert2
             Swal.fire({
@@ -767,42 +913,54 @@
                         }
                     });
                     
-                    // Create a form and submit it via AJAX
-                    var formData = new FormData();
-                    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-                    formData.append('_method', 'DELETE');
-                    
                     $.ajax({
-                        url: '/callcenter/' + leadId,
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
+                        url: deleteUrl,
+                        type: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
                         success: function(response) {
-                            // Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Deleted!',
-                                text: 'Lead has been deleted successfully',
-                                timer: 1500,
-                                showConfirmButton: false
-                            }).then(() => {
-                                // Reload the table data
-                                reloadTableData();
-                            });
+                            if (response.success) {
+                                // Show success message and reload table
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // Force a full reload of the DataTable
+                                    table.ajax.reload();
+                                });
+                            } else {
+                                throw new Error(response.message);
+                            }
                         },
                         error: function(xhr) {
-                            // Show error message
+                            let errorMessage = 'Failed to delete lead';
+                            
+                            if (xhr.status === 404) {
+                                errorMessage = 'Lead not found. It may have been already deleted.';
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            
+                            // Show error message and reload table
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error!',
-                                text: xhr.responseJSON?.message || 'Failed to delete lead',
+                                text: errorMessage,
                                 confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Force a full reload of the DataTable
+                                table.ajax.reload();
                             });
                         }
                     });
                 }
             });
+            
+            return false;
         });
 
         // Function to load logs modal

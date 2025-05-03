@@ -33,29 +33,47 @@ class CallCenterController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'company' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-            'status' => 'required|in:new,contacted,qualified,unqualified,converted',
-            'source' => 'nullable|string|max:255',
-            'assigned_to' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'phone' => 'required|string|max:20',
+                'email' => 'nullable|email|max:255',
+                'company' => 'nullable|string|max:255',
+                'notes' => 'nullable|string',
+                'status' => 'required|in:new,contacted,qualified,unqualified,converted',
+                'source' => 'nullable|string|max:255'
+            ]);
 
-        $lead = Lead::create($validated);
+            // Create the lead with validated data
+            $lead = Lead::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'] ?? null,
+                'company' => $validated['company'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'status' => $validated['status'],
+                'source' => $validated['source'] ?? 'website'
+            ]);
 
-        // Create initial log entry
-        LeadLog::create([
-            'lead_id' => $lead->id,
-            'type' => 'note',
-            'content' => 'Lead created',
-            'user_id' => Auth::id() ?? null,
-        ]);
+            // Create initial log entry
+            LeadLog::create([
+                'lead_id' => $lead->id,
+                'type' => 'note',
+                'content' => 'Lead created',
+                'user_id' => Auth::id() ?? null,
+            ]);
 
-        return redirect()->route('callcenter.index')
-            ->with('success', 'Lead created successfully.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead created successfully.',
+                'data' => $lead
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create lead: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -101,12 +119,34 @@ class CallCenterController extends Controller
     /**
      * Remove the specified lead from storage.
      */
-    public function destroy(Lead $lead)
+    public function destroy($lead)
     {
-        $lead->delete();
+        try {
+            $lead = Lead::find($lead);
+            
+            if (!$lead) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lead not found'
+                ], 404);
+            }
 
-        return redirect()->route('callcenter.index')
-            ->with('success', 'Lead deleted successfully.');
+            // Delete associated logs first
+            $lead->logs()->delete();
+            
+            // Delete the lead
+            $lead->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete lead: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -244,6 +284,7 @@ class CallCenterController extends Controller
                     'source' => $lead->source,
                     'notes' => $lead->notes
                 ],
+                'id' => $lead->id,
                 'created_at' => $lead->created_at->format('m/d/Y'),
                 'name' => $lead->name,
                 'phone' => $lead->phone ? '<a href="tel:'.$lead->phone.'" class="clickable-link"><i class="fas fa-phone-alt"></i>'.$lead->phone.'</a>' : '-',
@@ -257,6 +298,9 @@ class CallCenterController extends Controller
                     </button>
                     <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="'.$lead->id.'" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                         <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
+                        <i class="fas fa-file-invoice-dollar"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="'.$lead->id.'" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                         <i class="fas fa-trash"></i>
