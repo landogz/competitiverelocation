@@ -295,6 +295,29 @@
     .ql-editor {
         line-height: 1.4 !important;
     }
+
+    /* Quill Editor Background Color */
+    .ql-container {
+        background-color: #ffffff !important;
+    }
+
+    .ql-toolbar {
+        background-color: #f8f9fa !important;
+        border-top-left-radius: 8px !important;
+        border-top-right-radius: 8px !important;
+    }
+
+    .ql-editor {
+        background-color: #ffffff !important;
+        min-height: 200px !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    .ql-container.ql-snow {
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+    }
 </style>
 
 @section('content')
@@ -318,9 +341,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">Manage Email Templates</h4>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
-                        <i class="fas fa-plus me-2"></i>Create Template
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+                            <i class="fas fa-plus me-2"></i>Create Template
+                        </button>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#sendCustomEmailModal">
+                            <i class="fas fa-paper-plane me-2"></i>Send Custom Email
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -561,6 +589,69 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Send Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Send Custom Email Modal -->
+<div class="modal fade" id="sendCustomEmailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Custom Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="sendCustomEmailForm" method="POST" action="{{ route('email-templates.send-custom') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">To</label>
+                                <input type="email" class="form-control" name="to" required multiple>
+                                <small class="text-muted">For multiple recipients, separate emails with commas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">CC</label>
+                                <div class="cc-container form-control" style="min-height: 38px; padding: 0.375rem 0.75rem;">
+                                    <div class="cc-tags d-flex flex-wrap gap-2" style="padding: 2px 0;">
+                                        <input type="text" class="cc-input border-0" style="flex: 1; min-width: 100px;" placeholder="Add CC recipients">
+                                    </div>
+                                </div>
+                                <small class="text-muted">Press Enter or comma to add email addresses</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Subject</label>
+                                <input type="text" class="form-control" name="subject" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Attachments</label>
+                                <input type="file" class="form-control" name="attachments[]" multiple>
+                                <small class="text-muted">You can select multiple files</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Email Body</label>
+                                <div id="customEmailEditor" style="height: 400px;"></div>
+                                <input type="hidden" name="body" id="customEmailContent">
                             </div>
                         </div>
                     </div>
@@ -1046,6 +1137,180 @@ document.addEventListener('DOMContentLoaded', function() {
                 ['clean']
             ]
         }
+    });
+
+    // Initialize Quill editor for custom email
+    var customEmailQuill = new Quill('#customEmailEditor', {
+        theme: 'snow',
+        modules: {
+            toolbar: fullToolbar
+        }
+    });
+
+    // CC Email Tags Functionality
+    const ccContainer = document.querySelector('.cc-container');
+    const ccTags = document.querySelector('.cc-tags');
+    const ccInput = document.querySelector('.cc-input');
+
+    function createTag(email) {
+        const tag = document.createElement('span');
+        tag.className = 'badge bg-primary d-flex align-items-center';
+        tag.innerHTML = `
+            ${email}
+            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.5rem;"></button>
+        `;
+        
+        const closeBtn = tag.querySelector('.btn-close');
+        closeBtn.addEventListener('click', () => {
+            tag.remove();
+        });
+        
+        return tag;
+    }
+
+    function addTag(email) {
+        if (email) {
+            const tag = createTag(email);
+            ccInput.insertAdjacentElement('beforebegin', tag);
+            ccInput.value = '';
+            ccInput.focus();
+        }
+    }
+
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    ccInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const email = ccInput.value.trim();
+            if (email && validateEmail(email)) {
+                addTag(email);
+            }
+        }
+    });
+
+    // Add paste event handler
+    ccInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        const emails = pastedText.split(/[,\n\s]+/).filter(email => email && validateEmail(email));
+        emails.forEach(email => addTag(email));
+    });
+
+    // Add blur event handler
+    ccInput.addEventListener('blur', () => {
+        const email = ccInput.value.trim();
+        if (email && validateEmail(email)) {
+            addTag(email);
+        }
+    });
+
+    // Update form submission to collect CC emails
+    document.getElementById('sendCustomEmailForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Collect all form data
+        const formData = new FormData(this);
+        
+        // Get CC emails
+        const ccEmails = Array.from(ccTags.querySelectorAll('.badge'))
+            .map(tag => tag.textContent.trim());
+        
+        // Add CC emails to form data
+        formData.set('cc', ccEmails.join(','));
+        
+        // Add email body
+        formData.set('body', customEmailQuill.root.innerHTML);
+        
+        // Validate required fields
+        const to = formData.get('to');
+        const subject = formData.get('subject');
+        const body = formData.get('body');
+        
+        if (!to || !subject || !body) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: 'Please fill in all required fields (To, Subject, and Body)'
+            });
+            return;
+        }
+        
+        // Log form data for debugging
+        console.log('Form data:', {
+            to: to,
+            cc: formData.get('cc'),
+            subject: subject,
+            hasBody: !!body,
+            hasAttachments: formData.getAll('attachments[]').length > 0,
+            csrfToken: document.querySelector('meta[name="csrf-token"]').content
+        });
+        
+        // Show loading state
+        Swal.fire({
+            title: 'Sending Email...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.json().then(data => {
+                    console.error('Error response:', data);
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Success response:', data);
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sendCustomEmailModal'));
+                modal.hide();
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Email sent successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Failed to send email');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.message || 'Something went wrong. Please try again later.'
+            });
+        });
+    });
+
+    // Clear CC tags when modal is closed
+    document.getElementById('sendCustomEmailModal').addEventListener('hidden.bs.modal', function () {
+        ccTags.innerHTML = '<input type="text" class="cc-input border-0" style="flex: 1; min-width: 100px;" placeholder="Add CC recipients">';
+        this.querySelector('form').reset();
+        customEmailQuill.root.innerHTML = '';
     });
 
     // Attach event listeners to row buttons

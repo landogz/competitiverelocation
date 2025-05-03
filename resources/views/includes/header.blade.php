@@ -18,6 +18,10 @@
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
+    * {
+    scrollbar-width: thin;
+    scrollbar-color: #4a6bff #f1f1f1;
+}
     .page-content,.modal-body{
         background-color: #EEEEEE;
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);

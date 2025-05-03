@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use App\Mail\TestEmailTemplate;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\CustomEmail;
+use Illuminate\Support\Facades\Storage;
 
 class EmailTemplateController extends Controller
 {
@@ -132,6 +134,147 @@ class EmailTemplateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function sendCustomEmail(Request $request)
+    {
+        try {
+            \Log::info('Incoming request data:', [
+                'to' => $request->input('to'),
+                'cc' => $request->input('cc'),
+                'subject' => $request->input('subject'),
+                'hasBody' => $request->has('body'),
+                'hasAttachments' => $request->hasFile('attachments'),
+                'files' => $request->hasFile('attachments') ? array_map(function($file) {
+                    return [
+                        'name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'mime' => $file->getMimeType(),
+                        'error' => $file->getError()
+                    ];
+                }, $request->file('attachments')) : []
+            ]);
+
+            // Validate request
+            $validated = $request->validate([
+                'to' => 'required|email',
+                'cc' => 'nullable|string',
+                'subject' => 'required|string|max:255',
+                'body' => 'required|string',
+                'attachments.*' => 'nullable|file|max:10240' // 10MB max per file
+            ]);
+
+            // Process CC emails
+            $ccEmails = [];
+            if (!empty($validated['cc'])) {
+                $ccEmails = array_filter(
+                    array_map('trim', explode(',', $validated['cc'])),
+                    function($email) {
+                        $isValid = filter_var($email, FILTER_VALIDATE_EMAIL);
+                        if (!$isValid) {
+                            \Log::warning('Invalid CC email address:', ['email' => $email]);
+                        }
+                        return $isValid;
+                    }
+                );
+
+                \Log::info('Processed CC emails:', [
+                    'original' => $validated['cc'],
+                    'validEmails' => $ccEmails
+                ]);
+            }
+
+            // Process attachments
+            $attachments = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $index => $file) {
+                    try {
+                        \Log::info('Processing attachment ' . ($index + 1) . ':', [
+                            'name' => $file->getClientOriginalName(),
+                            'size' => $file->getSize(),
+                            'mime' => $file->getMimeType(),
+                            'error' => $file->getError(),
+                            'path' => $file->getPathname(),
+                            'realPath' => $file->getRealPath()
+                        ]);
+
+                        // Ensure the storage directory exists
+                        if (!Storage::exists('email-attachments')) {
+                            Storage::makeDirectory('email-attachments');
+                        }
+
+                        // Test if we can write to the directory
+                        $testPath = 'email-attachments/test_' . time() . '.txt';
+                        if (!Storage::put($testPath, 'test')) {
+                            throw new \Exception('Cannot write to storage directory');
+                        }
+                        Storage::delete($testPath);
+
+                        $path = $file->store('email-attachments');
+                        if ($path) {
+                            $attachments[] = $path;
+                            \Log::info('Attachment stored successfully:', [
+                                'path' => $path,
+                                'fullPath' => Storage::path($path)
+                            ]);
+                        } else {
+                            throw new \Exception('Failed to store attachment');
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Error storing attachment:', [
+                            'error' => $e->getMessage(),
+                            'file' => $file->getClientOriginalName(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        // Continue processing other attachments even if one fails
+                        continue;
+                    }
+                }
+            }
+
+            \Log::info('Sending email with data:', [
+                'to' => $validated['to'],
+                'cc' => $ccEmails,
+                'subject' => $validated['subject'],
+                'attachments' => $attachments
+            ]);
+
+            // Send email
+            Mail::to($validated['to'])
+                ->send(new CustomEmail(
+                    $validated['subject'],
+                    $validated['body'],
+                    $ccEmails,
+                    $attachments
+                ));
+
+            \Log::info('Email sent successfully');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email sent successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error:', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error sending email:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage()
             ], 500);
         }
     }

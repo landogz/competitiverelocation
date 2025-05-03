@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <title>Login - Competitive Relocation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --primary-color: #4a6bff;
@@ -116,6 +119,14 @@
             transform: translateY(0);
         }
 
+        .btn-login:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .forgot-password {
             text-align: center;
             margin-top: 20px;
@@ -175,7 +186,7 @@
     </style>
 </head>
 <body>
-<div class="login-container">
+    <div class="login-container">
         <div class="login-header">
             <h1>Welcome Back</h1>
             <p>Please login to your account</p>
@@ -192,8 +203,8 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}">
-            @csrf
+            <form id="loginForm" method="POST" action="{{ url('/auth/login') }}">
+                @csrf
                 
                 <div class="form-group">
                     <div class="input-group">
@@ -216,18 +227,18 @@
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
                         </span>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" placeholder="Password" required>
-                            <button type="button" class="password-toggle">
-                                <i class="fas fa-eye"></i>
-                            </button>
-            </div>
+                        <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                               name="password" placeholder="Password" required>
+                        <button type="button" class="password-toggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     @error('password')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
-            </div>
+                </div>
 
                 <div class="form-group form-check">
                     <input type="checkbox" class="form-check-input" name="remember" 
@@ -237,7 +248,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn btn-login">
+                <button type="submit" class="btn btn-login" id="loginButton">
                     <i class="fas fa-sign-in-alt me-2"></i> Login
                 </button>
             </form>
@@ -253,8 +264,115 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            
+            const loginForm = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
+            const originalButtonText = loginButton.innerHTML;
+
+            if (!loginForm) {
+                console.error('Login form not found!');
+                return;
+            }
+
+            console.log('Form and button found');
+
+            // Remove any existing event listeners
+            const newForm = loginForm.cloneNode(true);
+            loginForm.parentNode.replaceChild(newForm, loginForm);
+            const newLoginForm = document.getElementById('loginForm');
+            const newLoginButton = document.getElementById('loginButton');
+
+            newLoginForm.addEventListener('submit', async function(e) {
+                console.log('Form submitted');
+                e.preventDefault();
+                
+                try {
+                    // Disable submit button and show loading state
+                    newLoginButton.disabled = true;
+                    newLoginButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Logging in...';
+
+                    // Get form data
+                    const formData = new FormData(newLoginForm);
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    console.log('CSRF Token:', csrfToken);
+                    console.log('Form data:', Object.fromEntries(formData));
+
+                    // Send AJAX request
+                    console.log('Sending login request to:', newLoginForm.action);
+                    
+                    const response = await fetch(newLoginForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    console.log('Response status:', response.status);
+                    const data = await response.json();
+                    console.log('Response data:', data);
+
+                    if (data.success) {
+                        console.log('Login successful, showing success alert');
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'You have been logged in successfully',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Continue',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            allowOutsideClick: false
+                        });
+                        window.location.href = data.redirect || '/dashboard';
+                    } else {
+                        console.log('Login failed, showing error alert');
+                        console.log('Error message:', data.message);
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'Login Failed',
+                            text: data.message,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Try Again',
+                            allowOutsideClick: false
+                        }).then((result) => {
+                            console.log('SweetAlert closed with result:', result);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    console.log('Showing error alert for caught error');
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'An error occurred during login. Please try again.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        console.log('SweetAlert closed with result:', result);
+                    });
+                } finally {
+                    // Re-enable submit button and restore original text
+                    newLoginButton.disabled = false;
+                    newLoginButton.innerHTML = originalButtonText;
+                }
+            });
+
+            // Add click event listener to the button as well
+            newLoginButton.addEventListener('click', function(e) {
+                console.log('Button clicked');
+                e.preventDefault();
+                newLoginForm.dispatchEvent(new Event('submit'));
+            });
+
+            // Password toggle functionality
             const toggleButtons = document.querySelectorAll('.password-toggle');
             
             toggleButtons.forEach(button => {
@@ -273,29 +391,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             });
-        });
+            
+            // Add animation to form elements
+            document.querySelectorAll('.form-group').forEach((element, index) => {
+                element.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
+                element.style.opacity = '0';
+            });
 
-        // Add animation to form elements
-        document.querySelectorAll('.form-group').forEach((element, index) => {
-            element.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
-            element.style.opacity = '0';
+            // Add keyframe animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
         });
-
-        // Add keyframe animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-</script>
+    </script>
 </body>
 </html>

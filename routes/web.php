@@ -206,6 +206,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
     Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
     Route::post('/email-templates/{template}/test', [EmailTemplateController::class, 'test'])->name('email-templates.test');
+    Route::post('/email-templates/send-custom', [EmailTemplateController::class, 'sendCustomEmail'])->name('email-templates.send-custom');
 
     Route::post('/leads/sync', [CallCenterController::class, 'sync'])->name('leads.sync');
     Route::post('/leads/datatable', [CallCenterController::class, 'datatable'])->name('leads.datatable');

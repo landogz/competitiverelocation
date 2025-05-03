@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <title>Reset Password - Competitive Relocation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -142,16 +144,25 @@
             width: 100%;
             font-weight: 600;
             transition: all 0.3s ease;
-    }
+        }
 
         .btn-login:hover {
             background: #2541b2;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(37, 65, 178, 0.2);
+            color: #ffffff;
         }
 
         .btn-login:active {
             transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .forgot-password {
@@ -183,6 +194,32 @@
 </style>
 </head>
 <body>
+    @if(session('status'))
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: "{{ session('status') }}",
+                confirmButtonText: 'OK'
+            });
+        });
+    </script>
+    @endif
+    @if($errors->any())
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                confirmButtonText: 'OK'
+            });
+        });
+    </script>
+    @endif
     <div class="login-container">
         <div class="login-header">
             <h1>Reset Password</h1>
@@ -200,9 +237,9 @@
                                     </div>
             @endif
 
-            <form method="POST" action="{{ route('password.update') }}">
-                                        @csrf
-                                        <input type="hidden" name="token" value="{{ $token }}">
+            <form method="POST" action="{{ route('password.reset.submit') }}">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
                 
                 <div class="form-group">
                     <div class="input-group">
@@ -225,13 +262,11 @@
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
                         </span>
-                        <div class="position-relative w-100">
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" placeholder="New Password" required>
-                            <button type="button" class="password-toggle" tabindex="-1">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
+                        <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                               name="password" placeholder="New Password" required>
+                        <button type="button" class="password-toggle" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     @error('password')
                         <span class="invalid-feedback" role="alert">
@@ -245,13 +280,11 @@
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
                         </span>
-                        <div class="position-relative w-100">
-                            <input type="password" class="form-control" 
-                                   name="password_confirmation" placeholder="Confirm New Password" required>
-                            <button type="button" class="password-toggle" tabindex="-1">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
+                        <input type="password" class="form-control" 
+                               name="password_confirmation" placeholder="Confirm New Password" required>
+                        <button type="button" class="password-toggle" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>   
                     </div>
                 </div>
 
