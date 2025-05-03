@@ -85,8 +85,8 @@
                                                 <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
-                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
+                                                    <i class="fas fa-envelope"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                                                     <i class="fas fa-trash"></i>
@@ -129,8 +129,8 @@
                                                 <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
-                                                    <i class="fas fa-file-invoice-dollar"></i>
+                                                <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
+                                                    <i class="fas fa-envelope"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                                                     <i class="fas fa-trash"></i>
@@ -286,6 +286,61 @@
     </div>
 </div>
 
+<!-- Add Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sendEmailModalLabel"><i class="fas fa-envelope me-2"></i>Send Email</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sendEmailForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Email Template</label>
+                                <select class="form-select" id="emailTemplate" name="template_id" required>
+                                    <option value="">Select Template</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}">{{ $template->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Subject</label>
+                                <input type="text" class="form-control" name="subject" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Email Content</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div id="emailEditor" style="height: 400px;"></div>
+                                        <input type="hidden" name="content" id="emailContent">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>Send Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- DataTables CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
@@ -299,6 +354,19 @@
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Add Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+    .ql-editor p {
+        margin: 0 0 10px 0 !important;
+        line-height: 1.4 !important;
+    }
+    .ql-editor {
+        line-height: 1.4 !important;
+    }
+</style>
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
 <style>
     /* Add these styles for clickable links */
@@ -541,8 +609,8 @@
                                     <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
-                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
+                                        <i class="fas fa-envelope"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
                                         <i class="fas fa-trash"></i>
@@ -1274,6 +1342,124 @@
                 });
             });
         }
+
+        // Initialize Quill editor for email content
+        var emailQuill = new Quill('#emailEditor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'font': [] }, { 'size': [] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'align': [] }],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Handle send email button click
+        $(document).on('click', '.send-email-btn', function(e) {
+            e.preventDefault();
+            var leadId = $(this).data('lead-id');
+            var row = $(this).closest('tr');
+            var leadEmail = row.find('td:eq(3)').text().trim();
+            
+            // Set the form action
+            $('#sendEmailForm').attr('action', `/callcenter/${leadId}/send-email`);
+            
+            // Reset form and show modal
+            $('#sendEmailForm')[0].reset();
+            emailQuill.root.innerHTML = '';
+            
+            // Show the modal
+            var sendEmailModal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
+            sendEmailModal.show();
+        });
+
+        // Handle email template selection change
+        $('#emailTemplate').on('change', function() {
+            var templateId = $(this).val();
+            if (templateId) {
+                // Show loading state
+                Swal.fire({
+                    title: 'Loading...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Fetch template content
+                fetch(`/email-templates/${templateId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        emailQuill.root.innerHTML = data.content || '';
+                        $('#sendEmailForm [name="subject"]').val(data.subject || '');
+                        Swal.close();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Failed to load template'
+                        });
+                    });
+            }
+        });
+
+        // Handle send email form submission
+        $('#sendEmailForm').on('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('emailContent').value = emailQuill.root.innerHTML;
+            
+            // Show loading state
+            Swal.fire({
+                title: 'Sending Email...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: new FormData(this),
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        // Close modal
+                        $('#sendEmailModal').modal('hide');
+                        
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Email sent successfully',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        throw new Error(response.message || 'Failed to send email');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: xhr.responseJSON?.message || 'Something went wrong. Please try again later.'
+                    });
+                }
+            });
+        });
     });
 </script>
 

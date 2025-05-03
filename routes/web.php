@@ -117,6 +117,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/callcenter/{lead}', [CallCenterController::class, 'destroy'])->name('callcenter.destroy');
     Route::post('/callcenter/{lead}/logs', [CallCenterController::class, 'storeLog'])->name('callcenter.logs.store');
     Route::get('/callcenter/{lead}/logs', [CallCenterController::class, 'viewLogs'])->name('callcenter.logs.view');
+    Route::post('/callcenter/{lead}/send-email', [CallCenterController::class, 'sendEmail'])->name('callcenter.send-email');
 
     Route::get('/salesreports', function () {
         return view('salesreports');
@@ -204,6 +205,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/email-templates/{template}', [EmailTemplateController::class, 'show'])->name('email-templates.show');
     Route::put('/email-templates/{template}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
     Route::delete('/email-templates/{template}', [EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
+    Route::post('/email-templates/{template}/test', [EmailTemplateController::class, 'test'])->name('email-templates.test');
 
     Route::post('/leads/sync', [CallCenterController::class, 'sync'])->name('leads.sync');
     Route::post('/leads/datatable', [CallCenterController::class, 'datatable'])->name('leads.datatable');

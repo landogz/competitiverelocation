@@ -6,6 +6,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 
 <style>
     .card {
@@ -108,9 +109,9 @@
     }
 
     .ck.ck-editor__main > .ck-editor__editable {
-        height: 200px !important;
-        min-height: 200px !important;
-        max-height: 200px !important;
+        min-height: 150px !important;
+        max-height: 500px !important;
+        resize: vertical !important;
         border-radius: 0 0 8px 8px !important;
     }
 
@@ -260,6 +261,40 @@
     .btn-group .btn {
         padding: 0.4rem 0.8rem;
     }
+
+    /* Make Quill editor adjustable in height */
+    .ql-container {
+        min-height: 400px;
+        max-height: 600px;
+        resize: vertical;
+        overflow: auto;
+    }
+
+    /* Skeleton loader styles */
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+        background-size: 400% 100%;
+        animation: skeleton-loading 1.2s ease-in-out infinite;
+        border-radius: 6px;
+        min-height: 38px;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .skeleton-textarea {
+        min-height: 120px;
+    }
+    @keyframes skeleton-loading {
+        0% { background-position: 100% 50%; }
+        100% { background-position: 0 50%; }
+    }
+
+    .ql-editor p {
+        margin: 0 0 10px 0 !important;
+        line-height: 1.4 !important;
+    }
+    .ql-editor {
+        line-height: 1.4 !important;
+    }
 </style>
 
 @section('content')
@@ -312,6 +347,12 @@
                                                     data-bs-target="#editTemplateModal">
                                                 <i class="fas fa-edit"></i>
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-success test-template" 
+                                                    data-id="{{ $template->id }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#testTemplateModal">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-danger delete-template" 
                                                     data-id="{{ $template->id }}">
                                                 <i class="fas fa-trash-alt"></i>
@@ -341,7 +382,7 @@
                 @csrf
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-9">
+                        <div class="col-md-12">
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
@@ -364,21 +405,26 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Content</label>
-                                <textarea id="editor" name="content"></textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Available Placeholders</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="list-group placeholder-list">
-                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                            {{ $field }}
-                                        </button>
-                                        @endforeach
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <div id="quill-editor" style="height: 400px;"></div>
+                                        <input type="hidden" name="content" id="quill-content">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="card-title mb-0">Available Placeholders</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="list-group placeholder-list">
+                                                    @foreach($placeholders['Transaction'] as $field => $placeholder)
+                                                    <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
+                                                        {{ $field }}
+                                                    </button>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -406,45 +452,58 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Template Name</label>
-                                        <input type="text" class="form-control" name="name" required>
+                    <div id="editModalSkeletons">
+                        <div class="skeleton" style="max-width: 200px;"></div>
+                        <div class="skeleton" style="max-width: 300px;"></div>
+                        <div class="skeleton" style="max-width: 300px;"></div>
+                        <div class="skeleton skeleton-textarea"></div>
+                    </div>
+                    <div id="editModalFields" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Template Name</label>
+                                            <input type="text" class="form-control" name="name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Subject</label>
+                                            <input type="text" class="form-control" name="subject" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Description</label>
+                                            <input type="text" class="form-control" name="description">
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Subject</label>
-                                        <input type="text" class="form-control" name="subject" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Description</label>
-                                        <input type="text" class="form-control" name="description">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Content</label>
-                                <textarea id="editor-edit" name="content"></textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Available Placeholders</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="list-group placeholder-list">
-                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                            {{ $field }}
-                                        </button>
-                                        @endforeach
+                                <div class="mb-3">
+                                    <label class="form-label">Content</label>
+                                    <div class="row">
+                                        <div class="col-md-9">
+                                            <div id="quill-editor-edit" style="height: 400px;"></div>
+                                            <input type="hidden" name="content" id="quill-content-edit">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5 class="card-title mb-0">Available Placeholders</h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="list-group placeholder-list">
+                                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
+                                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
+                                                            {{ $field }}
+                                                        </button>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -460,10 +519,67 @@
     </div>
 </div>
 
+<!-- Test Template Modal -->
+<div class="modal fade" id="testTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="testTemplateForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div id="modalSkeletons">
+                        <div class="skeleton" style="max-width: 300px;"></div>
+                        <div class="skeleton" style="max-width: 400px;"></div>
+                        <div class="skeleton skeleton-textarea"></div>
+                    </div>
+                    <div id="modalFields" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Recipient Email</label>
+                                    <input type="email" class="form-control" name="recipient_email" required 
+                                           placeholder="Enter recipient email address">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Subject</label>
+                                    <input type="text" class="form-control" name="subject" required 
+                                           placeholder="Enter email subject">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Email Content</label>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="emailEditor" style="height: 400px;"></div>
+                                            <input type="hidden" name="content" id="emailContent">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Send Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 <!-- Include CKEditor and SweetAlert2 from CDN -->
-<script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -503,6 +619,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     data-bs-target="#editTemplateModal">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            <button type="button" class="btn btn-sm btn-success test-template" 
+                                    data-id="${row.id}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#testTemplateModal">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-danger delete-template" 
                                     data-id="${row.id}">
                                 <i class="fas fa-trash-alt"></i>
@@ -516,97 +638,16 @@ document.addEventListener('DOMContentLoaded', function() {
         rowId: 'id'
     });
 
-    // Initialize CKEditor for create form
-    ClassicEditor
-        .create(document.querySelector('#editor'), {
-            toolbar: [
-                'heading',
-                '|',
-                'bold', 'italic', 'strikethrough', 'underline',
-                '|',
-                'bulletedList', 'numberedList',
-                '|',
-                'alignment',
-                '|',
-                'link', 'blockQuote', 'insertTable', 'sourceEditing', 'htmlEmbed',
-                '|',
-                'undo', 'redo'
-            ],
-            htmlSupport: {
-                allow: [
-                    {
-                        name: /.*/,
-                        attributes: true,
-                        classes: true,
-                        styles: true
-                    }
-                ]
-            }
-        })
-        .then(newEditor => {
-            editor = newEditor;
-            
-            // Handle placeholder insertion for create form
-            document.querySelectorAll('#createTemplateModal .placeholder-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const placeholder = this.dataset.placeholder;
-                    editor.model.change(writer => {
-                        const insertPosition = editor.model.document.selection.getFirstPosition();
-                        editor.model.insertContent(writer.createText(placeholder), insertPosition);
-                    });
-                });
-            });
-        })
-        .catch(error => {
-            console.error(error);
-        });
-
-    // Initialize CKEditor for edit form
-    ClassicEditor
-        .create(document.querySelector('#editor-edit'), {
-            toolbar: [
-                'heading',
-                '|',
-                'bold', 'italic', 'strikethrough', 'underline',
-                '|',
-                'bulletedList', 'numberedList',
-                '|',
-                'alignment',
-                '|',
-                'link', 'blockQuote', 'insertTable', 'sourceEditing', 'htmlEmbed',
-                '|',
-                'undo', 'redo'
-            ],
-            htmlSupport: {
-                allow: [
-                    {
-                        name: /.*/,
-                        attributes: true,
-                        classes: true,
-                        styles: true
-                    }
-                ]
-            }
-        })
-        .then(newEditor => {
-            editEditor = newEditor;
-            
-            // Handle placeholder insertion for edit form
-            document.querySelectorAll('#editTemplateModal .placeholder-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const placeholder = this.dataset.placeholder;
-                    editEditor.model.change(writer => {
-                        const insertPosition = editEditor.model.document.selection.getFirstPosition();
-                        editEditor.model.insertContent(writer.createText(placeholder), insertPosition);
-                    });
-                });
-            });
-        })
-        .catch(error => {
-            console.error(error);
-        });
+    // Function to add new row to table
+    function addTableRow(data) {
+        table.row.add({
+            id: data.id,
+            name: data.name,
+            subject: data.subject,
+            description: data.description || ''
+        }).draw();
+        attachEventListeners();
+    }
 
     // Function to update table row
     function updateTableRow(data) {
@@ -622,38 +663,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Function to add new row to table
-    function addTableRow(data) {
-        var newRow = table.row.add({
-            id: data.id,
-            name: data.name,
-            subject: data.subject,
-            description: data.description || ''
-        }).draw();
-        attachEventListeners();
-    }
+    // Handle placeholder clicks for both create and edit modals
+    document.querySelectorAll('.placeholder-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const placeholder = this.dataset.placeholder;
+            const activeModal = document.querySelector('.modal.show');
+            let quillInstance;
 
-    // Function to remove row from table
-    function removeTableRow(id) {
-        table.row(`tr[data-id="${id}"]`).remove().draw();
-    }
+            if (activeModal.id === 'createTemplateModal') {
+                quillInstance = quill;
+            } else if (activeModal.id === 'editTemplateModal') {
+                quillInstance = quillEdit;
+            }
 
-    // Function to attach event listeners to row buttons
-    function attachEventListeners() {
-        // Remove existing event listeners first
-        $('.edit-template').off('click');
-        $('.delete-template').off('click');
-        
-        // Attach new event listeners
-        $('.edit-template').on('click', handleEdit);
-        $('.delete-template').on('click', handleDelete);
-    }
+            if (quillInstance) {
+                const range = quillInstance.getSelection();
+                if (range) {
+                    quillInstance.insertText(range.index, placeholder);
+                } else {
+                    quillInstance.insertText(quillInstance.getLength(), placeholder);
+                }
+            }
+        });
+    });
+
+    // Full Quill toolbar options
+    var fullToolbar = [
+        [{ 'font': [] }, { 'size': [] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'align': [] }],
+        ['link', 'image', 'video', 'formula'],
+        ['clean']
+    ];
+
+    // Initialize Quill for Create Modal
+    var quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: fullToolbar
+        }
+    });
+
+    // Initialize Quill for Edit Modal
+    var quillEdit = new Quill('#quill-editor-edit', {
+        theme: 'snow',
+        modules: {
+            toolbar: fullToolbar
+        }
+    });
 
     // Handle create form submission
     document.getElementById('createTemplateForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        formData.set('content', editor.getData());
+        formData.set('content', quill.root.innerHTML);
 
         // Show loading state
         Swal.fire({
@@ -676,12 +744,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Add new row to table
                 addTableRow(data.template);
-                
+
                 // Close modal and reset form
                 const modal = bootstrap.Modal.getInstance(document.getElementById('createTemplateModal'));
                 modal.hide();
                 this.reset();
-                editor.setData('');
+                quill.root.innerHTML = '';
 
                 // Show success message
                 Swal.fire({
@@ -708,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editTemplateForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        formData.set('content', editEditor.getData());
+        formData.set('content', quillEdit.root.innerHTML);
         formData.append('_method', 'PUT');
 
         // Show loading state
@@ -732,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Update table row
                 updateTableRow(data.template);
-                
+
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editTemplateModal'));
                 modal.hide();
@@ -758,35 +826,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Handle edit button click
+    // When opening edit modal, set Quill content
+    window.setQuillEditContent = function(html) {
+        quillEdit.root.innerHTML = html || '';
+    };
+
+    // When opening create modal, clear Quill content
+    window.clearQuillContent = function() {
+        quill.root.innerHTML = '';
+    };
+
+    // Replace CKEditor setData calls in modal events
+    document.getElementById('createTemplateModal').addEventListener('hidden.bs.modal', function () {
+        clearQuillContent();
+        this.querySelector('form').reset();
+    });
+
+    document.getElementById('editTemplateModal').addEventListener('hidden.bs.modal', function () {
+        setQuillEditContent('');
+        this.querySelector('form').reset();
+    });
+
+    // Update handleEdit to set Quill content
     function handleEdit() {
         const templateId = this.dataset.id;
         const form = document.getElementById('editTemplateForm');
         form.action = `/email-templates/${templateId}`;
-        
-        // Show loading state
-        Swal.fire({
-            title: 'Loading...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        
-        // Fetch template data and populate form
+        // Show skeletons, hide fields
+        document.getElementById('editModalSkeletons').style.display = '';
+        document.getElementById('editModalFields').style.display = 'none';
         fetch(`/email-templates/${templateId}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
             .then(data => {
                 form.querySelector('[name="name"]').value = data.name || '';
                 form.querySelector('[name="subject"]').value = data.subject || '';
                 form.querySelector('[name="description"]').value = data.description || '';
-                editEditor.setData(data.content || '');
-                Swal.close();
+                setQuillEditContent(data.content || '');
+                // Hide skeletons, show fields
+                document.getElementById('editModalSkeletons').style.display = 'none';
+                document.getElementById('editModalFields').style.display = '';
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -795,6 +876,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: 'Failed to load template data',
                     icon: 'error'
                 });
+                // Hide skeletons, show fields anyway (fallback)
+                document.getElementById('editModalSkeletons').style.display = 'none';
+                document.getElementById('editModalFields').style.display = '';
             });
     }
 
@@ -831,7 +915,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.success) {
                         // Remove row from table
-                        removeTableRow(templateId);
+                        table.row(`tr[data-id="${templateId}"]`).remove().draw();
                         
                         Swal.fire({
                             icon: 'success',
@@ -855,18 +939,122 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Attach event listeners to existing rows
+    // Handle test template button click
+    document.querySelectorAll('.test-template').forEach(button => {
+        button.addEventListener('click', function() {
+            const templateId = this.dataset.id;
+            const form = document.getElementById('testTemplateForm');
+            form.action = `/email-templates/${templateId}/test`;
+            // Reset form
+            form.reset();
+            // Show skeletons, hide fields
+            document.getElementById('modalSkeletons').style.display = '';
+            document.getElementById('modalFields').style.display = 'none';
+            // Fetch template content
+            fetch(`/email-templates/${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    emailQuill.root.innerHTML = data.content || '';
+                    form.querySelector('[name="subject"]').value = data.subject || '';
+                    // Hide skeletons, show fields
+                    document.getElementById('modalSkeletons').style.display = 'none';
+                    document.getElementById('modalFields').style.display = '';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Hide skeletons, show fields anyway (fallback)
+                    document.getElementById('modalSkeletons').style.display = 'none';
+                    document.getElementById('modalFields').style.display = '';
+                });
+        });
+    });
+
+    // Handle test form submission
+    document.getElementById('testTemplateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        document.getElementById('emailContent').value = emailQuill.root.innerHTML;
+        
+        // Show loading state
+        Swal.fire({
+            title: 'Sending Email...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new TypeError("Oops, we haven't got JSON!");
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('testTemplateModal'));
+                modal.hide();
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Email sent successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Failed to send email');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.message || 'Something went wrong. Please try again later.'
+            });
+        });
+    });
+
+    // Initialize Quill editor for email content
+    var emailQuill = new Quill('#emailEditor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'font': [] }, { 'size': [] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'align': [] }],
+                ['link', 'image', 'video'],
+                ['clean']
+            ]
+        }
+    });
+
+    // Attach event listeners to row buttons
+    function attachEventListeners() {
+        $('.edit-template').off('click');
+        $('.delete-template').off('click');
+        $('.edit-template').on('click', handleEdit);
+        $('.delete-template').on('click', handleDelete);
+    }
     attachEventListeners();
-
-    // Handle modal hidden events
-    document.getElementById('createTemplateModal').addEventListener('hidden.bs.modal', function () {
-        editor.setData('');
-        this.querySelector('form').reset();
-    });
-
-    document.getElementById('editTemplateModal').addEventListener('hidden.bs.modal', function () {
-        editEditor.setData('');
-        this.querySelector('form').reset();
-    });
 });
 </script>

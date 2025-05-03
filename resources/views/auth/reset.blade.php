@@ -3,239 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM - Competitive Relocation System</title>
-
-    <!-- App CSS -->
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Reset Password - Competitive Relocation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    .page-content{
-        background-color: #EEEEEE;
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .login-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
     }
-    .hidden{
-        display: none !important;
-    }
-    .alert {
-        display: none;
-        margin-top: 10px;
-    }
-    .password-field {
+
+        .login-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        .login-form {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 40px 12px 15px !important;
+            transition: all 0.3s ease;
+            background: #fff;
+            box-shadow: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 107, 255, 0.08);
+            background: #fff;
+        }
+
+        .position-relative {
         position: relative;
     }
+
     .password-toggle {
         position: absolute;
-        right: 10px;
+            right: 14px;
         top: 50%;
         transform: translateY(-50%);
-        background: none;
+            background: transparent;
         border: none;
-        color: #6c757d;
+            color: var(--secondary-color);
         cursor: pointer;
-        z-index: 10;
+            padding: 0;
+            z-index: 2;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+        }
+
+        .password-toggle:focus {
+            outline: none;
     }
+
     .password-toggle:hover {
-        color: #3b82f6;
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .input-group-text {
+            background: transparent;
+            border: none;
+            color: var(--secondary-color);
+        }
+
+        .input-group {
+            position: relative;
+            background: none;
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s ease;
     }
-    .generate-password-btn {
-        margin-top: 10px;
-        font-size: 0.85rem;
+
+        .btn-login:hover {
+            background: #2541b2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 65, 178, 0.2);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #3a5bef;
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 576px) {
+            .login-container {
+                margin: 20px;
+            }
     }
 </style>
 </head>
 <body>
-
-
-    <div class="container-xxl">
-        <div class="row vh-100 d-flex justify-content-center">
-            <div class="col-12 align-self-center">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-4 mx-auto">
-                            <div class="card">
-                                <div class="card-body p-0 bg-black auth-header-box rounded-top">
-                                    <div class="text-center p-3">
-                                        <a href="{{ url('/') }}" class="logo logo-admin">
-                                            <img src="{{ asset('assets/images/logo-sm.png') }}" height="50" alt="logo" class="auth-logo">
-                                        </a>
-                                        <h4 class="mt-3 mb-1 fw-semibold text-white fs-18">Reset Password</h4>   
-                                        <p class="text-muted fw-medium mb-0">Enter your new password below!</p>  
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Reset Password</h1>
+            <p>Enter your new password</p>
+        </div>
+        
+        <div class="login-form">
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                                     </div>
-                                </div>
-                                <div class="card-body pt-0">                                    
-                                    <form class="my-4" id="resetPasswordForm" method="POST" action="{{ route('password.reset.submit') }}">            
+            @endif
+
+            <form method="POST" action="{{ route('password.update') }}">
                                         @csrf
                                         <input type="hidden" name="token" value="{{ $token }}">
-                                        <input type="hidden" name="email" value="{{ $email }}">
-                                        
-                                        <div class="form-group mb-2">
-                                            <label class="form-label" for="password">New Password</label>
-                                            <div class="password-field">
-                                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter new password" required>
-                                                <button type="button" class="password-toggle" data-target="password">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary generate-password-btn" id="generatePassword">
-                                                <i class="fas fa-magic"></i> Generate Strong Password
-                                            </button>
-                                        </div><!--end form-group-->             
-                                        
-                                        <div class="form-group mb-3">
-                                            <label class="form-label" for="password_confirmation">Confirm New Password</label>
-                                            <div class="password-field">
-                                                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Confirm new password" required>
-                                                <button type="button" class="password-toggle" data-target="password_confirmation">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                        </div><!--end form-group-->             
-                                        
-                                        <div class="form-group mb-0 row">
-                                            <div class="col-12">
-                                                <div class="d-grid mt-3">
-                                                    <button class="btn btn-primary" type="submit" id="resetBtn">Reset Password <i class="fas fa-key ms-1"></i></button>
-                                                </div>
-                                            </div><!--end col--> 
-                                        </div> <!--end form-group-->                           
-                                    </form><!--end form-->
-                                    <div class="text-center mb-2">
-                                        <p class="text-muted">Remember It ?  <a href="{{ url('/') }}" class="text-primary ms-2">Sign in here</a></p>
-                                    </div>
-                                </div><!--end card-body-->
-                            </div><!--end card-->
-                        </div><!--end col-->
-                    </div><!--end row-->
-                </div><!--end card-body-->
-            </div><!--end col-->
-        </div><!--end row-->                                        
-    </div><!-- container -->
+                
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                               name="email" value="{{ $email ?? old('email') }}" 
+                               placeholder="Email Address" required autofocus>
+                    </div>
+                    @error('email')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
 
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <div class="position-relative w-100">
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                   name="password" placeholder="New Password" required>
+                            <button type="button" class="password-toggle" tabindex="-1">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                    </div>
+                    @error('password')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <div class="position-relative w-100">
+                            <input type="password" class="form-control" 
+                                   name="password_confirmation" placeholder="Confirm New Password" required>
+                            <button type="button" class="password-toggle" tabindex="-1">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <i class="fas fa-key me-2"></i> Reset Password
+                </button>
+            </form>
+
+            <div class="forgot-password">
+                <a href="{{ route('login') }}">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Login
+                </a>
+            </div>
+                                                </div>
+                                    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const resetPasswordForm = document.getElementById('resetPasswordForm');
-            const resetBtn = document.getElementById('resetBtn');
+            const toggleButtons = document.querySelectorAll('.password-toggle');
             
-            // Password toggle functionality
-            document.querySelectorAll('.password-toggle').forEach(button => {
+            toggleButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const passwordField = document.getElementById(targetId);
+                    const input = this.parentElement.querySelector('input');
                     const icon = this.querySelector('i');
                     
-                    if (passwordField.type === 'password') {
-                        passwordField.type = 'text';
+                    if (input.type === 'password') {
+                        input.type = 'text';
                         icon.classList.remove('fa-eye');
                         icon.classList.add('fa-eye-slash');
                     } else {
-                        passwordField.type = 'password';
+                        input.type = 'password';
                         icon.classList.remove('fa-eye-slash');
                         icon.classList.add('fa-eye');
                     }
                 });
-            });
-            
-            // Generate strong password
-            document.getElementById('generatePassword').addEventListener('click', function() {
-                const length = 16;
-                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-                let password = "";
-                
-                // Ensure at least one of each required character type
-                password += charset.match(/[A-Z]/)[0]; // Uppercase
-                password += charset.match(/[a-z]/)[0]; // Lowercase
-                password += charset.match(/[0-9]/)[0]; // Number
-                password += charset.match(/[!@#$%^&*()_+]/)[0]; // Special character
-                
-                // Fill the rest randomly
-                for (let i = password.length; i < length; i++) {
-                    const randomIndex = Math.floor(Math.random() * charset.length);
-                    password += charset[randomIndex];
-                }
-                
-                // Shuffle the password
-                password = password.split('').sort(() => Math.random() - 0.5).join('');
-                
-                // Set the generated password
-                document.getElementById('password').value = password;
-                document.getElementById('password_confirmation').value = password;
-                
-                // Show success message
-                Swal.fire({
-                    title: 'Password Generated',
-                    text: 'A strong password has been generated and filled in both fields',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
                 });
             });
             
-            // Form submission
-            resetPasswordForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('password_confirmation').value;
-                
-                if (password !== confirmPassword) {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Passwords do not match',
-                        icon: 'error',
-                        confirmButtonColor: '#3085d6'
-                    });
-                    return;
-                }
-                
-                // Disable the button and show loading state
-                resetBtn.disabled = true;
-                resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-                
-                // Submit the form using fetch
-                fetch(this.action, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        token: document.querySelector('input[name="token"]').value,
-                        email: document.querySelector('input[name="email"]').value,
-                        password: password,
-                        password_confirmation: confirmPassword
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: data.message,
-                            icon: 'success',
-                            confirmButtonColor: '#3085d6'
-                        }).then(() => {
-                            window.location.href = data.redirect;
-                        });
-                    } else {
-                        throw new Error(data.message);
-                    }
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.message || 'An error occurred while resetting your password.',
-                        icon: 'error',
-                        confirmButtonColor: '#3085d6'
-                    });
-                    resetBtn.disabled = false;
-                    resetBtn.innerHTML = 'Reset Password <i class="fas fa-key ms-1"></i>';
-                });
-            });
+        // Add animation to form elements
+        document.querySelectorAll('.form-group').forEach((element, index) => {
+            element.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
+            element.style.opacity = '0';
         });
+
+        // Add keyframe animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                    }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html> 

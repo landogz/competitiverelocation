@@ -3,235 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM - Competitive Relocation System</title>
-    <!-- App CSS -->
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <title>Forgot Password - Competitive Relocation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-        .login-container {
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .login-card {
-            background: #fff;
-            border-radius: 1.5rem;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            padding: 2.5rem 2rem 2rem 2rem;
-            max-width: 400px;
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
             width: 100%;
-            margin: 2rem 0;
+            max-width: 400px;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .login-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            text-align: center;
             position: relative;
         }
-        .login-logo {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .login-logo img {
-            height: 60px;
-        }
-        .login-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #22223b;
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-        .login-subtitle {
-            color: #6c757d;
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 1rem;
-        }
-        .form-label {
+
+        .login-header h1 {
+            margin: 0;
+            font-size: 2rem;
             font-weight: 600;
-            color: #22223b;
         }
+
+        .login-header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+
+        .login-form {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
         .form-control {
-            border-radius: 0.75rem;
-            border: 1px solid #e0e0e0;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
         }
+
         .form-control:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 107, 255, 0.25);
         }
-        .btn-primary {
-            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+
+        .input-group-text {
+            background: transparent;
             border: none;
-            border-radius: 0.75rem;
+            color: var(--secondary-color);
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 12px;
+            width: 100%;
             font-weight: 600;
-            font-size: 1.1rem;
-            padding: 0.75rem;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
         }
-        .btn-primary:hover {
-            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+
+        .btn-login:hover {
+            background: #2541b2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 65, 178, 0.2);
+            color: #ffffff;
         }
-        .forgot-link, .login-link {
-            color: #3b82f6;
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
             text-decoration: none;
-            font-size: 0.97rem;
+            transition: all 0.3s ease;
         }
-        .forgot-link:hover, .login-link:hover {
+
+        .forgot-password a:hover {
+            color: #3a5bef;
             text-decoration: underline;
         }
-        .form-check-label {
-            font-size: 0.97rem;
+
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
-        .token-display {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            word-break: break-all;
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            padding: 0;
+            z-index: 2;
         }
-        .token-display code {
-            font-size: 0.9rem;
+
+        .password-toggle:hover {
+            color: var(--primary-color);
         }
-        @media (max-width: 500px) {
-            .login-card {
-                padding: 1.5rem 0.5rem;
+
+        @media (max-width: 576px) {
+            .login-container {
+                margin: 20px;
             }
         }
     </style>
 </head>
 <body>
-<div class="login-container">
-    <div class="login-card">
-        <div class="login-logo">
-            <img src="{{ asset('assets/images/logo-dark.png') }}" alt="logo">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Reset Password</h1>
+            <p>Enter your email to receive reset instructions</p>
         </div>
-        <div class="login-title">Reset Password</div>
-        <div class="login-subtitle">Enter your email and instructions will be sent to you!</div>
-        <form class="my-4" id="forgotPasswordForm">
-            <div class="form-group mb-3">
-                <label class="form-label" for="userEmail">Email</label>
-                <input type="email" class="form-control" id="userEmail" name="email" placeholder="Enter Email Address" required>
+        
+        <div class="login-form">
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if (session('status'))
+                <div class="alert alert-success">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('password.email') }}">
+                @csrf
+                
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                               name="email" value="{{ old('email') }}" 
+                               placeholder="Email Address" required autofocus>
+                    </div>
+                    @error('email')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <i class="fas fa-paper-plane me-2"></i> Send Reset Link
+                </button>
+            </form>
+
+            <div class="forgot-password">
+                <a href="{{ route('login') }}">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Login
+                </a>
             </div>
-            <button class="btn btn-primary w-100" type="submit" id="resetBtn">Reset <i class="fas fa-sign-in-alt ms-1"></i></button>
-        </form>
-        <div id="tokenDisplay" class="hidden">
-            <div class="alert alert-info">
-                <strong>Development Environment:</strong> Use this token to reset your password.
-            </div>
-            <div class="token-display">
-                <code id="resetToken"></code>
-            </div>
-            <div class="text-center mt-2">
-                <a href="#" id="resetLink" class="btn btn-sm btn-outline-primary">Go to Reset Page</a>
-            </div>
-        </div>
-        <div class="text-center mb-2 mt-3">
-            <p class="text-muted">Remember it? <a href="{{ url('/') }}" class="login-link ms-2">Sign in here</a></p>
         </div>
     </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-        const resetBtn = document.getElementById('resetBtn');
-        const tokenDisplay = document.getElementById('tokenDisplay');
-        const resetToken = document.getElementById('resetToken');
-        const resetLink = document.getElementById('resetLink');
-        
-        forgotPasswordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('userEmail').value;
-            
-            // Disable the button and show loading state
-            resetBtn.disabled = true;
-            resetBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-            
-            // Send the password reset request
-            fetch('{{ route("password.email") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ email: email })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Reset button state
-                resetBtn.disabled = false;
-                resetBtn.innerHTML = 'Reset <i class="fas fa-sign-in-alt ms-1"></i>';
-                
-                if (data.status === 'passwords.sent') {
-                    // Check if we're in development environment and have a debug token
-                    if (data.debug_token) {
-                        // Show the token for development
-                        resetToken.textContent = data.debug_token;
-                        tokenDisplay.classList.remove('hidden');
-                        
-                        // Set up the reset link
-                        resetLink.href = `{{ url('/password/reset') }}/${data.debug_token}?email=${encodeURIComponent(email)}`;
-                        
-                        // Show success message
-                        Swal.fire({
-                            title: 'Development Mode',
-                            text: 'Password reset token has been generated. Use the link below to reset your password.',
-                            icon: 'info',
-                            confirmButtonColor: '#3085d6'
-                        });
-                    } else {
-                        // Production environment - show standard message
-                        Swal.fire({
-                            title: 'Password Reset Link Sent!',
-                            text: 'If an account exists with this email, you will receive password reset instructions.',
-                            icon: 'success',
-                            confirmButtonColor: '#3085d6'
-                        }).then(() => {
-                            // Redirect to login page after a short delay
-                            setTimeout(() => {
-                                window.location.href = '{{ url("/") }}';
-                            }, 1500);
-                        });
-                    }
-                } else {
-                    // Show error message
-                    Swal.fire({
-                        title: 'Error!',
-                        text: data.message || 'Failed to send password reset email. Please try again.',
-                        icon: 'error',
-                        confirmButtonColor: '#3085d6'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                
-                // Reset button state
-                resetBtn.disabled = false;
-                resetBtn.innerHTML = 'Reset <i class="fas fa-sign-in-alt ms-1"></i>';
-                
-                // Show error message
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'An error occurred while processing your request. Please try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#3085d6'
-                });
-            });
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add animation to form elements
+        document.querySelectorAll('.form-group').forEach((element, index) => {
+            element.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
+            element.style.opacity = '0';
         });
-    });
-</script>
+
+        // Add keyframe animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        function togglePassword(button) {
+            const input = button.previousElementSibling;
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

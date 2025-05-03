@@ -6,6 +6,8 @@ use App\Models\EmailTemplate;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use App\Mail\TestEmailTemplate;
+use Illuminate\Support\Facades\Mail;
 
 class EmailTemplateController extends Controller
 {
@@ -101,6 +103,37 @@ class EmailTemplateController extends Controller
     public function preview(EmailTemplate $emailTemplate)
     {
         return view('email-templates.preview', compact('emailTemplate'));
+    }
+
+    public function test(Request $request, EmailTemplate $template)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'recipient_email' => 'required|email',
+                'subject' => 'required|string',
+                'content' => 'required|string'
+            ]);
+
+            // Create a temporary template with the edited content and subject
+            $tempTemplate = clone $template;
+            $tempTemplate->content = $validated['content'];
+            $tempTemplate->subject = $validated['subject'];
+
+            // Send email
+            Mail::to($validated['recipient_email'])
+                ->send(new TestEmailTemplate($tempTemplate));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email sent successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     private function getAvailablePlaceholders()

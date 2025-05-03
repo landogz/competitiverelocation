@@ -17,7 +17,8 @@ class CallCenterController extends Controller
     public function index()
     {
         $leads = Lead::orderBy('created_at', 'desc')->get();
-        return view('callcenter', compact('leads'));
+        $templates = \App\Models\EmailTemplate::all();
+        return view('callcenter', compact('leads', 'templates'));
     }
 
     /**
@@ -315,5 +316,40 @@ class CallCenterController extends Controller
             'recordsFiltered' => $totalRecords,
             'data' => $data
         ]);
+    }
+
+    public function sendEmail(Request $request, Lead $lead)
+    {
+        try {
+            $validated = $request->validate([
+                'template_id' => 'required|exists:email_templates,id',
+                'subject' => 'required|string|max:255',
+                'content' => 'required|string'
+            ]);
+
+            // Get the email template
+            $template = \App\Models\EmailTemplate::find($validated['template_id']);
+
+            // Create a new log entry for the email
+            $lead->logs()->create([
+                'type' => 'email',
+                'content' => 'Email sent: ' . $validated['subject'],
+                'user_id' => Auth::id() ?? null,
+            ]);
+
+            // Send the email
+            \Illuminate\Support\Facades\Mail::to($lead->email)
+                ->send(new \App\Mail\TestEmailTemplate($template));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email sent successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
