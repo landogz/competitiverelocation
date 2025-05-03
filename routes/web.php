@@ -14,6 +14,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\CallCenterController;
 use App\Http\Controllers\SalesRepController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -218,4 +219,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/salesreps/{salesRep}', [SalesRepController::class, 'show'])->name('salesreps.show');
     Route::put('/salesreps/{salesRep}', [SalesRepController::class, 'update'])->name('salesreps.update');
     Route::delete('/salesreps/{salesRep}', [SalesRepController::class, 'destroy'])->name('salesreps.destroy');
+
+    Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart-data');
 });
