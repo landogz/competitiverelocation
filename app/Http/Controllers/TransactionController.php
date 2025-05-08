@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -50,6 +51,157 @@ class TransactionController extends Controller
         ];
 
         return view('loadboard', compact('transactions', 'templates', 'placeholders'));
+    }
+
+    public function index_agent()
+    {
+        // Get the authenticated agent
+        $agentId = auth()->user()->agent_id;
+        $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
+        
+        if (!$agent) {
+            return redirect()->route('dashboard')->with('error', 'Agent profile not found');
+        }
+
+        // Get agent's coordinates
+        $agentCoordinates = $this->getCoordinatesFromAddress(
+            $agent->address,
+            $agent->city,
+            $agent->state,
+            $agent->zip_code,
+            $agent->country
+        );
+
+        if (!$agentCoordinates) {
+            \Log::error('Could not get coordinates for agent', [
+                'agent_id' => $agent->id,
+                'address' => $agent->address,
+                'city' => $agent->city,
+                'state' => $agent->state,
+                'zip_code' => $agent->zip_code
+            ]);
+            
+            // If we can't get coordinates, return only the agent's assigned jobs
+            $transactions = Transaction::query()
+                ->where('assigned_agent', $agent->id)
+            ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+            ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+            ->select(
+                'transactions.*',
+                'lead_sources.title as lead_source_title',
+                'agents.company_name as assigned_agent_company_name'
+                )
+                ->orderByDesc('transactions.created_at')
+                ->get();
+        } else {
+            // Get all transactions
+            $transactions = Transaction::query()
+                ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+                ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                ->select(
+                    'transactions.*',
+                    'lead_sources.title as lead_source_title',
+                    'agents.company_name as assigned_agent_company_name'
+                )
+                ->orderByDesc('transactions.created_at')
+                ->get();
+
+            // Filter transactions by distance
+            $transactions = $transactions->filter(function ($transaction) use ($agentCoordinates, $agent) {
+                // Always include transactions assigned to this agent
+                if ($transaction->assigned_agent == $agent->id) {
+                    return true;
+                }
+
+                // Get coordinates for the transaction's pickup location
+                $jobCoordinates = $this->getCoordinatesFromAddress($transaction->pickup_location);
+                
+                if (!$jobCoordinates) {
+                    return false;
+                }
+
+                // Calculate distance between agent and job
+                $distance = $this->calculateDistance(
+                    $agentCoordinates['lat'],
+                    $agentCoordinates['lng'],
+                    $jobCoordinates['lat'],
+                    $jobCoordinates['lng']
+                );
+
+                // Only include jobs within 50 miles
+                return $distance <= 50;
+            });
+        }
+
+        // Get email templates
+        $templates = \App\Models\EmailTemplate::all();
+
+        // Define placeholders for transaction data
+        $placeholders = [
+            'Transaction' => [
+                'Customer Name' => '{customer_name}',
+                'Customer Email' => '{customer_email}',
+                'Customer Phone' => '{customer_phone}',
+                'Service Type' => '{service_type}',
+                'Pickup Location' => '{pickup_location}',
+                'Delivery Location' => '{delivery_location}',
+                'Move Date' => '{move_date}',
+                'Total Amount' => '{total_amount}',
+                'Down Payment' => '{down_payment}',
+                'Remaining Balance' => '{remaining_balance}',
+                'Miles' => '{miles}',
+                'Assigned Agent' => '{assigned_agent}',
+                'Lead Source' => '{lead_source}',
+                'Transaction ID' => '{transaction_id}'
+            ]
+        ];
+
+        return view('loadboard-agent', compact('transactions', 'templates', 'placeholders'));
+    }
+
+    /**
+     * Get nearby zip codes within a specified radius
+     * 
+     * @param string $zipCode The center zip code
+     * @param int $radiusMiles The radius in miles
+     * @return array Array of nearby zip codes
+     */
+    private function getNearbyZipCodes($zipCode, $radiusMiles)
+    {
+        // You can use a zip code database or API to get nearby zip codes
+        // For now, we'll use a simple approach with a zip code database table
+        // You'll need to create a zip_codes table with latitude and longitude
+        
+        try {
+            $centerZip = DB::table('zip_codes')
+                ->where('zip_code', $zipCode)
+                ->first();
+
+            if (!$centerZip) {
+                return [];
+            }
+
+            // Calculate the bounding box for the radius
+            $lat = $centerZip->latitude;
+            $lon = $centerZip->longitude;
+            
+            // 1 degree of latitude is approximately 69 miles
+            // 1 degree of longitude varies but we'll use an average
+            $latDelta = $radiusMiles / 69;
+            $lonDelta = $radiusMiles / (69 * cos(deg2rad($lat)));
+
+            // Get all zip codes within the bounding box
+            $nearbyZips = DB::table('zip_codes')
+                ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+                ->whereBetween('longitude', [$lon - $lonDelta, $lon + $lonDelta])
+                ->pluck('zip_code')
+                ->toArray();
+
+            return $nearbyZips;
+        } catch (\Exception $e) {
+            \Log::error('Error getting nearby zip codes: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function syncFromApi()
@@ -404,6 +556,10 @@ class TransactionController extends Controller
                       ->orWhere('transactions.pickup_location', 'like', "%{$search}%")
                       ->orWhere('transactions.delivery_location', 'like', "%{$search}%")
                       ->orWhere('transactions.services', 'like', "%{$search}%")
+                      ->orWhere('transactions.date', 'like', "%{$search}%")
+                      ->orWhere('transactions.miles', 'like', "%{$search}%")
+                      ->orWhere('transactions.grand_total', 'like', "%{$search}%")
+                      ->orWhere('transactions.status', 'like', "%{$search}%")
                       ->orWhere('agents.company_name', 'like', "%{$search}%");
                 });
                 
@@ -479,6 +635,189 @@ class TransactionController extends Controller
         }
     }
 
+    public function agentDatatable(Request $request)
+    {
+        try {
+        // Get the authenticated agent
+        $agentId = auth()->user()->agent_id;
+        $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
+        
+        if (!$agent) {
+                return response()->json(['error' => 'Agent not found'], 404);
+            }
+
+            // Get agent's coordinates
+            $agentCoordinates = $this->getCoordinatesFromAddress(
+                $agent->address,
+                $agent->city,
+                $agent->state,
+                $agent->zip_code,
+                $agent->country
+            );
+
+            if (!$agentCoordinates) {
+                \Log::error('Could not get coordinates for agent', [
+                    'agent_id' => $agent->id,
+                    'address' => $agent->address,
+                    'city' => $agent->city,
+                    'state' => $agent->state,
+                    'zip_code' => $agent->zip_code
+                ]);
+                
+                // If we can't get coordinates, return only the agent's assigned jobs
+                $query = Transaction::query()
+                    ->where('assigned_agent', $agent->id)
+                    ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+                    ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                    ->select(
+                        'transactions.*',
+                        'lead_sources.title as lead_source_title',
+                        'agents.company_name as assigned_agent_company_name'
+                    );
+                $transactions = $query->get();
+            } else {
+                $query = Transaction::query()
+                    ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+                    ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                    ->select(
+                        'transactions.*',
+                        'lead_sources.title as lead_source_title',
+                        'agents.company_name as assigned_agent_company_name'
+                    );
+                $transactions = $query->get();
+                // Filter transactions by distance OR assigned to agent
+                $transactions = $transactions->filter(function ($transaction) use ($agentCoordinates, $agent) {
+                    // Always include transactions assigned to this agent
+                    if ($transaction->assigned_agent == $agent->id) {
+                        return true;
+                    }
+                    // Get coordinates for the transaction's pickup location
+                    $jobCoordinates = $this->getCoordinatesFromAddress($transaction->pickup_location);
+                    if (!$jobCoordinates) {
+                        return false;
+                    }
+                    // Calculate distance between agent and job
+                    $distance = $this->calculateDistance(
+                        $agentCoordinates['lat'],
+                        $agentCoordinates['lng'],
+                        $jobCoordinates['lat'],
+                        $jobCoordinates['lng']
+                    );
+                    // Only include jobs within 50 miles
+                    return $distance <= 50;
+                });
+            }
+
+            // Get total count before any filtering
+            $totalRecords = $transactions->count();
+
+            // Apply search if provided
+            if ($request->has('search') && !empty($request->search['value'])) {
+                $search = $request->search['value'];
+                $transactions = $transactions->filter(function ($transaction) use ($search) {
+                    return str_contains(strtolower($transaction->transaction_id), strtolower($search)) ||
+                           str_contains(strtolower($transaction->services), strtolower($search)) ||
+                           str_contains(strtolower($transaction->status), strtolower($search));
+                });
+            }
+
+            // Get filtered count after search
+            $filteredRecords = $transactions->count();
+
+            // Apply pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+            $transactions = $transactions->slice($start, $length);
+
+            // Convert to DataTables format - ensure it's an array, not an object
+            $data = [];
+            foreach ($transactions as $transaction) {
+                $data[] = [
+                    'id' => $transaction->id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'date' => $transaction->date,
+                    'services' => $transaction->services,
+                    'status' => $transaction->status,
+                    'assigned_agent' => $transaction->assigned_agent,
+                    'pickup_location' => $transaction->pickup_location,
+                    'delivery_location' => $transaction->delivery_location,
+                ];
+            }
+
+        return response()->json([
+                'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in agentDatatable: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'An error occurred while processing your request',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function getCoordinatesFromAddress($address, $city = null, $state = null, $zipCode = null, $country = null)
+    {
+        try {
+            // Build the full address
+            $fullAddress = array_filter([
+                $address,
+                $city,
+                $state,
+                $zipCode,
+                $country
+            ]);
+            
+            $addressString = implode(', ', $fullAddress);
+
+            // Use Google Maps Geocoding API with Laravel's HTTP client
+            $apiKey = config('services.google.maps_api_key');
+            $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
+                'address' => $addressString,
+                'key' => $apiKey
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if ($data['status'] === 'OK') {
+                    return [
+                        'lat' => $data['results'][0]['geometry']['location']['lat'],
+                        'lng' => $data['results'][0]['geometry']['location']['lng']
+                    ];
+                }
+            }
+
+            \Log::error('Geocoding failed', [
+                'address' => $addressString,
+                'response' => $response->json()
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            \Log::error('Error getting coordinates: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 3959; // Radius of the earth in miles
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+
+        $a = sin($latDelta/2) * sin($latDelta/2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lonDelta/2) * sin($lonDelta/2);
+            
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $distance = $earthRadius * $c;
+
+        return $distance;
+    }
+
     public function getCounts()
     {
         try {
@@ -494,6 +833,97 @@ class TransactionController extends Controller
             \Log::error('Error getting counts: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to get counts'
+            ], 500);
+        }
+    }
+
+    /**
+     * Accept a job and assign it to the current agent
+     */
+    public function acceptJob($transactionId)
+    {
+        try {
+            // Get the authenticated agent
+            $agentId = auth()->user()->agent_id;
+            $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
+            
+            if (!$agent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Agent profile not found'
+                ], 404);
+            }
+
+            // Get the transaction
+            $transaction = Transaction::findOrFail($transactionId);
+
+            // Check if transaction is already assigned
+            if ($transaction->assigned_agent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This job is already assigned to another agent'
+                ], 400);
+            }
+
+            // Update the transaction
+            $transaction->update([
+                'assigned_agent' => $agent->id,
+                'status' => 'in_progress'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Job accepted and marked as in progress'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to accept job: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Decline a job
+     */
+    public function declineJob($transactionId)
+    {
+        try {
+            // Get the transaction
+            $transaction = Transaction::findOrFail($transactionId);
+
+            // Check if transaction is already assigned to this agent
+            $agentId = auth()->user()->agent_id;
+            $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
+            
+            if (!$agent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Agent profile not found'
+                ], 404);
+            }
+
+            if ($transaction->assigned_agent !== $agent->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You can only decline jobs assigned to you'
+                ], 400);
+            }
+
+            // Update the transaction
+            $transaction->update([
+                'assigned_agent' => null,
+                'status' => 'pending'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Job declined successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to decline job: ' . $e->getMessage()
             ], 500);
         }
     }

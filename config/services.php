@@ -43,4 +43,12 @@ return [
         'client_id' => env('STRIPE_CLIENT_ID'),
     ],
 
+    'zipcodeapi' => [
+        'key' => env('ZIPCODE_API_KEY'),
+    ],
+
+    'google' => [
+        'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
 ];

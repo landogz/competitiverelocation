@@ -72,9 +72,6 @@
             <div class="card border-0 rounded-3 shadow-sm">
                 <div class="card-body p-4">
                     <div class="table-responsive" style="overflow-y: auto;">
-                        <div class="loading-overlay">
-                            <div class="loading-spinner"></div>
-                        </div>
                         <table id="transactionsTable" class="table table-centered align-middle table-hover mb-0">
                             <thead class="text-muted bg-light">
                                 <tr>
@@ -92,97 +89,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($transactions as $transaction)
-                                <tr>
-                                    <td>{{ $transaction->transaction_id }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                                <!-- <div class="avatar-sm rounded-circle bg-primary bg-opacity-10 p-2">
-                                                <span class="text-primary fw-semibold">{{ substr($transaction->firstname, 0, 1) }}{{ substr($transaction->lastname, 0, 1) }}</span>
-                                                </div> -->
-                                            <div>
-                                                <h6 class="mb-0">{{ $transaction->firstname }} {{ $transaction->lastname }}</h6>
-                                                <small class="text-muted">{{ $transaction->email }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="date-column">{{ $transaction->date ? $transaction->date->format('M d, Y') : 'N/A' }}</td>
-                                    <td>
-                                        @php
-                                            $services = is_string($transaction->services) ? json_decode($transaction->services, true) : $transaction->services;
-                                            $serviceNames = [];
-                                            
-                                            if (is_array($services) && count($services) > 0) {
-                                                foreach ($services as $service) {
-                                                    $serviceNames[] = trim($service['name']);
-                                                }
-                                            } else {
-                                                $serviceNames[] = trim($transaction->service);
-                                            }
-                                            // Join with explicit newline character
-                                            $formattedServices = implode("\n", $serviceNames);
-                                        @endphp
-                                        <span class="badge bg-primary bg-opacity-10 text-primary service-badge">{{ $formattedServices }}</span>
-                                    </td>
-                                    <td>{{ $transaction->pickup_location }}</td>
-                                    <td>{{ $transaction->delivery_location }}</td>
-                                    <td>{{ number_format($transaction->miles) }}</td>
-                                    <td><span class="fw-semibold">${{ number_format($transaction->grand_total, 2) }}</span></td>
-                                        <td>
-                                            @php
-                                                // Prefer joined field if available
-                                                $agentName = $transaction->assigned_agent_company_name ?? null;
-                                                if (!$agentName) {
-                                                    $agentName = (!empty($transaction->assigned_agent) && isset($agents[$transaction->assigned_agent])) ? $agents[$transaction->assigned_agent] : 'N/A';
-                                                }
-                                            @endphp
-                                            {{ $agentName }}
-                                        </td>
-                                    <td>
-                                        @php
-                                            $statusClass = [
-                                                'completed' => 'bg-success-subtle text-success',
-                                                'in_progress' => 'bg-info-subtle text-info',
-                                                'cancelled' => 'bg-danger-subtle text-danger',
-                                                'pending' => 'bg-warning-subtle text-warning'
-                                            ][$transaction->status] ?? 'bg-warning-subtle text-warning';
-                                        @endphp
-                                            <span class="badge {{ $statusClass }} rounded-pill px-3 status-badge" data-old-status="{{ $transaction->status }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Actions
-                                            </button>
-                                            <ul class="dropdown-menu shadow-sm border-0">
-                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#transactionModal{{ $transaction->id }}">
-                                                    <i class="fas fa-eye me-2 text-muted"></i> View Details
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="{{ route('leads.edit', $transaction->id) }}">
-                                                    <i class="fas fa-edit me-2 text-primary"></i> Edit
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="sendQuote('{{ $transaction->id }}')">
-                                                    <i class="fas fa-paper-plane me-2 text-info"></i> Send Quote
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus('{{ $transaction->id }}', 'pending')">
-                                                    <i class="fas fa-clock me-2 text-warning"></i> Mark as Pending
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus('{{ $transaction->id }}', 'in_progress')">
-                                                    <i class="fas fa-spinner me-2 text-info"></i> Mark In Progress
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus('{{ $transaction->id }}', 'completed')">
-                                                    <i class="fas fa-check me-2 text-success"></i> Mark Completed
-                                                </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus('{{ $transaction->id }}', 'cancelled')">
-                                                    <i class="fas fa-times me-2 text-danger"></i> Cancel
-                                                </a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
+                                <!-- DataTables will populate this via AJAX -->
                             </tbody>
                         </table>
                     </div>
@@ -1156,6 +1063,9 @@
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
 <!-- DataTables -->
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
@@ -1166,6 +1076,9 @@
 
 <script>
     $(document).ready(function() {
+        // Configure moment.js
+        moment.locale('en');
+
         // Toast function for silent sync
         function showToast(message) {
             Swal.fire({
@@ -1249,6 +1162,7 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 data: function(d) {
+                    // Add any additional search parameters here if needed
                     return d;
                 },
                 error: function(xhr, error, thrown) {
@@ -1261,7 +1175,10 @@
                     });
                 },
                 beforeSend: function() {
-                    $('.loading-overlay').addClass('active');
+                    // Show loading overlay only on initial load
+                    if (!this.data || !this.data.search || !this.data.search.value) {
+                        $('.loading-overlay').addClass('active');
+                    }
                 },
                 complete: function() {
                     setTimeout(function() {
@@ -1294,32 +1211,80 @@
                 }
             ],
             columns: [
-                { data: 'transaction_id', name: 'transaction_id' },
+                { 
+                    data: 'transaction_id', 
+                    name: 'transaction_id',
+                    searchable: true
+                },
                 { 
                     data: 'customer', 
                     name: 'customer',
+                    searchable: true,
                     render: function(data, type, row) {
-                        return `
-                            <div class="d-flex align-items-center gap-2">
-                                <div>
-                                    <h6 class="mb-0">${row.firstname} ${row.lastname}</h6>
-                                    <small class="text-muted">${row.email}</small>
+                        if (type === 'display') {
+                            return `
+                                <div class="d-flex align-items-center gap-2">
+                                    <div>
+                                        <h6 class="mb-0">${row.firstname} ${row.lastname}</h6>
+                                        <small class="text-muted">${row.email}</small>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        }
+                        // For searching, return the concatenated name and email
+                        return `${row.firstname} ${row.lastname} ${row.email}`;
                     }
                 },
                 { 
                     data: 'date', 
                     name: 'date',
-                    render: function(data) {
-                        return data ? moment(data).format('MMM D, YYYY') : 'N/A';
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (!data) return 'N/A';
+                        
+                        if (type === 'display') {
+                            return moment(data).format('MMM D, YYYY');
+                        }
+                        
+                        // For searching, return multiple date formats
+                        if (type === 'search') {
+                            const date = moment(data);
+                            return [
+                                date.format('MMM D, YYYY'),  // May 9, 2025
+                                date.format('MMMM D, YYYY'), // May 9, 2025
+                                date.format('MMM D YYYY'),   // May 9 2025
+                                date.format('MM/D/YYYY'),    // 05/9/2025
+                                date.format('YYYY-MM-DD'),   // 2025-05-09
+                                date.format('MMM'),          // May
+                                date.format('D'),            // 9
+                                date.format('YYYY'),         // 2025
+                                data                         // Original date string
+                            ].join(' ');
+                        }
+                        
+                        return data;
                     }
                 },
                 { 
                     data: 'services', 
                     name: 'services',
-                    render: function(data) {
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            let services = data;
+                            if (typeof data === 'string') {
+                                try {
+                                    services = JSON.parse(data);
+                                } catch (e) {
+                                    services = [{ name: data }];
+                                }
+                            }
+                            const serviceNames = Array.isArray(services) 
+                                ? services.map(service => service.name || service).join('\n')
+                                : services;
+                            return `<span class="badge bg-primary bg-opacity-10 text-primary service-badge">${serviceNames}</span>`;
+                        }
+                        // For searching, return the concatenated service names
                         let services = data;
                         if (typeof data === 'string') {
                             try {
@@ -1328,25 +1293,41 @@
                                 services = [{ name: data }];
                             }
                         }
-                        const serviceNames = Array.isArray(services) 
-                            ? services.map(service => service.name || service).join('\n')
+                        return Array.isArray(services) 
+                            ? services.map(service => service.name || service).join(' ')
                             : services;
-                        return `<span class="badge bg-primary bg-opacity-10 text-primary service-badge">${serviceNames}</span>`;
                     }
                 },
-                { data: 'pickup_location', name: 'pickup_location' },
-                { data: 'delivery_location', name: 'delivery_location' },
-                { data: 'miles', name: 'miles' },
+                { 
+                    data: 'pickup_location', 
+                    name: 'pickup_location',
+                    searchable: true
+                },
+                { 
+                    data: 'delivery_location', 
+                    name: 'delivery_location',
+                    searchable: true
+                },
+                { 
+                    data: 'miles', 
+                    name: 'miles',
+                    searchable: true
+                },
                 { 
                     data: 'grand_total', 
                     name: 'grand_total',
-                    render: function(data) {
-                        return `<span class="fw-semibold">$${parseFloat(data).toFixed(2)}</span>`;
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `<span class="fw-semibold">$${parseFloat(data).toFixed(2)}</span>`;
+                        }
+                        return data;
                     }
                 },
                 { 
                     data: 'assigned_agent_company_name', 
                     name: 'assigned_agent_company_name',
+                    searchable: true,
                     render: function(data) {
                         return data || 'N/A';
                     }
@@ -1354,16 +1335,21 @@
                 { 
                     data: 'status', 
                     name: 'status',
-                    render: function(data) {
-                        const statusClass = {
-                            'completed': 'bg-success-subtle text-success',
-                            'in_progress': 'bg-info-subtle text-info',
-                            'cancelled': 'bg-danger-subtle text-danger',
-                            'pending': 'bg-warning-subtle text-warning'
-                        }[data] || 'bg-warning-subtle text-warning';
-                        return `<span class="badge ${statusClass} rounded-pill px-3 status-badge" data-old-status="${data}">
-                            ${data.charAt(0).toUpperCase() + data.slice(1)}
-                        </span>`;
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            const statusClass = {
+                                'completed': 'bg-success-subtle text-success',
+                                'in_progress': 'bg-info-subtle text-info',
+                                'cancelled': 'bg-danger-subtle text-danger',
+                                'pending': 'bg-warning-subtle text-warning'
+                            }[data] || 'bg-warning-subtle text-warning';
+                            return `<span class="badge ${statusClass} rounded-pill px-3 status-badge" data-old-status="${data}">
+                                ${data.charAt(0).toUpperCase() + data.slice(1)}
+                            </span>`;
+                        }
+                        // For searching, return the raw status value
+                        return data;
                     }
                 },
                 {
@@ -1417,7 +1403,7 @@
             pagingType: 'simple_numbers',
             language: {
                 search: "_INPUT_",
-                searchPlaceholder: "Search transactions...",
+                searchPlaceholder: "Search all columns...",
                 lengthMenu: "Show _MENU_ entries",
                 info: "Showing _START_ to _END_ of _TOTAL_ entries",
                 infoEmpty: "Showing 0 to 0 of 0 entries",
@@ -1428,7 +1414,20 @@
             },
             dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
                  "<'row'<'col-sm-12'tr>>" +
-                 "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+                 "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            initComplete: function() {
+                // Remove any previous keyup and input events
+                $('.dataTables_filter input').off('keyup input');
+                // Debounced search
+                let debounceTimer;
+                $('.dataTables_filter input').on('input', function() {
+                    clearTimeout(debounceTimer);
+                    const input = this;
+                    debounceTimer = setTimeout(function() {
+                        table.search(input.value).draw();
+                    }, 1000); // 1000ms debounce
+                });
+            }
         });
 
         // Perform silent sync after DataTable initialization

@@ -59,7 +59,13 @@ Route::middleware(['auth'])->group(function () {
         return view('registercustomer');
     });
 
-    Route::get('/loadboard', [TransactionController::class, 'index'])->name('loadboard.index');
+    Route::get('/loadboard', [TransactionController::class, 'index'])
+        ->name('loadboard.index')
+        ->middleware('not.agent');
+
+    Route::get('/loadboard-agent', [TransactionController::class, 'index_agent'])
+        ->name('loadboard-agent.index_agent')
+        ->middleware('agent');
 
     Route::get('/leads', function () {
         return view('leads');
@@ -149,10 +155,6 @@ Route::middleware(['auth'])->group(function () {
         return view('calendar');
     });
 
-    Route::get('/profile', function () {
-        return view('profile');
-    });
-
     Route::get('/customer', function () {
         return view('customer.customer');
     });
@@ -180,7 +182,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Password Update Route (for logged-in users)
     Route::post('/password/update', [AuthController::class, 'updatePassword'])->name('password.update');
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    
+    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/update-photo', [ProfileController::class, 'updatePhoto'])->name('profile.update.photo');
 
@@ -194,12 +198,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/leads/{id}/update-inventory', [TransactionController::class, 'updateInventoryItem'])->name('leads.update-inventory');
     Route::get('/leads/{id}/added-inventory-items', [TransactionController::class, 'getAddedInventoryItems'])->name('leads.added-inventory-items');
 
-    Route::get('/loadboard', [TransactionController::class, 'index']);
     Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
     Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');
     Route::get('/transactions/get-counts', [TransactionController::class, 'getCounts'])->name('transactions.getCounts');
+    Route::post('/transactions/{transactionId}/accept', [TransactionController::class, 'acceptJob'])->name('transactions.accept');
+    Route::post('/transactions/{transactionId}/decline', [TransactionController::class, 'declineJob'])->name('transactions.decline');
 
     Route::post('/transactions/datatable', [TransactionController::class, 'datatable'])->name('transactions.datatable');
+    Route::post('/transactions/agent-datatable', [TransactionController::class, 'agentDatatable'])->name('transactions.agent-datatable');
 
     Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
     Route::post('/email-templates', [EmailTemplateController::class, 'store'])->name('email-templates.store');
@@ -219,6 +225,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/salesreps/{salesRep}', [SalesRepController::class, 'show'])->name('salesreps.show');
     Route::put('/salesreps/{salesRep}', [SalesRepController::class, 'update'])->name('salesreps.update');
     Route::delete('/salesreps/{salesRep}', [SalesRepController::class, 'destroy'])->name('salesreps.destroy');
+    Route::post('/salesreps/{id}/reset-password', [SalesRepController::class, 'resetPassword'])->name('salesreps.reset-password');
 
     Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart-data');
 });

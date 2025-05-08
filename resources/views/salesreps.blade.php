@@ -209,6 +209,9 @@
                                                         data-id="{{ $salesRep->id }}">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-sm btn-warning reset-password" data-id="{{ $salesRep->id }}" title="Reset Password">
+                                                    <i class="fas fa-key"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -251,7 +254,11 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-label">Position <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="position" required>
+                                <select class="form-control" name="position" required>
+                                    <option value="">Select Position</option>
+                                    <option value="Driver">Driver</option>
+                                    <option value="Sales Representative">Sales Representative</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -279,7 +286,8 @@
                                     <option value="">Select Company</option>
                                     @if(Auth::user()->privilege === 'agent')
                                         @php
-                                            $agent = \App\Models\Agent::where('company_name', Auth::user()->last_name)->first();
+                                            $agentId = Auth::user()->agent_id;
+                                            $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
                                         @endphp
                                         <option value="{{ $agent?->id ?? '' }}" selected>{{ $agent?->company_name ?? 'Unknown Company' }}</option>
                                     @else
@@ -330,7 +338,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Position</label>
-                        <input type="text" class="form-control" name="position" required>
+                        <select class="form-control" name="position" required>
+                            <option value="">Select Position</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Sales Representative">Sales Representative</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Office</label>
@@ -350,7 +362,8 @@
                             <option value="">Select Company</option>
                             @if(Auth::user()->privilege === 'agent')
                                 @php
-                                    $agent = \App\Models\Agent::where('company_name', Auth::user()->last_name)->first();
+                                    $agentId = Auth::user()->agent_id;
+                                    $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
                                 @endphp
                                 <option value="{{ $agent?->id ?? '' }}" selected>{{ $agent?->company_name ?? 'Unknown Company' }}</option>
                             @else
@@ -405,10 +418,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Remove existing event listeners first
         $('.edit-sales-rep').off('click');
         $('.delete-sales-rep').off('click');
+        $('.reset-password').off('click');
         
         // Attach new event listeners
         $('.edit-sales-rep').on('click', handleEdit);
         $('.delete-sales-rep').on('click', handleDelete);
+        $('.reset-password').on('click', handleResetPassword);
     }
 
     // Handle edit button click
@@ -511,6 +526,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Handle reset password button click
+    function handleResetPassword() {
+        const salesRepId = $(this).data('id');
+        Swal.fire({
+            title: 'Reset Password?',
+            text: 'This will reset the password to 12345678.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, reset it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show waiting/loading Swal
+                Swal.fire({
+                    title: 'Resetting Password...',
+                    text: 'Please wait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                $.ajax({
+                    url: `/salesreps/${salesRepId}/reset-password`,
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        Swal.fire('Success!', response.message, 'success');
+                    },
+                    error: function() {
+                        Swal.fire('Error!', 'Failed to reset password.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
     // Handle edit form submission
     document.getElementById('editSalesRepForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -556,6 +608,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button type="button" class="btn btn-sm btn-danger delete-sales-rep" 
                                 data-id="${data.salesRep.id}">
                             <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-warning reset-password" data-id="${data.salesRep.id}" title="Reset Password">
+                            <i class="fas fa-key"></i>
                         </button>
                     </div>`
                 ]).draw();
@@ -631,6 +686,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button type="button" class="btn btn-sm btn-danger delete-sales-rep" 
                                 data-id="${data.salesRep.id}">
                             <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-warning reset-password" data-id="${data.salesRep.id}" title="Reset Password">
+                            <i class="fas fa-key"></i>
                         </button>
                     </div>`
                 ]).draw().node();

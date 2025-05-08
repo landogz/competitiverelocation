@@ -31,7 +31,8 @@ class User extends Authenticatable
         'state',
         'zip_code',
         'phone',
-        'bio'
+        'bio',
+        'agent_id'
     ];
 
     /**

@@ -64,7 +64,10 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="last_name" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ $user->last_name }}">
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ $user->last_name }}" {{ $user->privilege === 'agent' ? 'readonly' : '' }}>
+                                @if($user->privilege === 'agent')
+                                    <small class="text-muted">Last name cannot be changed for agent accounts as it is linked to your company name.</small>
+                                @endif
                             </div>
                         </div>
     
@@ -156,6 +159,11 @@
 .form-control:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-control:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
 }
 
 .card {
@@ -290,7 +298,7 @@ $(document).ready(function() {
                 
                 Swal.fire({
                     icon: 'error',
-                    title: 'Oops...',
+                    title: 'Error',
                     text: errorMessage,
                     confirmButtonText: 'Try Again'
                 });

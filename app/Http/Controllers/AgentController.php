@@ -141,7 +141,7 @@ class AgentController extends Controller
                     }
                 }
                 
-                // Create new agent
+                // Create new agent and link to user
                 $agent = Agent::create([
                     'external_id' => $apiAgent['id'],
                     'company_name' => $apiAgent['company_name'],
@@ -168,6 +168,21 @@ class AgentController extends Controller
                     'truck_image' => $apiAgent['truck_image'] ?? null,
                     'unique_url' => 'https://competitiverelocation.com/delivery-services/?agent=' . $apiAgent['id'] . '&ref=' . str_replace(' ', '-', strtolower($apiAgent['company_name']))
                 ]);
+                
+                // Now link user to agent
+                $user->agent_id = $agent->id;
+                $user->save();
+
+                // Send welcome email to the agent
+                if (!empty($agent->email)) {
+                    \Mail::to($agent->email)->send(
+                        new \App\Mail\SalesRepWelcomeMail(
+                            $agent->email,
+                            '12345678', // or your actual default password logic
+                            $agent->company_name
+                        )
+                    );
+                }
                 
                 $newAgentsCount++;
             }

@@ -232,7 +232,7 @@
                                 </div>
                                 <div class="dropdown-divider mt-0"></div>
                                 <small class="text-muted px-2 pb-1 d-block">Account</small>
-                                <a class="dropdown-item" href="{{ url('/profile') }}"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
+                                <a class="dropdown-item" id="profileLink" href="{{ route('user.profile') }}"><i class="las la-user fs-18 me-1 align-text-bottom"></i> Profile</a>
                                 {{-- <a class="dropdown-item" href="pages-faq.html"><i class="las la-wallet fs-18 me-1 align-text-bottom"></i> Earning</a> --}}
                                 <small class="text-muted px-2 py-1 d-block">Settings</small>                        
                                 {{-- <a class="dropdown-item" href="pages-profile.html"><i class="las la-cog fs-18 me-1 align-text-bottom"></i>Account Settings</a> --}}
@@ -291,7 +291,7 @@
                         </li> --}}
 
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/loadboard') }}">
+                            <a class="nav-link" href="{{ Auth::user()->privilege === 'agent' ? url('/loadboard-agent') : url('/loadboard') }}">
                                 <i class="fas fa-car menu-icon"></i>
                                 <span>Load Board</span>
                             </a>
@@ -592,5 +592,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    const copyBtn = document.getElementById('copyAgentUrlBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            navigator.clipboard.writeText(url).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Copied!',
+                    text: 'Agent URL copied to clipboard',
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+            });
+        });
+    }
+
+    const profileLink = document.getElementById('profileLink');
+    if (profileLink) {
+        profileLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = this.getAttribute('href');
+        });
+    }
 });
 </script>

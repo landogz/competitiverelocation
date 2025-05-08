@@ -6,11 +6,63 @@
 <!-- Add custom dashboard CSS -->
 <link href="{{ asset('assets/css/dashboard.css') }}" rel="stylesheet">
 
+@php
+    $isAgent = Auth::user()->privilege === 'agent';
+    $agent = $isAgent && Auth::user()->agent_id ? \App\Models\Agent::find(Auth::user()->agent_id) : null;
+    $companyName = $agent ? $agent->company_name : null;
+    $agentUrl = $agent ? $agent->unique_url : null;
+@endphp
+
+@if(Auth::check() && Auth::user()->privilege === 'agent')
+    @php
+        $agent = \App\Models\Agent::find(Auth::user()->agent_id);
+        $agentUrl = $agent ? $agent->unique_url : null;
+    @endphp
+    @if($agentUrl)
+        <div class="d-flex flex-column align-items-center my-4">
+            <h5 class="fw-bold mb-2">Your Unique URL</h5>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2">Copy your link and share it anywhere</span>
+                <button class="btn btn-primary btn-sm" id="copyAgentUrlDashboard">Copy Link</button>
+            </div>
+            <div style="width:100%; max-width:700px;">
+                <input type="text" id="agentUrlInput" class="form-control text-center" value="{{ $agentUrl }}" readonly style="background:#fafbfc; border:2px dashed #ddd; font-size:1.1em; font-weight:500; padding:18px 8px;" />
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyBtn = document.getElementById('copyAgentUrlDashboard');
+            const urlInput = document.getElementById('agentUrlInput');
+            if (copyBtn && urlInput) {
+                copyBtn.addEventListener('click', function() {
+                    urlInput.select();
+                    urlInput.setSelectionRange(0, 99999);
+                    navigator.clipboard.writeText(urlInput.value).then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Copied!',
+                            text: 'Agent URL copied to clipboard',
+                            timer: 1200,
+                            showConfirmButton: false
+                        });
+                    });
+                });
+            }
+        });
+        </script>
+    @endif
+@endif
+
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-12">
                     <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
-                        <h4 class="page-title">Dashboard</h4>                            
+                        <!-- <h4 class="page-title">Dashboard</h4>                             -->
+                        <div class="d-flex align-items-center">
+                            <!-- <a href="{{ route('user.profile') }}" class="btn btn-primary btn-sm">
+                                <i class="las la-user me-1"></i> My Profile
+                            </a> -->
+                        </div>
                     </div><!--end page-title-box-->
                 </div><!--end col-->
             </div><!--end row-->
@@ -24,21 +76,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Deliveries</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "DELIVERY"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "DELIVERY"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "DELIVERY"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "DELIVERY"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -66,21 +128,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Removals</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "REMOVAL"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "REMOVAL"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "REMOVAL"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "REMOVAL"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -108,21 +180,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Moving Service</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "MOVING SERVICES"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "MOVING SERVICES"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "MOVING SERVICES"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "MOVING SERVICES"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -150,21 +232,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total College Move</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "COLLEGE ROOM MOVE"%')
+                                                ->count();
+                                            $lastMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "COLLEGE ROOM MOVE"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "COLLEGE ROOM MOVE"%')
-                                                ->sum('grand_total');
+                                                ->count();
                                             $lastMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "COLLEGE ROOM MOVE"%')
-                                                ->sum('grand_total');
-                                            $percentageChange = $lastMonthTotal > 0 ? (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                                ->count();
+                                        }
+                                        $percentageChange = $lastMonthTotal > 0 ? (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -194,21 +286,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Mattress Removal</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "MATTRESS REMOVAL"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "MATTRESS REMOVAL"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "MATTRESS REMOVAL"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "MATTRESS REMOVAL"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -237,17 +339,21 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Load Board</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)->where('assigned_agent', $agent->id)->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->where('assigned_agent', $agent->id)->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -274,21 +380,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Cleaning Service</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "CLEANING SERVICES"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "CLEANING SERVICES"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "CLEANING SERVICES"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "CLEANING SERVICES"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -316,21 +432,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Re-Arranging Service</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "RE ARRANGING SERVICE"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "RE ARRANGING SERVICE"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "RE ARRANGING SERVICE"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "RE ARRANGING SERVICE"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -360,21 +486,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Exterminator, Washing <br>and Replacing moving blankets</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "Exterminator, Washing and Replacing Moving Blankets"%')
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
+                                                ->where('assigned_agent', $agent->id)
+                                                ->where('services', 'like', '%"name": "Exterminator, Washing and Replacing Moving Blankets"%')
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)
                                                 ->where('services', 'like', '%"name": "Exterminator, Washing and Replacing Moving Blankets"%')
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)
                                                 ->where('services', 'like', '%"name": "Exterminator, Washing and Replacing Moving Blankets"%')
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -402,17 +538,21 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Sales Reps</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\SalesRep::whereMonth('created_at', now()->month)->where('agent_id', $agent->id)->count();
+                                            $lastMonthCount = \App\Models\SalesRep::whereMonth('created_at', now()->subMonth()->month)->where('agent_id', $agent->id)->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\SalesRep::whereMonth('created_at', now()->month)->count();
                                             $lastMonthCount = \App\Models\SalesRep::whereMonth('created_at', now()->subMonth()->month)->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -440,17 +580,21 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Call Center</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Lead::whereMonth('created_at', now()->month)->where('company', $agent->company_name)->count();
+                                            $lastMonthCount = \App\Models\Lead::whereMonth('created_at', now()->subMonth()->month)->where('company', $agent->company_name)->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Lead::whereMonth('created_at', now()->month)->count();
                                             $lastMonthCount = \App\Models\Lead::whereMonth('created_at', now()->subMonth()->month)->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -478,17 +622,21 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Sales</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->month)->where('assigned_agent', $agent->id)->sum('grand_total');
+                                            $lastMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->where('assigned_agent', $agent->id)->sum('grand_total');
+                                        } else {
                                             $currentMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->month)->sum('grand_total');
                                             $lastMonthTotal = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->sum('grand_total');
-                                            $percentageChange = $lastMonthTotal > 0 ? (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthTotal > 0 ? (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -518,21 +666,31 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Completed Jobs</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::where('status', 'completed')
+                                                ->where('assigned_agent', $agent->id)
+                                                ->whereMonth('created_at', now()->month)
+                                                ->count();
+                                            $lastMonthCount = \App\Models\Transaction::where('status', 'completed')
+                                                ->where('assigned_agent', $agent->id)
+                                                ->whereMonth('created_at', now()->subMonth()->month)
+                                                ->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::where('status', 'completed')
                                                 ->whereMonth('created_at', now()->month)
                                                 ->count();
                                             $lastMonthCount = \App\Models\Transaction::where('status', 'completed')
                                                 ->whereMonth('created_at', now()->subMonth()->month)
                                                 ->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -560,17 +718,21 @@
                                 </div>
                                 <div class="flex-grow-1 ms-2 text-truncate">
                                     <p class="text-dark mb-0 fw-semibold fs-14">Total Load Board</p>
-                                    <p class="mb-0 text-truncate text-muted">
-                                        @php
+                                    @php
+                                        if ($isAgent && $agent) {
+                                            $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)->where('assigned_agent', $agent->id)->count();
+                                            $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->where('assigned_agent', $agent->id)->count();
+                                        } else {
                                             $currentMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->month)->count();
                                             $lastMonthCount = \App\Models\Transaction::whereMonth('created_at', now()->subMonth()->month)->count();
-                                            $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
-                                            $isIncrease = $percentageChange > 0;
-                                        @endphp
-                                        <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
-                                        {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
-                                    </p>
-                                </div><!--end media-body-->
+                                        }
+                                        $percentageChange = $lastMonthCount > 0 ? (($currentMonthCount - $lastMonthCount) / $lastMonthCount) * 100 : 0;
+                                        $isIncrease = $percentageChange > 0;
+                                    @endphp
+                                    <span class="text-{{ $isIncrease ? 'success' : 'danger' }}">{{ number_format(abs($percentageChange), 1) }}%</span>
+                                    {{ $isIncrease ? 'Increase' : 'Decrease' }} from last month
+                                </p>
+                            </div><!--end media-body-->
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
@@ -732,12 +894,17 @@
                                     $data = [];
                                     $categories = [];
                                     
+                                    // Base query with agent filter and completed status
+                                    $baseQuery = \App\Models\Transaction::query()->where('status', 'completed');
+                                    if ($isAgent && $agent) {
+                                        $baseQuery->where('assigned_agent', $agent->id);
+                                    }
+                                    
                                     switch ($period) {
                                         case 'today':
                                             $startDate = now()->startOfDay();
                                             $endDate = now()->endOfDay();
-                                            $transactions = \App\Models\Transaction::whereBetween('created_at', [$startDate, $endDate])
-                                                ->get();
+                                            $transactions = $baseQuery->whereBetween('created_at', [$startDate, $endDate])->get();
                                             $total = $transactions->sum('grand_total');
                                             $count = $transactions->count();
                                             $average = $count > 0 ? $total / $count : 0;
@@ -748,7 +915,7 @@
                                         case 'last_week':
                                             $startDate = now()->subWeek()->startOfDay();
                                             $endDate = now()->endOfDay();
-                                            $transactions = \App\Models\Transaction::whereBetween('created_at', [$startDate, $endDate])
+                                            $transactions = $baseQuery->whereBetween('created_at', [$startDate, $endDate])
                                                 ->get()
                                                 ->groupBy(function($date) {
                                                     return \Carbon\Carbon::parse($date->created_at)->format('D');
@@ -768,7 +935,7 @@
                                         case 'last_month':
                                             $startDate = now()->subMonth()->startOfMonth();
                                             $endDate = now()->subMonth()->endOfMonth();
-                                            $transactions = \App\Models\Transaction::whereBetween('created_at', [$startDate, $endDate])
+                                            $transactions = $baseQuery->whereBetween('created_at', [$startDate, $endDate])
                                                 ->get()
                                                 ->groupBy(function($date) {
                                                     return \Carbon\Carbon::parse($date->created_at)->format('M d');
@@ -788,15 +955,15 @@
                                         case 'this_year':
                                         default:
                                             $currentYear = now()->year;
-                                            $data = [];
                                             $categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                                             
                                             for ($month = 1; $month <= 12; $month++) {
-                                                $total = \App\Models\Transaction::whereYear('created_at', $currentYear)
+                                                $monthQuery = clone $baseQuery;
+                                                $total = $monthQuery->whereYear('created_at', $currentYear)
                                                     ->whereMonth('created_at', $month)
                                                     ->sum('grand_total');
                                                 
-                                                $count = \App\Models\Transaction::whereYear('created_at', $currentYear)
+                                                $count = $monthQuery->whereYear('created_at', $currentYear)
                                                     ->whereMonth('created_at', $month)
                                                     ->count();
                                                 
@@ -896,49 +1063,6 @@
              
         </div><!-- container -->
 
-        <!--Start Rightbar-->
-        <!--Start Rightbar/offcanvas-->
-        <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
-            <div class="offcanvas-header border-bottom justify-content-between">
-              <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
-              <button type="button" class="btn-close text-reset p-0 m-0 align-self-center" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-            <div class="offcanvas-body">  
-                <h6>Account Settings</h6>
-                <div class="p-2 text-start mt-3">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="settings-switch1">
-                        <label class="form-check-label" for="settings-switch1">Auto updates</label>
-                    </div><!--end form-switch-->
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="settings-switch2" checked>
-                        <label class="form-check-label" for="settings-switch2">Location Permission</label>
-                    </div><!--end form-switch-->
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="settings-switch3">
-                        <label class="form-check-label" for="settings-switch3">Show offline Contacts</label>
-                    </div><!--end form-switch-->
-                </div><!--end /div-->
-                <h6>General Settings</h6>
-                <div class="p-2 text-start mt-3">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="settings-switch4">
-                        <label class="form-check-label" for="settings-switch4">Show me Online</label>
-                    </div><!--end form-switch-->
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" id="settings-switch5" checked>
-                        <label class="form-check-label" for="settings-switch5">Status visible to all</label>
-                    </div><!--end form-switch-->
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="settings-switch6">
-                        <label class="form-check-label" for="settings-switch6">Notifications Popup</label>
-                    </div><!--end form-switch-->
-                </div><!--end /div-->               
-            </div><!--end offcanvas-body-->
-        </div>
-        <!--end Rightbar/offcanvas-->
-        <!--end Rightbar-->
-        <!--Start Footer-->
 
 @endsection
 

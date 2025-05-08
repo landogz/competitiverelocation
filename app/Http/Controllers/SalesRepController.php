@@ -12,8 +12,9 @@ class SalesRepController extends Controller
     public function index()
     {
         if (auth()->user()->privilege === 'agent') {
-            // Get the agent's ID from the agents table based on the user's last_name (company name)
-            $agent = Agent::where('company_name', auth()->user()->last_name)->first();
+            // Get the agent's ID from the users table
+            $agentId = auth()->user()->agent_id;
+            $agent = $agentId ? Agent::find($agentId) : null;
             
             if ($agent) {
                 $salesReps = SalesRep::with('agent')
@@ -58,7 +59,7 @@ class SalesRepController extends Controller
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'password' => bcrypt('12345678'),
-                'privilege' => 'sales_rep',
+                'privilege' => 'agent',
                 'agent_id' => $request->agent_id
             ]);
 
@@ -76,6 +77,11 @@ class SalesRepController extends Controller
 
             // Commit transaction
             \DB::commit();
+
+            // Send welcome email
+            $agent = \App\Models\Agent::find($request->agent_id);
+            $companyName = $agent ? $agent->company_name : null;
+            \Mail::to($request->email)->send(new \App\Mail\SalesRepWelcomeMail($request->email, '12345678', $companyName));
 
             return response()->json([
                 'success' => true,
@@ -161,5 +167,23 @@ class SalesRepController extends Controller
     {
         $agents = Agent::select('id', 'company_name')->get();
         return response()->json($agents);
+    }
+
+    public function resetPassword($id)
+    {
+        $salesRep = \App\Models\SalesRep::with('user', 'agent')->findOrFail($id);
+        if ($salesRep->user) {
+            $salesRep->user->password = bcrypt('12345678');
+            $salesRep->user->save();
+
+            // Send password reset success email
+            $email = $salesRep->user->email;
+            $company = $salesRep->agent ? $salesRep->agent->company_name : null;
+            \Mail::to($email)->send(new \App\Mail\SalesRepPasswordResetMail($email, '12345678', $company));
+
+            return response()->json(['success' => true, 'message' => 'Password reset to 12345678']);
+        } else {
+            return response()->json(['success' => false, 'message' => 'No user account associated with this sales rep.'], 404);
+        }
     }
 } 

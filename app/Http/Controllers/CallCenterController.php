@@ -244,7 +244,11 @@ class CallCenterController extends Controller
 
         // Apply privilege-based filtering
         if (Auth::user()->privilege === 'agent') {
-            $query->where('company', Auth::user()->last_name);
+            $agentId = Auth::user()->agent_id;
+            $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
+            if ($agent) {
+                $query->where('company', $agent->company_name);
+            }
         }
 
         // Apply search filter

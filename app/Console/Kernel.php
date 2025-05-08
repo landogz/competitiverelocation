@@ -17,6 +17,11 @@ class Kernel extends ConsoleKernel
                 ->at('00:00')
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/agents-sync.log'));
+
+        // Check for available jobs daily at 9 AM
+        $schedule->command('jobs:check-available')
+                ->dailyAt('09:00')
+                ->timezone('America/New_York');
     }
 
     /**
