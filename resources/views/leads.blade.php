@@ -2,8 +2,65 @@
 
 @section('title', 'Dashboard')
 
-@section('content')
+<!-- Required Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<!-- Quill Editor CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<!-- Select2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- DataTables CSS and JS -->
+<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<!-- Moment.js for date formatting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 
+<style>
+    
+    
+    .ql-editor p {
+        margin: 0 0 10px 0 !important;
+        line-height: 1.4 !important;
+    }
+    .ql-editor {
+        line-height: 1.4 !important;
+    }
+
+    /* Quill Editor Background Color */
+    .ql-container {
+        background-color: #ffffff !important;
+    }
+
+    .ql-toolbar {
+        background-color: #f8f9fa !important;
+        border-top-left-radius: 8px !important;
+        border-top-right-radius: 8px !important;
+    }
+
+    .ql-editor {
+        background-color: #ffffff !important;
+        min-height: 200px !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    .ql-container.ql-snow {
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Make Quill editor adjustable in height */
+    .ql-container {
+        min-height: 400px;
+        max-height: 600px;
+        resize: vertical;
+        overflow: auto;
+    }
+    </style>
+@section('content')
+<meta name="transaction-id" content="{{ $transaction->id }}">
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
@@ -137,7 +194,7 @@
                                             <div class="mb-3">
                                                 <label class="form-label">Pictures of Removal Items / Receipt</label>
                                                 @if(!isset($transaction))
-                                                <button type="button" class="btn rounded-pill btn-success btn-xl mb-2" onclick="document.getElementById('image_upload').click()">Click here to open images</button>
+                                                <button type="button" class="btn rounded-pill btn-success btn-xl mb-2" id="sendMailBtn" data-transaction-id="{{ $transaction->id ?? '' }}">Send Mail</button>
                                                 <input type="file" id="image_upload" name="uploaded_image" style="display: none;" multiple>
                                                 @endif
                                                 @if(isset($transaction) && $transaction->uploaded_image)
@@ -352,30 +409,28 @@
 
                     <!-- Tab panes -->
                     <div class="tab-content">
-                        <div class="tab-pane p-0  pt-3 active show" id="sentemails" role="tabpanel">                            
-                            <button type="button" class="btn rounded-pill btn-success btn-xl mb-2">Send Mail</button>
-                            <p class="mb-0 text-muted">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered mb-0 table-centered">
-                                        <thead class="table-light">
+                        <div class="tab-pane p-0 pt-3 active show" id="sentemails" role="tabpanel">
+                            
+                        <button type="button" class="btn rounded-pill btn-success btn-xl mb-2" id="sendMailBtn" data-transaction-id="{{ $transaction->id ?? '' }}">
+                                    <i class="fas fa-envelope me-2"></i>Send Email
+                                </button>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0 table-centered" id="sentEmailsTable">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th>Trans #</th>
-                                            <th>Message</th>
-                                            <th class="text-center">Date</th>
-                                            <th class="text-center" style="width:50px;">Status</th>
+                                            <th>Date</th>
+                                            <th>Subject</th>
+                                            <!-- <th>Recipient</th> -->
+                                            <th>Template</th>
+                                            <th class="text-center">Status</th>
                                         </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr>
-                                            <td>#124781</td>   
-                                            <td>test</td>                                
-                                            <td>25/11/2018</td>
-                                            <td><span class="badge bg-success">Approved</span></td>
-                                        </tr>
-                                        </tbody>
-                                    </table><!--end /table-->
-                                </div>
-                            </p>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <div class="tab-pane p-0 pt-3" id="payments" role="tabpanel">
                                     <button type="button" class="btn rounded-pill btn-success btn-xl mb-2">Add Payment</button>
@@ -918,470 +973,330 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 <div id="toast-container"></div>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Only run if editing an existing transaction
-    if (!window.location.pathname.match(/\/leads\/(\d+)\/edit/)) return;
-    const transactionId = window.location.pathname.match(/\/leads\/(\d+)\/edit/)[1];
-    
-    // Store inventory item data for calculations
-    const inventoryItems = {};
-    
-    // Initialize inventory items data from the transaction's inventory items
-    document.querySelectorAll('.quantity-input').forEach(function(input) {
-        const itemId = input.getAttribute('data-item-id');
-        const row = input.closest('tr');
-        const itemName = row.querySelector('td:first-child').textContent.trim();
-        const categoryName = row.querySelector('td:nth-child(2)').textContent.trim();
-        const cubicFt = parseFloat(row.querySelector('td:nth-child(3)').textContent) || 0;
-        const quantity = parseInt(input.value) || 0;
-        
-        // Always add to inventoryItems, regardless of quantity
-        inventoryItems[itemId] = {
-            name: itemName,
-            category: categoryName,
-            cubicFt: cubicFt,
-            quantity: quantity
+// Define sendEmail function globally
+let currentTransaction = {};
+let quillEmailEditor;
+let sentEmailsTable;
+
+function reloadSentEmailsTable() {
+    if (sentEmailsTable) {
+        sentEmailsTable.ajax.reload();
+    }
+}
+
+function sendEmail(transactionId) {
+    if (!transactionId) {
+        showToast('No transaction ID found', 'error');
+        return;
+    }
+
+    // Get transaction data
+    fetch(`/leads/${transactionId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Flatten if nested under 'data' property
+            if (data && typeof data === 'object' && data.data && typeof data.data === 'object') {
+                data = data.data;
+            }
+            currentTransaction = data; // Store for placeholder replacement
+            document.getElementById('emailRecipient').value = data.email;
+            document.getElementById('emailSubject').value = '';
+            document.getElementById('emailMessage').value = '';
+            document.getElementById('emailTemplateSelect').value = '';
+            quillEmailEditor.root.innerHTML = '';
+            
+            // Show modal using Bootstrap 5
+            const modal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error loading transaction data', 'error');
+        });
+}
+
+// Helper: Replace placeholders in a string with transaction data
+function replacePlaceholders(str, data) {
+    if (!str) return '';
+    return str.replace(/\{([^}]+)\}/g, function(match, key) {
+        // Try direct key
+        if (typeof data[key] !== 'undefined') return data[key];
+        // Try snake_case to camelCase
+        const camelKey = key.replace(/_([a-z])/g, g => g[1].toUpperCase());
+        if (typeof data[camelKey] !== 'undefined') return data[camelKey];
+        // Try nested keys (e.g., data.pickup.location)
+        const keys = key.split('.');
+        let value = data;
+        for (const k of keys) {
+            if (value == null) return match;
+            value = value[k];
+        }
+        return (value !== undefined && value !== null) ? value : match;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get transaction ID from the page
+    const transactionId = document.querySelector('meta[name="transaction-id"]')?.content;
+    if (transactionId) {
+        currentTransaction.id = transactionId;
+    }
+
+    // Initialize DataTable for sent emails
+    sentEmailsTable = $('#sentEmailsTable').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: `/leads/${currentTransaction.id}/sent-emails`,
+            dataSrc: 'data'
+        },
+        columns: [
+            { 
+                data: 'created_at',
+                render: function(data) {
+                    return moment(data).format('MM/DD/YYYY hh:mm A');
+                }
+            },
+            { data: 'subject' },
+            // { data: 'recipient' },
+            { data: 'template.name' },
+            { 
+                data: 'status',
+                render: function(data) {
+                    const statusClass = data === 'sent' ? 'success' : 
+                                     data === 'failed' ? 'danger' : 'warning';
+                    return `<span class="badge bg-${statusClass}">${data}</span>`;
+                }
+            }
+        ],
+        order: [[0, 'desc']], // Sort by date column in descending order
+        pageLength: 10,
+        language: {
+            emptyTable: "No emails sent yet"
+        }
+    });
+
+    // Initialize Quill editor
+    quillEmailEditor = new Quill('#quillEmailEditor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'font': [] }, { 'size': [] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'align': [] }],
+                ['link', 'image', 'video'],
+                ['clean']
+            ]
+        }
+    });
+
+    // Initialize Select2 for email template dropdown
+    if ($.fn.select2) {
+        $('#emailTemplateSelect').select2({
+            dropdownParent: $('#sendEmailModal'),
+            width: '100%',
+            placeholder: 'Select a template',
+            allowClear: true
+        });
+    } else {
+        console.error('Select2 is not loaded properly');
+    }
+
+    // When template is selected, load subject/content and replace placeholders
+    $('#emailTemplateSelect').on('change', function() {
+        const selected = this.selectedOptions[0];
+        if (!selected || !selected.value) {
+            $('#emailSubject').val('');
+            quillEmailEditor.root.innerHTML = '';
+            return;
+        }
+        // Replace placeholders in subject/content
+        const subject = replacePlaceholders(selected.dataset.subject, currentTransaction);
+        const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentTransaction);
+        $('#emailSubject').val(subject);
+        quillEmailEditor.root.innerHTML = content;
+    });
+
+    // Add click event listener to the send email button
+    const sendMailBtn = document.getElementById('sendMailBtn');
+    if (sendMailBtn) {
+        sendMailBtn.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            if (!transactionId) {
+                showToast('No transaction ID found', 'error');
+                return;
+            }
+
+            // Get transaction data
+            fetch(`/leads/${transactionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Flatten if nested under 'data' property
+                    if (data && typeof data === 'object' && data.data && typeof data.data === 'object') {
+                        data = data.data;
+                    }
+                    currentTransaction = data; // Store for placeholder replacement
+                    document.getElementById('emailRecipient').value = data.email;
+                    document.getElementById('emailSubject').value = '';
+                    document.getElementById('emailMessage').value = '';
+                    document.getElementById('emailTemplateSelect').value = '';
+                    quillEmailEditor.root.innerHTML = '';
+                    
+                    // Show modal using Bootstrap 5
+                    const modal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error loading transaction data', 'error');
+                });
+        });
+    }
+
+    // Handle send email button click
+    document.getElementById('sendEmailBtn').addEventListener('click', function() {
+        const transactionId = currentTransaction.id;
+        const formData = {
+            recipient: document.getElementById('emailRecipient').value,
+            subject: document.getElementById('emailSubject').value,
+            message: quillEmailEditor.root.innerHTML,
+            template_id: document.getElementById('emailTemplateSelect').value,
+            _token: document.querySelector('meta[name="csrf-token"]').content
         };
-    });
-    
-    // Load added inventory items from the server
-    function loadAddedInventoryItems() {
-        fetch(`/leads/${transactionId}/added-inventory-items`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Clear the added items table
-                    const addedItemsTable = document.getElementById('added-inventory-items');
-                    if (!addedItemsTable) {
-                        console.error('Added inventory items table not found');
-                        return;
-                    }
-                    addedItemsTable.innerHTML = '';
-                    
-                    // Calculate totals
-                    let totalVolume = 0;
-                    let totalWeight = 0;
-                    
-                    // Add rows to the table
-                    data.data.forEach(item => {
-                        totalVolume += item.total_volume;
-                        totalWeight += item.total_volume * 10; // Assuming weight is volume * 10
-                        
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${item.name}</td>
-                            <td>${item.category}</td>
-                            <td>${parseFloat(item.cubic_ft).toFixed(2)}</td>
-                            <td>${item.quantity}</td>
-                            <td>${parseFloat(item.total_volume).toFixed(2)}</td>
-                        `;
-                        addedItemsTable.appendChild(row);
-                    });
-                    
-                    // Update the total fields
-                    const totalVolumeInput = document.getElementById('total_volume');
-                    const totalWeightInput = document.getElementById('total_weight');
-                    
-                    if (totalVolumeInput) totalVolumeInput.value = totalVolume.toFixed(2);
-                    if (totalWeightInput) totalWeightInput.value = totalWeight.toFixed(2);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading added inventory items:', error);
-                showToast('Error loading inventory items', 'error');
-            });
-    }
-    
-    // Initial load of added inventory items
-    loadAddedInventoryItems();
-    
-    // Handle inventory item quantity changes
-    const quantityInputs = document.querySelectorAll('.quantity-input');
-    quantityInputs.forEach(function(input) {
-        input.addEventListener('change', function() {
-            const itemId = this.getAttribute('data-item-id');
-            const quantity = parseInt(this.value) || 0;
-            
-            // Update the stored quantity
-            if (!inventoryItems[itemId]) {
-                const row = this.closest('tr');
-                const itemName = row.querySelector('td:first-child').textContent.trim();
-                const categoryName = row.querySelector('td:nth-child(2)').textContent.trim();
-                const cubicFt = parseFloat(row.querySelector('td:nth-child(3)').textContent) || 0;
-                
-                inventoryItems[itemId] = {
-                    name: itemName,
-                    category: categoryName,
-                    cubicFt: cubicFt,
-                    quantity: quantity
-                };
-            } else {
-                inventoryItems[itemId].quantity = quantity;
-            }
-            
-            // Save to server
-            fetch(`/leads/${transactionId}/update-inventory`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                },
-                body: JSON.stringify({ 
-                    item_id: itemId, 
-                    quantity: quantity 
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Inventory updated');
-                    // Reload the added inventory items
-                    loadAddedInventoryItems();
-                }
-            })
-            .catch(error => {
-                console.error('Error updating inventory:', error);
-                showToast('Error updating inventory', 'error');
-            });
+
+        // Show loading state
+        Swal.fire({
+            title: 'Sending Email...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
         });
-    });
 
-    // Add event listener for modal close
-    const inventoryModal = document.getElementById('setinventory');
-    if (inventoryModal) {
-        inventoryModal.addEventListener('hidden.bs.modal', function () {
-            // Reload the added inventory items when modal is closed
-            loadAddedInventoryItems();
-        });
-    }
-
-    // Handle Lead Information and Contact Info dropdown changes
-    const leadSourceSelect = document.getElementById('lead_source');
-    const leadTypeSelect = document.getElementById('lead_type');
-    const assignedAgentSelect = document.getElementById('assigned');
-
-    function handleDropdownChange(select, field) {
-        if (select) {
-            select.addEventListener('change', function() {
-                const value = this.value;
-                
-                    fetch(`/leads/${transactionId}/update-field`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                        },
-                    body: JSON.stringify({ 
-                        field: field,
-                        value: value 
-                    })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                    if (data.success) {
-                        showToast('Information updated successfully');
-                    } else {
-                        showToast('Error updating information', 'error');
+        // Send email
+        fetch(`/leads/${transactionId}/send-email`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        throw new Error(data.message || 'Server error occurred');
+                    } catch (e) {
+                        throw new Error(text || 'Server error occurred');
                     }
-                })
-                .catch(error => {
-                    console.error('Error updating field:', error);
-                    showToast('Error updating information', 'error');
-                    });
                 });
             }
-    }
-
-    // Initialize dropdown handlers
-    handleDropdownChange(leadSourceSelect, 'lead_source');
-    handleDropdownChange(leadTypeSelect, 'lead_type');
-    handleDropdownChange(assignedAgentSelect, 'assigned_agent');
-
-    // Handle Contact Info tab form fields
-    const contactInfoFields = {
-        'service': 'service',
-        'date': 'date',
-        'no_of_items': 'no_of_items',
-        'pickup_location': 'pickup_location',
-        'delivery_location': 'delivery_location',
-        'miles': 'miles',
-        'sales_name': 'sales_name',
-        'sales_email': 'sales_email',
-        'sales_location': 'sales_location'
-    };
-
-    // Add change event listeners to all contact info fields
-    Object.entries(contactInfoFields).forEach(([elementId, fieldName]) => {
-        const element = document.querySelector(`[name="${elementId}"]`);
-        if (element) {
-            element.addEventListener('change', function() {
-                let value = this.value;
-                
-                // Special handling for date field
-                if (fieldName === 'date') {
-                    // Ensure the date is in YYYY-MM-DD format
-                    const date = new Date(value);
-                    if (!isNaN(date.getTime())) {
-                        value = date.toISOString().split('T')[0];
-                    } else {
-                        showToast('Invalid date format', 'error');
-                        return;
-                    }
-                }
-                
-                fetch(`/leads/${transactionId}/update-field`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                    },
-                    body: JSON.stringify({ 
-                        field: fieldName,
-                        value: value 
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('Information updated successfully');
-                    } else {
-                        showToast('Error updating information', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating field:', error);
-                    showToast('Error updating information', 'error');
-                });
-            });
-        }
-    });
-
-    // Handle Lead Information fields
-    const leadInfoFields = {
-        'firstname': 'firstname',
-        'lastname': 'lastname',
-        'email': 'email',
-        'phone': 'phone'
-    };
-
-    // Add change event listeners to all lead info fields
-    Object.entries(leadInfoFields).forEach(([elementId, fieldName]) => {
-        const element = document.querySelector(`[name="${elementId}"]`);
-        if (element) {
-            element.addEventListener('change', function() {
-                const value = this.value;
-                
-                fetch(`/leads/${transactionId}/update-field`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                    },
-                    body: JSON.stringify({ 
-                        field: fieldName,
-                        value: value 
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('Information updated successfully');
-                    } else {
-                        showToast('Error updating information', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating field:', error);
-                    showToast('Error updating information', 'error');
-                });
-            });
-        }
-    });
-
-    // Handle insurance fields
-    const insuranceFields = {
-        'insurance_number': 'Insurance Number'
-    };
-
-    Object.entries(insuranceFields).forEach(([fieldName, fieldLabel]) => {
-        const input = document.querySelector(`input[name="${fieldName}"]`);
-        if (input) {
-            input.addEventListener('change', async function() {
-                const newValue = this.value;
-                try {
-                    const response = await fetch(`/leads/${transactionId}/update-field`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                        },
-                        body: JSON.stringify({
-                            field: fieldName,
-                            value: newValue
-                        })
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        showToast(`${fieldLabel} updated successfully`);
-                    } else {
-                        showToast(`Failed to update ${fieldLabel}`, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error updating field:', error);
-                    showToast(`Error updating ${fieldLabel}`, 'error');
-                }
-            });
-        }
-    });
-
-    // Handle insurance document upload
-    const insuranceDocumentInput = document.querySelector('input[name="insurance_document"]');
-    if (insuranceDocumentInput) {
-        insuranceDocumentInput.addEventListener('change', async function() {
-            const file = this.files[0];
-            if (!file) return;
-
-            // Show loading SweetAlert with progress bar
-            Swal.fire({
-                title: 'Uploading Document...',
-                html: `
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                             role="progressbar" 
-                             style="width: 0%" 
-                             id="upload-progress-bar">0%</div>
-                    </div>
-                    <div id="upload-status" class="mt-2">Preparing to upload...</div>
-                `,
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            const formData = new FormData();
-            formData.append('insurance_document', file);
-
-            try {
-                // Use XMLHttpRequest for upload progress
-                const xhr = new XMLHttpRequest();
-                
-                // Track upload progress
-                xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        const progressBar = document.getElementById('upload-progress-bar');
-                        const statusText = document.getElementById('upload-status');
-                        if (progressBar && statusText) {
-                            progressBar.style.width = percentComplete + '%';
-                            progressBar.textContent = Math.round(percentComplete) + '%';
-                            
-                            // Update status text based on progress
-                            if (percentComplete < 100) {
-                                statusText.textContent = `Uploading: ${Math.round(percentComplete)}%`;
-                            } else {
-                                statusText.textContent = 'Processing...';
-                            }
-                        }
-                    }
-                };
-
-                // Create a promise to handle the XHR
-                const uploadPromise = new Promise((resolve, reject) => {
-                    xhr.onload = () => {
-                        if (xhr.status === 200) {
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                resolve(response);
-                            } catch (e) {
-                                reject(new Error('Invalid response format'));
-                            }
-                        } else {
-                            reject(new Error('Upload failed'));
-                        }
-                    };
-                    xhr.onerror = () => reject(new Error('Network error'));
-                    
-                    // Set up and send the request
-                    xhr.open('POST', `/leads/${transactionId}/upload-insurance-document`, true);
-                    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
-                    xhr.send(formData);
-                });
-
-                // Wait for upload to complete
-                const response = await uploadPromise;
-
-                // Show success message
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
-                    text: 'Document successfully uploaded',
+                    text: 'Email sent successfully',
                     timer: 1500,
                     showConfirmButton: false
                 });
-                    
-                    // Update the view document link if it exists
-                    const viewLink = document.querySelector('a[href*="insurance_document"]');
-                    if (viewLink) {
-                    viewLink.href = response.document_url;
-                    } else {
-                        // Create new view link if it doesn't exist
-                        const container = this.parentElement;
-                        const linkDiv = document.createElement('div');
-                        linkDiv.className = 'mt-2';
-                        linkDiv.innerHTML = `
-                        <a href="${response.document_url}" target="_blank" class="btn btn-sm btn-info">
-                                <i class="fas fa-file-alt"></i> View Current Document
-                            </a>
-                        `;
-                        container.appendChild(linkDiv);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sendEmailModal'));
+                if (modal) {
+                    modal.hide();
                 }
-            } catch (error) {
-                // Show error message
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Upload Failed',
-                    text: error.message || 'Error uploading insurance document',
-                    confirmButtonText: 'OK'
-                });
+                
+                // Reset form fields
+                document.getElementById('emailRecipient').value = '';
+                document.getElementById('emailSubject').value = '';
+                document.getElementById('emailTemplateSelect').value = '';
+                if (quillEmailEditor) {
+                    quillEmailEditor.root.innerHTML = '';
+                }
+                
+                // Reload the sent emails table
+                reloadSentEmailsTable();
+            } else {
+                throw new Error(data.message || 'Failed to send email');
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.message || 'Something went wrong. Please try again.'
+            });
         });
-    }
-});
-
-// Toast notification function
-function showToast(message, type = 'success') {
-    const toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) return;
-
-        const toast = document.createElement('div');
-        toast.className = 'custom-toast';
-    
-    const icon = type === 'success' ? '✓' : '⚠️';
-        toast.innerHTML = `
-        <span class="toast-icon">${icon}</span>
-        <span class="toast-message">${message}</span>
-        <button class="toast-close">&times;</button>
-    `;
-
-    toastContainer.appendChild(toast);
-
-    // Add click event to close button
-    const closeBtn = toast.querySelector('.toast-close');
-    closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'toast-out 0.3s forwards';
-            setTimeout(() => toast.remove(), 300);
     });
-
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        toast.style.animation = 'toast-out 0.3s forwards';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+});
 </script>
+
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sendEmailModalLabel"><i class="fas fa-envelope me-2"></i>Send Email</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sendEmailForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailRecipient" class="form-label">To</label>
+                                <input type="email" class="form-control" id="emailRecipient" name="recipient" readonly required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailTemplateSelect" class="form-label">Select Template</label>
+                                <select class="form-select" id="emailTemplateSelect">
+                                    <option value="">Select a template</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" data-subject="{{ $template->subject }}" data-content="{{ htmlspecialchars($template->content) }}">
+                                            {{ $template->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailSubject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="emailSubject" name="subject" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailMessage" class="form-label">Message</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div id="quillEmailEditor" style="height: 250px;"></div>
+                                        <input type="hidden" id="emailMessage" name="message">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @endsection

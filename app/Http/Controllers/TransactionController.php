@@ -289,6 +289,29 @@ class TransactionController extends Controller
                         'last_synced_at' => now(),
                     ];
 
+                    // Handle image data if present
+                    if (isset($data['image_data']) && !empty($data['image_data'])) {
+                        try {
+                            // Decode base64 image data
+                            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $data['image_data']));
+                            
+                            // Generate unique filename
+                            $filename = 'transaction_' . $data['id'] . '_' . time() . '.jpg';
+                            
+                            // Save image to storage
+                            $path = Storage::disk('public')->put('transaction_images/' . $filename, $imageData);
+                            
+                            if ($path) {
+                                $transactionData['uploaded_image'] = 'storage/transaction_images/' . $filename;
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Error processing image for transaction', [
+                                'transaction_id' => $data['id'],
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+
                     Log::info('Creating new transaction', [
                         'transaction_id' => $data['id'],
                         'data' => $transactionData
@@ -301,7 +324,34 @@ class TransactionController extends Controller
                         'transaction_id' => $transaction->transaction_id
                     ]);
 
-                        $created++;
+                    // Send welcome and thank you emails to new customer
+                    if (!empty($transaction->email)) {
+                        // Send welcome email
+                        $welcomeTemplate = \App\Models\EmailTemplate::where('name', 'WELCOME NEW CUSTOMER')->first();
+                        if ($welcomeTemplate) {
+                            \Mail::to($transaction->email)->send(
+                                new \App\Mail\TestEmailTemplate($welcomeTemplate)
+                            );
+                            Log::info('Welcome email sent to customer', [
+                                'email' => $transaction->email,
+                                'transaction_id' => $transaction->transaction_id
+                            ]);
+                        }
+
+                        // Send thank you email
+                        $thankYouTemplate = \App\Models\EmailTemplate::where('name', 'Special Thank you')->first();
+                        if ($thankYouTemplate) {
+                            \Mail::to($transaction->email)->send(
+                                new \App\Mail\TestEmailTemplate($thankYouTemplate)
+                            );
+                            Log::info('Thank you email sent to customer', [
+                                'email' => $transaction->email,
+                                'transaction_id' => $transaction->transaction_id
+                            ]);
+                        }
+                    }
+
+                    $created++;
                 } catch (\Exception $e) {
                     Log::error('Error processing transaction', [
                         'transaction_id' => $data['id'] ?? 'unknown',
@@ -379,7 +429,8 @@ class TransactionController extends Controller
         $leadSources = \App\Models\LeadSource::pluck('title', 'id');
         $agents = \App\Models\Agent::pluck('company_name', 'id');
         $inventoryItems = \App\Models\InventoryItem::with('category')->get();
-        return view('leads', compact('transaction', 'leadSources', 'agents', 'inventoryItems'));
+        $templates = \App\Models\EmailTemplate::all();
+        return view('leads', compact('transaction', 'leadSources', 'agents', 'inventoryItems', 'templates'));
     }
 
     public function store(Request $request)
@@ -925,6 +976,72 @@ class TransactionController extends Controller
                 'success' => false,
                 'message' => 'Failed to decline job: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        $transaction = \App\Models\Transaction::findOrFail($id);
+        return response()->json([
+            'email' => $transaction->email,
+            'firstname' => $transaction->firstname,
+            'lastname' => $transaction->lastname,
+            'pickup_location' => $transaction->pickup_location,
+            'delivery_location' => $transaction->delivery_location,
+            'date' => $transaction->date,
+            // Add more fields as needed
+        ]);
+    }
+
+    public function sendEmail(Request $request)
+    {
+        $request->validate([
+            'recipient' => 'required|email',
+            'subject' => 'required|string',
+            'message' => 'required|string',
+            'load_id' => 'required|integer',
+            'template_id' => 'required|integer'
+        ]);
+
+        try {
+            $transaction = Transaction::findOrFail($request->load_id);
+            
+            // Create sent email record
+            $sentEmail = \App\Models\SentEmail::create([
+                'transaction_id' => $transaction->id,
+                'recipient' => $request->recipient,
+                'subject' => $request->subject,
+                'message' => $request->message,
+                'template_id' => $request->template_id,
+                'user_id' => auth()->id(),
+                'status' => 'pending' // Set initial status as pending
+            ]);
+
+            try {
+                \Mail::to($request->recipient)
+                    ->send(new \App\Mail\CustomEmail($request->subject, $request->message));
+
+                // Update status to sent if email was sent successfully
+                $sentEmail->update(['status' => 'sent']);
+
+                return response()->json(['success' => true, 'message' => 'Email sent successfully']);
+            } catch (\Exception $mailError) {
+                // Update status to failed if email sending failed
+                $sentEmail->update(['status' => 'failed']);
+                
+                \Log::error('Email sending failed: ' . $mailError->getMessage());
+                \Log::error('Email configuration: ' . json_encode([
+                    'mail_driver' => config('mail.default'),
+                    'mail_host' => config('mail.mailers.smtp.host'),
+                    'mail_port' => config('mail.mailers.smtp.port'),
+                    'mail_username' => config('mail.mailers.smtp.username'),
+                    'mail_encryption' => config('mail.mailers.smtp.encryption'),
+                ]));
+
+                return response()->json(['success' => false, 'message' => $mailError->getMessage()], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 } 

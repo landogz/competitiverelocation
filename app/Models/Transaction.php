@@ -69,4 +69,9 @@ class Transaction extends Model
             ->withPivot('quantity')
             ->withTimestamps();
     }
+
+    public function sentEmails()
+    {
+        return $this->hasMany(SentEmail::class);
+    }
 } 

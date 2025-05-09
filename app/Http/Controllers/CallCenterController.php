@@ -16,8 +16,88 @@ class CallCenterController extends Controller
      */
     public function index()
     {
-        $leads = Lead::orderBy('created_at', 'desc')->get();
+        try {
+            // Fetch leads from API
+            $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/transactions-pending');
+            
+            if ($response->successful()) {
+                $apiData = $response->json();
+                
+                if ($apiData['success'] && isset($apiData['data'])) {
+                    // Sync API data with local database
+                    foreach ($apiData['data'] as $transactionData) {
+                        $existingLead = Lead::where('phone', $transactionData['phone'])->first();
+                        
+                        if ($existingLead) {
+                            // Update existing lead while preserving notes and status
+                            $existingLead->update([
+                                'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
+                                'email' => $transactionData['email'],
+                                'company' => $transactionData['sales_location'] ?? null,
+                                'status' => $existingLead->status, // Preserve existing status
+                                'source' => 'website',
+                                'notes' => $existingLead->notes, // Preserve existing notes
+                                'sales_name' => $transactionData['sales_name'] ?? null,
+                                'sales_email' => $transactionData['sales_email'] ?? null,
+                                'pickup_location' => $transactionData['pickup_location'] ?? null,
+                                'delivery_location' => $transactionData['delivery_location'] ?? null,
+                                'miles' => $transactionData['miles'] ?? 0,
+                                'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                                'service_rate' => $transactionData['service_rate'] ?? 0,
+                                'no_of_items' => $transactionData['no_of_items'] ?? 0,
+                                'no_of_crew' => $transactionData['no_of_crew'] ?? 0,
+                                'crew_rate' => $transactionData['crew_rate'] ?? 0,
+                                'subtotal' => $transactionData['subtotal'] ?? 0,
+                                'software_fee' => $transactionData['Software_Fee'] ?? 0,
+                                'truck_fee' => $transactionData['Truck_Fee'] ?? 0,
+                                'downpayment' => $transactionData['Downpayment'] ?? 0,
+                                'grand_total' => $transactionData['grand_total'] ?? 0,
+                                'uploaded_image' => $transactionData['uploaded_image'] ?? null,
+                                'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                        date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            ]);
+                        } else {
+                            // Create new lead
+                            Lead::create([
+                                'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
+                                'phone' => $transactionData['phone'],
+                                'email' => $transactionData['email'],
+                                'company' => $transactionData['sales_location'] ?? null,
+                                'status' => 'new',
+                                'source' => 'website',
+                                'notes' => null,
+                                'sales_name' => $transactionData['sales_name'] ?? null,
+                                'sales_email' => $transactionData['sales_email'] ?? null,
+                                'pickup_location' => $transactionData['pickup_location'] ?? null,
+                                'delivery_location' => $transactionData['delivery_location'] ?? null,
+                                'miles' => $transactionData['miles'] ?? 0,
+                                'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                                'service_rate' => $transactionData['service_rate'] ?? 0,
+                                'no_of_items' => $transactionData['no_of_items'] ?? 0,
+                                'no_of_crew' => $transactionData['no_of_crew'] ?? 0,
+                                'crew_rate' => $transactionData['crew_rate'] ?? 0,
+                                'subtotal' => $transactionData['subtotal'] ?? 0,
+                                'software_fee' => $transactionData['Software_Fee'] ?? 0,
+                                'truck_fee' => $transactionData['Truck_Fee'] ?? 0,
+                                'downpayment' => $transactionData['Downpayment'] ?? 0,
+                                'grand_total' => $transactionData['grand_total'] ?? 0,
+                                'uploaded_image' => $transactionData['uploaded_image'] ?? null,
+                                'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                        date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error but continue with local data
+            \Log::error('Failed to sync leads from API: ' . $e->getMessage());
+        }
+
+        // Get leads from local database
+        $leads = Lead::orderBy('date', 'desc')->get();
         $templates = \App\Models\EmailTemplate::all();
+        
         return view('callcenter', compact('leads', 'templates'));
     }
 
@@ -53,7 +133,8 @@ class CallCenterController extends Controller
                 'company' => $validated['company'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'status' => $validated['status'],
-                'source' => $validated['source'] ?? 'website'
+                'source' => $validated['source'] ?? 'website',
+                'service' => isset($validated['services']) ? $validated['services'] : null
             ]);
 
             // Create initial log entry
@@ -107,11 +188,23 @@ class CallCenterController extends Controller
             'company' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'status' => 'required|in:new,contacted,qualified,unqualified,converted',
-            'source' => 'nullable|string|max:255',
-            'assigned_to' => 'nullable|string|max:255',
+            'source' => 'nullable|string|max:255'
         ]);
 
+        // Preserve existing notes if not provided in the update
+        if (!isset($validated['notes'])) {
+            $validated['notes'] = $lead->notes;
+        }
+
         $lead->update($validated);
+
+        // Create a log entry for the update
+        LeadLog::create([
+            'lead_id' => $lead->id,
+            'type' => 'note',
+            'content' => 'Lead information updated',
+            'user_id' => Auth::id() ?? null,
+        ]);
 
         return redirect()->route('callcenter.index')
             ->with('success', 'Lead updated successfully.');
@@ -182,41 +275,85 @@ class CallCenterController extends Controller
     public function sync(Request $request)
     {
         try {
-            $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/leads');
+            $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/transactions-pending');
             
             if (!$response->successful()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to fetch leads from API'
+                    'message' => 'Failed to fetch transactions from API'
                 ], 500);
             }
 
             $data = $response->json();
             $newCount = 0;
+            $updatedCount = 0;
 
             if ($data['success'] && isset($data['data'])) {
-                foreach ($data['data'] as $lead) {
+                foreach ($data['data'] as $transactionData) {
                     // Check if lead already exists using phone number
-                    $existingLead = Lead::where('phone', $lead['phone'])->first();
+                    $existingLead = Lead::where('phone', $transactionData['phone'])->first();
 
-                    if (!$existingLead) {
-                        // Get agent company name if agent_id exists
-                        $companyName = null;
-                        if (isset($lead['agent_id'])) {
-                            $agent = Agent::where('external_id', $lead['agent_id'])->first();
-                            if ($agent) {
-                                $companyName = $agent->company_name;
-                            }
-                        }
-
+                    if ($existingLead) {
+                        // Update existing lead while preserving notes and status
+                        $existingLead->update([
+                            'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
+                            'email' => $transactionData['email'],
+                            'company' => $transactionData['sales_location'] ?? null,
+                            'status' => $existingLead->status, // Preserve existing status
+                            'source' => 'website',
+                            'notes' => $existingLead->notes, // Preserve existing notes
+                            'sales_name' => $transactionData['sales_name'] ?? null,
+                            'sales_email' => $transactionData['sales_email'] ?? null,
+                            'pickup_location' => $transactionData['pickup_location'] ?? null,
+                            'delivery_location' => $transactionData['delivery_location'] ?? null,
+                            'miles' => $transactionData['miles'] ?? 0,
+                            'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                            'service_rate' => $transactionData['service_rate'] ?? 0,
+                            'no_of_items' => $transactionData['no_of_items'] ?? 0,
+                            'no_of_crew' => $transactionData['no_of_crew'] ?? 0,
+                            'crew_rate' => $transactionData['crew_rate'] ?? 0,
+                            'subtotal' => $transactionData['subtotal'] ?? 0,
+                            'software_fee' => $transactionData['Software_Fee'] ?? 0,
+                            'truck_fee' => $transactionData['Truck_Fee'] ?? 0,
+                            'downpayment' => $transactionData['Downpayment'] ?? 0,
+                            'grand_total' => $transactionData['grand_total'] ?? 0,
+                            'uploaded_image' => $transactionData['uploaded_image'] ?? null,
+                            'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                    date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            'status' => 'new',
+                            'notes' => null,
+                        ]);
+                        $updatedCount++;
+                    } else {
                         // Create new lead
                         Lead::create([
-                            'name' => $lead['name'],
-                            'phone' => $lead['phone'],
-                            'email' => $lead['email'],
-                            'company' => $companyName,
+                            'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
+                            'phone' => $transactionData['phone'],
+                            'email' => $transactionData['email'],
+                            'company' => $transactionData['sales_location'] ?? null,
                             'status' => 'new',
-                            'source' => 'website'
+                            'source' => 'website',
+                            'notes' => null,
+                            'sales_name' => $transactionData['sales_name'] ?? null,
+                            'sales_email' => $transactionData['sales_email'] ?? null,
+                            'pickup_location' => $transactionData['pickup_location'] ?? null,
+                            'delivery_location' => $transactionData['delivery_location'] ?? null,
+                            'miles' => $transactionData['miles'] ?? 0,
+                            'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                            'service_rate' => $transactionData['service_rate'] ?? 0,
+                            'no_of_items' => $transactionData['no_of_items'] ?? 0,
+                            'no_of_crew' => $transactionData['no_of_crew'] ?? 0,
+                            'crew_rate' => $transactionData['crew_rate'] ?? 0,
+                            'subtotal' => $transactionData['subtotal'] ?? 0,
+                            'software_fee' => $transactionData['Software_Fee'] ?? 0,
+                            'truck_fee' => $transactionData['Truck_Fee'] ?? 0,
+                            'downpayment' => $transactionData['Downpayment'] ?? 0,
+                            'grand_total' => $transactionData['grand_total'] ?? 0,
+                            'uploaded_image' => $transactionData['uploaded_image'] ?? null,
+                            'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                    date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            'status' => 'new',
+                            'notes' => null,
                         ]);
 
                         $newCount++;
@@ -227,7 +364,8 @@ class CallCenterController extends Controller
             return response()->json([
                 'success' => true,
                 'new_count' => $newCount,
-                'message' => $newCount > 0 ? "Added $newCount new leads" : "No new leads found"
+                'updated_count' => $updatedCount,
+                'message' => "Added $newCount new leads and updated $updatedCount existing leads"
             ]);
 
         } catch (\Exception $e) {
@@ -240,84 +378,138 @@ class CallCenterController extends Controller
 
     public function datatable(Request $request)
     {
-        $query = Lead::withCount('logs');
-
-        // Apply privilege-based filtering
-        if (Auth::user()->privilege === 'agent') {
-            $agentId = Auth::user()->agent_id;
-            $agent = $agentId ? \App\Models\Agent::find($agentId) : null;
-            if ($agent) {
-                $query->where('company', $agent->company_name);
+        try {
+            // Fetch leads from API
+            $response = Http::get('https://competitiverelocation.com/wp-json/landogz/v1/transactions-pending');
+            
+            if ($response->successful() && isset($response['data'])) {
+                foreach ($response['data'] as $transactionData) {
+                    $lead = Lead::where('phone', $transactionData['phone'])->first();
+                    
+                    if ($lead) {
+                        // Update existing lead while preserving notes and status
+                        $lead->update([
+                            'name' => $transactionData['name'],
+                            'email' => $transactionData['email'],
+                            'sales_name' => $transactionData['sales_name'],
+                            'sales_email' => $transactionData['sales_email'],
+                            'sales_location' => $transactionData['sales_location'],
+                            'pickup_location' => $transactionData['pickup_location'],
+                            'delivery_location' => $transactionData['delivery_location'],
+                            'miles' => $transactionData['miles'],
+                            'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                            'service_rate' => $transactionData['service_rate'],
+                            'no_of_items' => $transactionData['no_of_items'],
+                            'no_of_crew' => $transactionData['no_of_crew'],
+                            'crew_rate' => $transactionData['crew_rate'],
+                            'subtotal' => $transactionData['subtotal'],
+                            'software_fee' => $transactionData['software_fee'],
+                            'truck_fee' => $transactionData['truck_fee'],
+                            'downpayment' => $transactionData['downpayment'],
+                            'grand_total' => $transactionData['grand_total'],
+                            'uploaded_image' => $transactionData['uploaded_image'],
+                            'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                    date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            'status' => 'new',
+                            'notes' => null,
+                        ]);
+                    } else {
+                        // Create new lead
+                        Lead::create([
+                            'name' => $transactionData['name'],
+                            'phone' => $transactionData['phone'],
+                            'email' => $transactionData['email'],
+                            'sales_name' => $transactionData['sales_name'],
+                            'sales_email' => $transactionData['sales_email'],
+                            'sales_location' => $transactionData['sales_location'],
+                            'pickup_location' => $transactionData['pickup_location'],
+                            'delivery_location' => $transactionData['delivery_location'],
+                            'miles' => $transactionData['miles'],
+                            'service' => isset($transactionData['services']) ? $transactionData['services'] : null,
+                            'service_rate' => $transactionData['service_rate'],
+                            'no_of_items' => $transactionData['no_of_items'],
+                            'no_of_crew' => $transactionData['no_of_crew'],
+                            'crew_rate' => $transactionData['crew_rate'],
+                            'subtotal' => $transactionData['subtotal'],
+                            'software_fee' => $transactionData['software_fee'],
+                            'truck_fee' => $transactionData['truck_fee'],
+                            'downpayment' => $transactionData['downpayment'],
+                            'grand_total' => $transactionData['grand_total'],
+                            'uploaded_image' => $transactionData['uploaded_image'],
+                            'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
+                                    date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
+                            'status' => 'new',
+                            'notes' => null,
+                        ]);
+                    }
+                }
             }
+        } catch (\Exception $e) {
+            \Log::error('API sync error: ' . $e->getMessage());
         }
 
-        // Apply search filter
+        // 1. Get total records before any filters
+        $totalRecords = Lead::count();
+
+        // 2. Apply filters to the query
+        $query = Lead::query();
+        // Apply privilege-based filtering for agents
+        if (auth()->user()->role === 'agent') {
+            $query->where('company_id', auth()->user()->company_id);
+        }
+        // Apply search filters
         if ($request->has('search') && !empty($request->search['value'])) {
-            $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('company', 'like', "%{$search}%")
-                  ->orWhere('status', 'like', "%{$search}%");
+            $searchValue = $request->search['value'];
+            $query->where(function($q) use ($searchValue) {
+                $q->where('name', 'like', "%{$searchValue}%")
+                  ->orWhere('phone', 'like', "%{$searchValue}%")
+                  ->orWhere('email', 'like', "%{$searchValue}%")
+                  ->orWhere('sales_name', 'like', "%{$searchValue}%")
+                  ->orWhere('sales_location', 'like', "%{$searchValue}%")
+                  ->orWhere('service', 'like', "%{$searchValue}%");
             });
         }
-
-        // Get total records count
-        $totalRecords = $query->count();
-
-        // Apply sorting
+        // 3. Get filtered count before pagination
+        $filteredRecords = $query->count();
+        // 4. Apply sorting
         if ($request->has('order')) {
-            $columns = ['created_at', 'name', 'phone', 'email', 'company', 'status'];
-            $column = $columns[$request->order[0]['column']];
-            $direction = $request->order[0]['dir'];
-            $query->orderBy($column, $direction);
+            $orderColumn = $request->input('order.0.column');
+            $orderDir = $request->input('order.0.dir');
+            $columns = ['id', 'name', 'phone', 'email', 'sales_name', 'date', 'status'];
+            if (isset($columns[$orderColumn])) {
+                $query->orderBy($columns[$orderColumn], $orderDir);
+            }
         } else {
-            $query->orderBy('created_at', 'desc');
+            $query->orderBy('id', 'desc'); // Default sort by id desc
         }
+        // 5. Apply pagination
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $query->skip($start)->take($length);
+        $leads = $query->get();
 
-        // Apply pagination
-        $leads = $query->skip($request->start)
-                      ->take($request->length)
-                      ->get();
-
-        // Format data for DataTables
-        $data = [];
-        foreach ($leads as $lead) {
-            $data[] = [
-                'DT_RowData' => [
-                    'source' => $lead->source,
-                    'notes' => $lead->notes
-                ],
+        $data = $leads->map(function($lead) {
+            return [
                 'id' => $lead->id,
-                'created_at' => $lead->created_at->format('m/d/Y'),
                 'name' => $lead->name,
-                'phone' => $lead->phone ? '<a href="tel:'.$lead->phone.'" class="clickable-link"><i class="fas fa-phone-alt"></i>'.$lead->phone.'</a>' : '-',
-                'email' => $lead->email ? '<a href="mailto:'.$lead->email.'" class="clickable-link"><i class="fas fa-envelope"></i>'.$lead->email.'</a>' : '-',
-                'company' => $lead->company,
-                'status' => '<span class="badge bg-'.($lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary')))).'">'.ucfirst($lead->status).'</span>',
-                'actions' => '
-                    <button type="button" class="btn btn-sm btn-warning view-logs-btn position-relative" data-lead-id="'.$lead->id.'" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
-                        '.($lead->logs_count > 0 ? '<span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6em; padding: 0.25em 0.4em;">'.$lead->logs_count.'</span>' : '').'
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="'.$lead->id.'" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Quote">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="'.$lead->id.'" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                '
+                'phone' => '<a href="tel:' . $lead->phone . '">' . $lead->phone . '</a>',
+                'email' => '<a href="mailto:' . $lead->email . '">' . $lead->email . '</a>',
+                'sales_name' => $lead->sales_name,
+                'sales_location' => $lead->sales_location,
+                'service' => $lead->service,
+                'no_of_items' => $lead->no_of_items,
+                'grand_total' => '$' . number_format($lead->grand_total, 2),
+                'date' => $lead->date ?? '', // raw value for sorting
+                'date_display' => $lead->date ? date('M d, Y', strtotime($lead->date)) : '', // formatted for display
+                'status' => '<span class="badge badge-' . $this->getStatusBadgeClass($lead->status) . '">' . ucfirst($lead->status) . '</span>',
+                'actions' => view('call-center.actions', compact('lead'))->render()
             ];
-        }
+        });
 
         return response()->json([
-            'draw' => $request->draw,
+            'draw' => $request->input('draw'),
             'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
             'data' => $data
         ]);
     }
@@ -355,5 +547,16 @@ class CallCenterController extends Controller
                 'message' => 'Failed to send email: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function getStatusBadgeClass($status)
+    {
+        return match($status) {
+            'new' => 'warning',
+            'contacted' => 'info',
+            'qualified' => 'success',
+            'unqualified' => 'danger',
+            default => 'primary'
+        };
     }
 }

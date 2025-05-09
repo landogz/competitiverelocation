@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AgentController extends Controller
 {
@@ -168,6 +169,30 @@ class AgentController extends Controller
                     'truck_image' => $apiAgent['truck_image'] ?? null,
                     'unique_url' => 'https://competitiverelocation.com/delivery-services/?agent=' . $apiAgent['id'] . '&ref=' . str_replace(' ', '-', strtolower($apiAgent['company_name']))
                 ]);
+
+                // Handle truck image data if present
+                if (isset($apiAgent['truck_image_data']) && !empty($apiAgent['truck_image_data'])) {
+                    try {
+                        // Decode base64 image data
+                        $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $apiAgent['truck_image_data']));
+                        
+                        // Generate unique filename
+                        $filename = 'truck_' . $apiAgent['id'] . '_' . time() . '.jpg';
+                        
+                        // Save image to storage
+                        $path = Storage::disk('public')->put('truck_images/' . $filename, $imageData);
+                        
+                        if ($path) {
+                            $agent->truck_image = 'storage/truck_images/' . $filename;
+                            $agent->save();
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error processing truck image for agent', [
+                            'agent_id' => $apiAgent['id'],
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
                 
                 // Now link user to agent
                 $user->agent_id = $agent->id;
@@ -175,13 +200,12 @@ class AgentController extends Controller
 
                 // Send welcome email to the agent
                 if (!empty($agent->email)) {
-                    \Mail::to($agent->email)->send(
-                        new \App\Mail\SalesRepWelcomeMail(
-                            $agent->email,
-                            '12345678', // or your actual default password logic
-                            $agent->company_name
-                        )
-                    );
+                    $welcomeTemplate = \App\Models\EmailTemplate::where('name', 'WELCOME NEW AGENTS')->first();
+                    if ($welcomeTemplate) {
+                        \Mail::to($agent->email)->send(
+                            new \App\Mail\TestEmailTemplate($welcomeTemplate)
+                        );
+                    }
                 }
                 
                 $newAgentsCount++;

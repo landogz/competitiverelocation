@@ -3,6 +3,9 @@
 @section('title', 'Load Board')
 
 @section('content')
+
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid px-4">
     <!-- Page Title -->
     <div class="row">
@@ -440,92 +443,61 @@
 </div>
 @endforeach
 
-<!-- Send Quote Modal -->
-<div class="modal fade" id="sendQuoteModal" tabindex="-1">
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Send Quote</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sendEmailModalLabel"><i class="fas fa-envelope me-2"></i>Send Email</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="sendQuoteForm" method="POST">
-                @csrf
+            <form id="sendEmailForm">
+                <input type="hidden" id="emailLoadId" name="load_id">
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div class="col-md-6">
+                        <div class="col-md-12">
                                     <div class="mb-3">
-                                        <label class="form-label">To</label>
-                                        <input type="email" class="form-control" name="to" id="quoteTo" readonly>
+                                <label for="emailRecipient" class="form-label">To</label>
+                                <input type="email" class="form-control" id="emailRecipient" name="recipient" readonly required>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                        <div class="col-md-12">
                                     <div class="mb-3">
-                                        <label class="form-label">Subject</label>
-                                        <input type="text" class="form-control" name="subject" id="quoteSubject" readonly>
+                                <label for="emailTemplateSelect" class="form-label">Select Template</label>
+                                <select class="form-select" id="emailTemplateSelect">
+                                    <option value="">Select a template</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" data-subject="{{ $template->subject }}" data-content="{{ htmlspecialchars($template->content) }}">
+                                            {{ $template->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                     </div>
                                 </div>
-                            </div>
+                        <div class="col-md-12">
                             <div class="mb-3">
-                                <label class="form-label">Content</label>
-                                <textarea id="quoteEditor" name="content"></textarea>
+                                <label for="emailSubject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="emailSubject" name="subject" required>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Available Placeholders</h5>
-                                </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailMessage" class="form-label">Message</label>
+                                <div class="card">
                                 <div class="card-body">
-                                    <div class="list-group placeholder-list">
-                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                            {{ $field }}
-                                        </button>
-                                        @endforeach
+                                        <div id="quillEmailEditor" style="height: 250px;"></div>
+                                        <input type="hidden" id="emailMessage" name="message">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Send Quote</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-
-<!-- Template Selection Modal -->
-<div class="modal fade" id="templateSelectionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Select Email Template</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Select Template</label>
-                    <select class="form-select" id="templateSelect">
-                        <option value="">Select a template</option>
-                        @foreach($templates as $template)
-                        <option value="{{ $template->id }}" 
-                                data-subject="{{ $template->subject }}"
-                                data-content="{{ $template->content }}">
-                            {{ $template->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="useTemplateBtn">Use Template</button>
-            </div>
         </div>
     </div>
 </div>
@@ -534,6 +506,7 @@
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <!-- Lightbox2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <style>
     .fs-14 { font-size: 14px; }
     .avatar-md { width: 48px; height: 48px; }
@@ -1058,6 +1031,46 @@
             font-size: 1.25rem;
         }
     }
+
+    
+    .ql-editor p {
+        margin: 0 0 10px 0 !important;
+        line-height: 1.4 !important;
+    }
+    .ql-editor {
+        line-height: 1.4 !important;
+    }
+
+    /* Quill Editor Background Color */
+    .ql-container {
+        background-color: #ffffff !important;
+    }
+
+    .ql-toolbar {
+        background-color: #f8f9fa !important;
+        border-top-left-radius: 8px !important;
+        border-top-right-radius: 8px !important;
+    }
+
+    .ql-editor {
+        background-color: #ffffff !important;
+        min-height: 200px !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    .ql-container.ql-snow {
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Make Quill editor adjustable in height */
+    .ql-container {
+        min-height: 400px;
+        max-height: 600px;
+        resize: vertical;
+        overflow: auto;
+    }
 </style>
 
 <!-- jQuery -->
@@ -1073,6 +1086,11 @@
 <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
 <!-- Lightbox2 JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+
+<!-- Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -1370,8 +1388,8 @@
                                     <li><a class="dropdown-item" href="/leads/${data}/edit">
                                         <i class="fas fa-edit me-2 text-primary"></i> Edit
                                     </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="sendQuote('${data}')">
-                                        <i class="fas fa-paper-plane me-2 text-info"></i> Send Quote
+                                    <li><a class="dropdown-item" href="#" onclick="sendEmail('${data}')">
+                                        <i class="fas fa-paper-plane me-2 text-info"></i> Send Email
                                     </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="updateStatus('${data}', 'pending')">
                                         <i class="fas fa-clock me-2 text-warning"></i> Mark as Pending
@@ -1554,168 +1572,120 @@
             
         };
 
-        let quoteEditor;
-        let currentTransactionId;
-
-        // Initialize CKEditor for quote
-        ClassicEditor
-            .create(document.querySelector('#quoteEditor'), {
-                toolbar: [
-                    'heading',
-                    '|',
-                    'bold', 'italic', 'strikethrough', 'underline',
-                    '|',
-                    'bulletedList', 'numberedList',
-                    '|',
-                    'alignment',
-                    '|',
-                    'link', 'blockQuote', 'insertTable', 'sourceEditing', 'htmlEmbed',
-                    '|',
-                    'undo', 'redo'
-                ],
-                htmlSupport: {
-                    allow: [
-                        {
-                            name: /.*/,
-                            attributes: true,
-                            classes: true,
-                            styles: true
-                        }
-                    ]
-                }
-            })
-            .then(newEditor => {
-                quoteEditor = newEditor;
-                
-                // Handle placeholder insertion for quote editor
-                document.querySelectorAll('#sendQuoteModal .placeholder-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const placeholder = this.dataset.placeholder;
-                        quoteEditor.model.change(writer => {
-                            const insertPosition = quoteEditor.model.document.selection.getFirstPosition();
-                            quoteEditor.model.insertContent(writer.createText(placeholder), insertPosition);
-                        });
-                    });
-                });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-
-        // Update sendQuote function
-        window.sendQuote = function(transactionId) {
-            currentTransactionId = transactionId;
-            
-            // Show loading state
-            Swal.fire({
-                title: 'Loading...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            // Fetch transaction data
-            fetch(`/transactions/${transactionId}`)
-                .then(response => response.json())
-                .then(data => {
-                    Swal.close();
-                    // Show template selection modal
-                    const templateModal = new bootstrap.Modal(document.getElementById('templateSelectionModal'));
-                    templateModal.show();
-                })
-                .catch(error => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Failed to load transaction data'
-                    });
+        // Add global sendEmail function
+        var quillEmailEditor;
+        var currentTransaction = {};
+        window.sendEmail = function(transactionId) {
+            $.get(`/transactions/${transactionId}`, function(data) {
+                currentTransaction = data; // Store for placeholder replacement
+                $('#emailLoadId').val(transactionId);
+                $('#emailRecipient').val(data.email);
+                $('#emailSubject').val('');
+                $('#emailMessage').val('');
+                $('#emailTemplateSelect').val('');
+                $('#sendEmailModal').modal('show');
                 });
         };
 
-        // Handle template selection
-        document.getElementById('useTemplateBtn').addEventListener('click', function() {
-            const selectedOption = document.getElementById('templateSelect').selectedOptions[0];
-            if (!selectedOption.value) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Warning!',
-                    text: 'Please select a template'
-                });
+        // Helper: Replace placeholders in a string with transaction data
+        function replacePlaceholders(str, data) {
+            if (!str) return '';
+            return str.replace(/\{(\w+)\}/g, function(match, key) {
+                return typeof data[key] !== 'undefined' ? data[key] : match;
+            });
+        }
+
+        // When template is selected, load subject/content and replace placeholders
+        $('#emailTemplateSelect').on('change', function() {
+            const selected = this.selectedOptions[0];
+            if (!selected || !selected.value) {
+                $('#emailSubject').val('');
+                quillEmailEditor.root.innerHTML = '';
                 return;
             }
-
-            // Close template selection modal
-            const templateModal = bootstrap.Modal.getInstance(document.getElementById('templateSelectionModal'));
-            templateModal.hide();
-
-            // Show send quote modal
-            const quoteModal = new bootstrap.Modal(document.getElementById('sendQuoteModal'));
-            quoteModal.show();
-
-            // Populate email and subject
-            document.getElementById('quoteTo').value = '{{ $transaction->email }}';
-            document.getElementById('quoteSubject').value = selectedOption.dataset.subject;
-            quoteEditor.setData(selectedOption.dataset.content);
+            // Replace placeholders in subject/content
+            const subject = replacePlaceholders(selected.dataset.subject, currentTransaction);
+            const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentTransaction);
+            $('#emailSubject').val(subject);
+            quillEmailEditor.root.innerHTML = content;
         });
 
-        // Handle send quote form submission
-        document.getElementById('sendQuoteForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            formData.append('transaction_id', currentTransactionId);
-            formData.set('content', quoteEditor.getData());
+        // Initialize Quill for the email message
+        var quillEmailEditor = new Quill('#quillEmailEditor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'font': [] }, { 'size': [] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'align': [] }],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ]
+            }
+        });
 
+        // On send, set hidden input to Quill HTML and send email via AJAX
+        $('#sendEmailBtn').click(function() {
+            $('#emailMessage').val(quillEmailEditor.root.innerHTML);
+            var formData = {
+                recipient: $('#emailRecipient').val(),
+                subject: $('#emailSubject').val(),
+                message: $('#emailMessage').val(),
+                load_id: $('#emailLoadId').val(),
+                template_id: $('#emailTemplateSelect').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
             // Show loading state
             Swal.fire({
-                title: 'Sending...',
+                title: 'Sending Email...',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
-
-            fetch('/transactions/send-quote', {
+            $.ajax({
+                url: '/loadboard/send-email',
                 method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('sendQuoteModal'));
-                    modal.hide();
-
-                    // Show success message
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
-                        text: 'Quote sent successfully',
+                            text: 'Email sent successfully',
                         timer: 1500,
                         showConfirmButton: false
                     });
+                        $('#sendEmailModal').modal('hide');
+                        // Optionally reset the form
+                        $('#sendEmailForm')[0].reset();
+                        quillEmailEditor.root.innerHTML = '';
                 } else {
-                    throw new Error(data.message || 'Failed to send quote');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message || 'Failed to send email'
+                        });
                 }
-            })
-            .catch(error => {
+                },
+                error: function(xhr) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
-                    text: error.message || 'Something went wrong'
+                        text: xhr.responseJSON?.message || 'Something went wrong. Please try again.'
                 });
+                }
             });
         });
 
-        // Handle modal hidden events
-        document.getElementById('sendQuoteModal').addEventListener('hidden.bs.modal', function () {
-            quoteEditor.setData('');
-            this.querySelector('form').reset();
+        $('#emailTemplateSelect').select2({
+            dropdownParent: $('#sendEmailModal'),
+            width: '100%',
+            placeholder: 'Select a template',
+            allowClear: true
         });
     });
     </script>

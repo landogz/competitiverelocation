@@ -12,9 +12,9 @@
                     <button type="button" class="btn btn-primary" id="syncLeads">
                         <i class="fas fa-sync-alt me-1"></i> Sync Leads
                     </button>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLeadModal">
+                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLeadModal">
                         <i class="fas fa-plus me-2"></i>Add New Lead
-                    </button>
+                    </button> --}}
                 </div>
             </div>
         </div>
@@ -32,117 +32,18 @@
                         <table class="table table-hover datatable mb-0" id="datatable_1">
                             <thead class="table-light">
                               <tr>
-                                <th>Date</th>
+                                <th>ID</th>
                                 <th>Name</th>
                                 <th>Phone</th>
                                 <th>Email</th>
-                                <th>Company</th>
+                                <th>Sales Name</th>
+                                <th>Move Date</th>
                                 <th>Status</th>
                                 <th class="text-center">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                                @forelse($leads as $lead)
-                                    @if(Auth::user()->privilege === 'agent')
-                                        {{-- Debug information --}}
-                                        <tr class="debug-info" style="display: none;">
-                                            <td colspan="7">
-                                                Debug: Lead Company: {{ $lead->company }} | User Last Name: {{ Auth::user()->last_name }}
-                                            </td>
-                                        </tr>
-                                        @if(strtolower($lead->company) === strtolower(Auth::user()->last_name))
-                                        <tr data-source="{{ $lead->source }}" data-notes="{{ $lead->notes }}">
-                                            <td>{{ $lead->created_at->format('m/d/Y') }}</td>
-                                            <td>{{ $lead->name }}</td>
-                                            <td>
-                                                @if($lead->phone)
-                                                    <a href="tel:{{ $lead->phone }}" class="clickable-link">
-                                                        <i class="fas fa-phone-alt"></i>{{ $lead->phone }}
-                                                    </a>
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>     
-                                            <td>
-                                                @if($lead->email)
-                                                    <a href="mailto:{{ $lead->email }}" class="clickable-link">
-                                                        <i class="fas fa-envelope"></i>{{ $lead->email }}
-                                                    </a>
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>        
-                                            <td>{{ $lead->company }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ $lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary'))) }}">
-                                                    {{ ucfirst($lead->status) }}
-                                                </span>
-                                            </td>
-                                            <td class="text-center">                                                
-                                                <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
-                                                    <i class="fas fa-envelope"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        @endif
-                                    @else
-                                        <tr data-source="{{ $lead->source }}" data-notes="{{ $lead->notes }}">
-                                            <td>{{ $lead->created_at->format('m/d/Y') }}</td>
-                                            <td>{{ $lead->name }}</td>
-                                            <td>
-                                                @if($lead->phone)
-                                                    <a href="tel:{{ $lead->phone }}" class="clickable-link">
-                                                        <i class="fas fa-phone-alt"></i>{{ $lead->phone }}
-                                                    </a>
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>     
-                                            <td>
-                                                @if($lead->email)
-                                                    <a href="mailto:{{ $lead->email }}" class="clickable-link">
-                                                        <i class="fas fa-envelope"></i>{{ $lead->email }}
-                                                    </a>
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>        
-                                            <td>{{ $lead->company }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ $lead->status === 'new' ? 'warning' : ($lead->status === 'contacted' ? 'info' : ($lead->status === 'qualified' ? 'success' : ($lead->status === 'unqualified' ? 'danger' : 'primary'))) }}">
-                                                    {{ ucfirst($lead->status) }}
-                                                </span>
-                                            </td>
-                                            <td class="text-center">                                                
-                                                <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
-                                                    <i class="fas fa-envelope"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="{{ $lead->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No leads found</td>
-                                </tr>
-                                @endforelse
+                                {{-- Initial data loading removed - will be populated by sync --}}
                             </tbody>
                           </table>
                     </div> 
@@ -518,57 +419,6 @@
             });
         }
 
-        // Perform silent sync on page load
-        function silentSync() {
-            $.ajax({
-                url: "{{ route('leads.sync') }}",
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                data: {
-                    action: 'add_new',
-                    @if(Auth::user()->privilege === 'agent')
-                    company: '{{ Auth::user()->last_name }}'
-                    @endif
-                },
-                success: function(response) {
-                    if (response.new_count > 0) {
-                        // Reload table data silently if new leads were added
-                        $('#datatable_1').DataTable().ajax.reload(null, false);
-                        
-                        // Update the stats boxes with fresh counts using IDs
-                        $('#totalLeads').text(parseInt($('#totalLeads').text()) + response.new_count);
-                        $('#newLeads').text(parseInt($('#newLeads').text()) + response.new_count);
-                        $('#contactedLeads').text(parseInt($('#contactedLeads').text()) + response.new_count);
-                        $('#qualifiedLeads').text(parseInt($('#qualifiedLeads').text()) + response.new_count);
-                    }
-                },
-                error: function(xhr) {
-                    console.log('Silent sync failed:', xhr.responseJSON?.message || 'Unknown error');
-                }
-            });
-        }
-
-        // Remove custom styles for toast
-        $('<style>')
-            .text(`
-                .colored-toast.swal2-icon-success {
-                    background-color: #a5dc86 !important;
-                    color: white !important;
-                }
-                .colored-toast .swal2-title {
-                    color: white !important;
-                }
-                .colored-toast .swal2-close {
-                    color: white !important;
-                }
-                .colored-toast .swal2-timer-progress-bar {
-                    background: rgba(255, 255, 255, 0.7) !important;
-                }
-            `)
-            .appendTo('head');
-
         // Initialize DataTable
         table = $('#datatable_1').DataTable({
             processing: true,
@@ -588,49 +438,29 @@
                 }
             },
             columns: [
-                { data: 'created_at', name: 'created_at' },
-                { data: 'name', name: 'name' },
-                { data: 'phone', name: 'phone' },
-                { data: 'email', name: 'email' },
-                { data: 'company', name: 'company' },
-                { data: 'status', name: 'status' },
-                { 
-                    data: 'actions', 
-                    name: 'actions', 
-                    orderable: false, 
-                    searchable: false,
+                { data: 'id' },
+                { data: 'name' },
+                { data: 'phone' },
+                { data: 'email' },
+                { data: 'sales_name' },
+                {
+                    data: 'date',
                     render: function(data, type, row) {
-                        if (type === 'display') {
-                            return `
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-warning view-logs-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="View Logs">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-primary edit-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Lead">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-success send-email-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Email">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-danger delete-lead-btn" data-lead-id="${row.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Lead">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            `;
+                        if (type === 'display' || type === 'filter') {
+                            return row.date_display;
                         }
                         return data;
-                    }
-                }
+                    },
+                    name: 'Move Date'
+                },
+                { data: 'status' },
+                { data: 'actions', orderable: false, searchable: false }
             ],
-            order: [[0, 'desc']],
-            drawCallback: function() {
-                // Reinitialize tooltips after each table draw
-                $('[data-bs-toggle="tooltip"]').tooltip();
-            }
+            order: [[0, 'desc']]
         });
 
-        // Perform silent sync after DataTable initialization
-        silentSync();
+        // Remove silent sync on page load
+        // silentSync();
 
         // Add sync button functionality
         $('#syncLeads').on('click', function() {
@@ -823,127 +653,35 @@
             $('#submitLeadForm').prop('disabled', false);
         });
 
-        // Handle view logs button click
-        $(document).on('click', '.view-logs-btn', function(e) {
+        // Handle view details/logs button click
+        $(document).on('click', '.view-details', function(e) {
             e.preventDefault();
-            var leadId = $(this).data('lead-id');
+            var leadId = $(this).data('id');
             loadLogsModal(leadId);
         });
 
-        // Handle Add Log button click
-        $(document).on('click', '.add-log-btn', function(e) {
-            e.preventDefault();
-            var leadId = $(this).data('lead-id');
-            
-            // Close any open modals first
-            $('.modal').modal('hide');
-            
-            // Set the form action
-            $('#addLogForm').attr('action', `/callcenter/${leadId}/logs`);
-            
-            // Show the modal
-            var addLogModal = new bootstrap.Modal(document.getElementById('addLogModal'));
-            addLogModal.show();
-        });
-
-        // Handle Add Log form submission via AJAX
-        $('#addLogForm').on('submit', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
-            var leadId = url.split('/')[2]; // Extract lead ID from URL
-            
-            // Show loading state
-            Swal.fire({
-                title: 'Saving...',
-                text: 'Please wait while we save the log',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            // Create FormData object
-            var formData = new FormData();
-            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-            formData.append('type', $('#type').val());
-            formData.append('content', $('#content').val());
-            
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    // Show success message
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Log added successfully',
-                        icon: 'success',
-                        confirmButtonText: 'Close'
-                    });
-                    
-                    // Close the modal
-                    $('#addLogModal').modal('hide');
-                    
-                    // Reset the form
-                    form[0].reset();
-                    
-                    // Update the badge count
-                    var viewLogsBtn = $('.view-logs-btn[data-lead-id="' + leadId + '"]');
-                    var currentBadge = viewLogsBtn.find('.badge');
-                    var currentCount = currentBadge.length ? parseInt(currentBadge.text()) : 0;
-                    
-                    if (currentBadge.length) {
-                        currentBadge.text(currentCount + 1);
-                    } else {
-                        viewLogsBtn.prepend('<span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6em; padding: 0.25em 0.4em;">1</span>');
-                    }
-                    
-                    // Reload logs modal
-                    loadLogsModal(leadId);
-                },
-                error: function(xhr) {
-                    // Show error message
-                    Swal.fire({
-                        title: 'Error!',
-                        text: xhr.responseJSON?.message || 'Something went wrong',
-                        icon: 'error',
-                        confirmButtonText: 'Close'
-                    });
-                }
-            });
-        });
-
         // Handle edit button click
-        $(document).on('click', '.edit-lead-btn', function(e) {
+        $(document).on('click', '.edit-lead', function(e) {
             e.preventDefault();
-            var leadId = $(this).data('lead-id');
-            
-            // Get lead data from the table row
-            var row = $(this).closest('tr');
-            var leadData = {
-                name: row.find('td:eq(1)').text().trim(),
-                phone: row.find('td:eq(2)').text().trim(),
-                email: row.find('td:eq(3)').text().trim(),
-                company: row.find('td:eq(4)').text().trim(),
-                status: row.find('td:eq(5) .badge').text().trim().toLowerCase(),
-                source: row.data('source') || 'website', // Default to 'website' if not set
-                notes: row.data('notes') || '' // Get notes from data attribute
-            };
-            
-            loadEditLeadModal(leadId, leadData);
+            var leadId = $(this).data('id');
+            // You may want to fetch lead data via AJAX here if needed
+            // For now, just call the edit modal loader
+            loadEditLeadModal(leadId, {});
+        });
+
+        // Handle send quote/email button click
+        $(document).on('click', '.send-quote', function(e) {
+            e.preventDefault();
+            var leadId = $(this).data('id');
+            // You may want to open a modal for sending a quote/email
+            // For now, just show a placeholder alert
+            Swal.fire('Send Quote/Email', 'Lead ID: ' + leadId, 'info');
         });
 
         // Handle delete button click
-        $(document).on('click', '.delete-lead-btn', function(e) {
+        $(document).on('click', '.delete-lead', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            var leadId = $(this).data('lead-id');
-            
+            var leadId = $(this).data('id');
             if (!leadId) {
                 Swal.fire({
                     icon: 'error',
@@ -953,11 +691,7 @@
                 });
                 return false;
             }
-            
-            // Construct the delete URL directly
             var deleteUrl = '/callcenter/' + leadId;
-            
-            // Show confirmation dialog with SweetAlert2
             Swal.fire({
                 title: 'Are you sure?',
                 text: "This action cannot be undone!",
@@ -969,7 +703,6 @@
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Show loading state
                     Swal.fire({
                         title: 'Deleting Lead',
                         text: 'Please wait...',
@@ -980,7 +713,6 @@
                             Swal.showLoading();
                         }
                     });
-                    
                     $.ajax({
                         url: deleteUrl,
                         type: 'DELETE',
@@ -989,7 +721,6 @@
                         },
                         success: function(response) {
                             if (response.success) {
-                                // Show success message and reload table
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Deleted!',
@@ -997,7 +728,6 @@
                                     timer: 1500,
                                     showConfirmButton: false
                                 }).then(() => {
-                                    // Force a full reload of the DataTable
                                     table.ajax.reload();
                                 });
                             } else {
@@ -1006,28 +736,23 @@
                         },
                         error: function(xhr) {
                             let errorMessage = 'Failed to delete lead';
-                            
                             if (xhr.status === 404) {
                                 errorMessage = 'Lead not found. It may have been already deleted.';
                             } else if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
                             }
-                            
-                            // Show error message and reload table
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error!',
                                 text: errorMessage,
                                 confirmButtonText: 'OK'
                             }).then(() => {
-                                // Force a full reload of the DataTable
                                 table.ajax.reload();
                             });
                         }
                     });
                 }
             });
-            
             return false;
         });
 
@@ -1456,6 +1181,70 @@
                         icon: 'error',
                         title: 'Error!',
                         text: xhr.responseJSON?.message || 'Something went wrong. Please try again later.'
+                    });
+                }
+            });
+        });
+
+        // Handle Add Log button click
+        $(document).on('click', '.add-log-btn', function(e) {
+            e.preventDefault();
+            var leadId = $(this).data('lead-id') || $(this).data('id');
+            // Close any open modals first
+            $('.modal').modal('hide');
+            // Set the form action
+            $('#addLogForm').attr('action', `/callcenter/${leadId}/logs`);
+            // Show the modal after a short delay to allow backdrop to clear
+            setTimeout(function() {
+                var addLogModal = new bootstrap.Modal(document.getElementById('addLogModal'));
+                addLogModal.show();
+            }, 400);
+        });
+
+        // Handle Add Log form submission via AJAX
+        $('#addLogForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            var leadId = url.split('/')[2]; // Extract lead ID from URL
+            // Show loading state
+            Swal.fire({
+                title: 'Saving...',
+                text: 'Please wait while we save the log',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            // Create FormData object
+            var formData = new FormData(form[0]);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Log added successfully',
+                        icon: 'success',
+                        confirmButtonText: 'Close'
+                    });
+                    // Close the modal
+                    $('#addLogModal').modal('hide');
+                    // Reset the form
+                    form[0].reset();
+                    // Reload logs modal
+                    loadLogsModal(leadId);
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: xhr.responseJSON?.message || 'Something went wrong',
+                        icon: 'error',
+                        confirmButtonText: 'Close'
                     });
                 }
             });

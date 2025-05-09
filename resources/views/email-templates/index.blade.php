@@ -778,7 +778,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Full Quill toolbar options
+    // Configure image handler for Quill
+    function imageHandler() {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (file) {
+                try {
+                    // Convert image to base64
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const range = this.quill.getSelection(true);
+                        this.quill.insertEmbed(range.index, 'image', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to upload image. Please try again.'
+                    });
+                }
+            }
+        };
+    }
+
+    // Full Quill toolbar options with image handler
     var fullToolbar = [
         [{ 'font': [] }, { 'size': [] }],
         ['bold', 'italic', 'underline', 'strike'],
@@ -792,19 +822,29 @@ document.addEventListener('DOMContentLoaded', function() {
         ['clean']
     ];
 
-    // Initialize Quill for Create Modal
+    // Initialize Quill for Create Modal with image handler
     var quill = new Quill('#quill-editor', {
         theme: 'snow',
         modules: {
-            toolbar: fullToolbar
+            toolbar: {
+                container: fullToolbar,
+                handlers: {
+                    image: imageHandler
+                }
+            }
         }
     });
 
-    // Initialize Quill for Edit Modal
+    // Initialize Quill for Edit Modal with image handler
     var quillEdit = new Quill('#quill-editor-edit', {
         theme: 'snow',
         modules: {
-            toolbar: fullToolbar
+            toolbar: {
+                container: fullToolbar,
+                handlers: {
+                    image: imageHandler
+                }
+            }
         }
     });
 
@@ -1124,18 +1164,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var emailQuill = new Quill('#emailEditor', {
         theme: 'snow',
         modules: {
-            toolbar: [
-                [{ 'font': [] }, { 'size': [] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'color': [] }, { 'background': [] }],
-                [{ 'script': 'sub'}, { 'script': 'super' }],
-                [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-                [{ 'direction': 'rtl' }],
-                [{ 'align': [] }],
-                ['link', 'image', 'video'],
-                ['clean']
-            ]
+            toolbar: {
+                container: fullToolbar,
+                handlers: {
+                    image: imageHandler
+                }
+            }
         }
     });
 
@@ -1143,7 +1177,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var customEmailQuill = new Quill('#customEmailEditor', {
         theme: 'snow',
         modules: {
-            toolbar: fullToolbar
+            toolbar: {
+                container: fullToolbar,
+                handlers: {
+                    image: imageHandler
+                }
+            }
         }
     });
 

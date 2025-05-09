@@ -15,6 +15,7 @@ use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\CallCenterController;
 use App\Http\Controllers\SalesRepController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LeadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -197,6 +198,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/leads/{id}/upload-insurance-document', [TransactionController::class, 'uploadInsuranceDocument'])->name('leads.upload-insurance-document');
     Route::post('/leads/{id}/update-inventory', [TransactionController::class, 'updateInventoryItem'])->name('leads.update-inventory');
     Route::get('/leads/{id}/added-inventory-items', [TransactionController::class, 'getAddedInventoryItems'])->name('leads.added-inventory-items');
+    Route::post('/leads/{id}/send-email', [LeadController::class, 'sendEmail'])->name('leads.send-email');
+    Route::get('/leads/{id}/sent-emails', [LeadController::class, 'getSentEmails'])->name('leads.sent-emails');
+    Route::get('/leads/{id}', [LeadController::class, 'show'])->name('leads.show');
 
     Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
     Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');
@@ -228,4 +232,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/salesreps/{id}/reset-password', [SalesRepController::class, 'resetPassword'])->name('salesreps.reset-password');
 
     Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart-data');
+
+    Route::get('/transactions/{id}', [TransactionController::class, 'show'])->name('transactions.show');
+
+    Route::post('/loadboard/send-email', [TransactionController::class, 'sendEmail'])->name('loadboard.sendEmail');
 });
