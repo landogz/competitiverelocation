@@ -233,38 +233,28 @@ class TransactionController extends Controller
             ]);
 
             $created = 0;
+            $updated = 0;
             $errors = [];
 
             foreach ($transactions as $data) {
                 try {
-                    // Log the transaction being processed
-                    Log::info('Processing transaction', [
-                        'transaction_id' => $data['id'] ?? 'unknown',
-                        'email' => $data['email'] ?? 'unknown',
-                        'service' => $data['service'] ?? 'unknown'
-                    ]);
-                    
                     // Check if transaction already exists
                     $existingTransaction = Transaction::where('transaction_id', $data['id'])->first();
-                    
-                    if ($existingTransaction) {
-                        Log::info('Transaction already exists, skipping', [
-                            'transaction_id' => $data['id']
-                    ]);
-                        continue;
-                    }
-                    
+
                     $transactionData = [
-                        'transaction_id' => $data['id'], // Make sure to include transaction_id
+                        'transaction_id' => $data['id'],
                         'firstname' => $data['firstname'] ?? null,
                         'lastname' => $data['lastname'] ?? null,
                         'email' => $data['email'] ?? null,
                         'phone' => $data['phone'] ?? null,
-                        'assigned_agent' => $data['agent_id'] ?? null,
+                        'lead_source' => $data['lead_source'] ?? null,
+                        'lead_type' => $data['lead_type'] ?? 'local',
+                        'assigned_agent' => $data['assigned_agent'] ?? null,
                         'sales_name' => $data['sales_name'] ?? null,
                         'sales_email' => $data['sales_email'] ?? null,
                         'sales_location' => $data['sales_location'] ?? null,
-                        'date' => $data['date'] ? \Carbon\Carbon::parse($data['date']) : null,
+                        'date' => !empty($data['date']) && $data['date'] !== '1970-01-01 00:00:00' ? 
+                                date('Y-m-d H:i:s', strtotime($data['date'])) : null,
                         'pickup_location' => $data['pickup_location'] ?? null,
                         'delivery_location' => $data['delivery_location'] ?? null,
                         'miles' => $data['miles'] ?? 0,
@@ -285,73 +275,56 @@ class TransactionController extends Controller
                         'payment_id' => $data['payment_id'] ?? null,
                         'uploaded_image' => $data['uploaded_image'] ?? null,
                         'services' => $data['services'] ?? [],
-                        'status' => 'pending',
                         'last_synced_at' => now(),
                     ];
 
-                    // Handle image data if present
-                    if (isset($data['image_data']) && !empty($data['image_data'])) {
-                        try {
-                            // Decode base64 image data
-                            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $data['image_data']));
-                            
-                            // Generate unique filename
-                            $filename = 'transaction_' . $data['id'] . '_' . time() . '.jpg';
-                            
-                            // Save image to storage
-                            $path = Storage::disk('public')->put('transaction_images/' . $filename, $imageData);
-                            
-                            if ($path) {
-                                $transactionData['uploaded_image'] = 'storage/transaction_images/' . $filename;
-                            }
-                        } catch (\Exception $e) {
-                            Log::error('Error processing image for transaction', [
-                                'transaction_id' => $data['id'],
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-
-                    Log::info('Creating new transaction', [
-                        'transaction_id' => $data['id'],
-                        'data' => $transactionData
+                    // Log the transaction data for debugging
+                    Log::info('Transaction sync debug', [
+                        'api_id' => $data['id'],
+                        'exists' => $existingTransaction ? true : false,
+                        'transactionData' => $transactionData
                     ]);
 
-                    $transaction = Transaction::create($transactionData);
+                    // // Handle image data if present
+                    // if (isset($data['image_data']) && !empty($data['image_data'])) {
+                    //     try {
+                    //         // Decode base64 image data
+                    //         $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $data['image_data']));
+                            
+                    //         // Generate unique filename
+                    //         $filename = 'transaction_' . $data['id'] . '_' . time() . '.jpg';
+                            
+                    //         // Save image to storage
+                    //         $path = Storage::disk('public')->put('transaction_images/' . $filename, $imageData);
+                            
+                    //         if ($path) {
+                    //             $transactionData['uploaded_image'] = 'storage/transaction_images/' . $filename;
+                    //         }
+                    //     } catch (\Exception $e) {
+                    //         Log::error('Error processing image for transaction', [
+                    //             'transaction_id' => $data['id'],
+                    //             'error' => $e->getMessage()
+                    //         ]);
+                    //     }
+                    // }
 
-                    Log::info('Transaction created successfully', [
-                        'id' => $transaction->id,
-                        'transaction_id' => $transaction->transaction_id
-                    ]);
-
-                    // Send welcome and thank you emails to new customer
-                    if (!empty($transaction->email)) {
-                        // Send welcome email
-                        $welcomeTemplate = \App\Models\EmailTemplate::where('name', 'WELCOME NEW CUSTOMER')->first();
-                        if ($welcomeTemplate) {
-                            \Mail::to($transaction->email)->send(
-                                new \App\Mail\TestEmailTemplate($welcomeTemplate)
-                            );
-                            Log::info('Welcome email sent to customer', [
-                                'email' => $transaction->email,
-                                'transaction_id' => $transaction->transaction_id
-                            ]);
-                        }
-
-                        // Send thank you email
-                        $thankYouTemplate = \App\Models\EmailTemplate::where('name', 'Special Thank you')->first();
-                        if ($thankYouTemplate) {
-                            \Mail::to($transaction->email)->send(
-                                new \App\Mail\TestEmailTemplate($thankYouTemplate)
-                            );
-                            Log::info('Thank you email sent to customer', [
-                                'email' => $transaction->email,
-                                'transaction_id' => $transaction->transaction_id
-                            ]);
-                        }
+                    if ($existingTransaction) {
+                        // Update existing transaction
+                        $existingTransaction->update($transactionData);
+                        $updated++;
+                        Log::info('Updated existing transaction', [
+                            'transaction_id' => $data['id']
+                        ]);
+                    } else {
+                        // Create new transaction
+                        $transactionData['status'] = 'pending';
+                        Transaction::create($transactionData);
+                        $created++;
+                        Log::info('Created new transaction', [
+                            'transaction_id' => $data['id']
+                        ]);
                     }
 
-                    $created++;
                 } catch (\Exception $e) {
                     Log::error('Error processing transaction', [
                         'transaction_id' => $data['id'] ?? 'unknown',
@@ -367,16 +340,19 @@ class TransactionController extends Controller
 
             Log::info('Sync completed', [
                 'created' => $created,
+                'updated' => $updated,
                 'errors' => count($errors),
                 'error_details' => $errors
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => $created > 0 ? "Successfully added {$created} new transaction(s)" : "No new transactions to add",
+                'message' => "Sync completed: {$created} new, {$updated} updated",
                 'new_count' => $created,
+                'updated_count' => $updated,
                 'data' => [
                     'created' => $created,
+                    'updated' => $updated,
                     'errors' => $errors
                 ]
             ]);
@@ -420,7 +396,43 @@ class TransactionController extends Controller
         $leadSources = \App\Models\LeadSource::pluck('title', 'id');
         $agents = \App\Models\Agent::pluck('company_name', 'id');
         $inventoryItems = \App\Models\InventoryItem::with('category')->get();
-        return view('leads', compact('leadSources', 'agents', 'inventoryItems'));
+        $templates = \App\Models\EmailTemplate::all();
+        
+        // Define placeholders for transaction data
+        $placeholders = [
+            'Transaction' => [
+                'First Name' => '{firstname}',
+                'Last Name' => '{lastname}',
+                'Email' => '{email}',
+                'Phone' => '{phone}',
+                'Lead Source' => '{lead_source}',
+                'Lead Type' => '{lead_type}',
+                'Assigned Agent' => '{assigned_agent}',
+                'Sales Name' => '{sales_name}',
+                'Sales Email' => '{sales_email}',
+                'Sales Location' => '{sales_location}',
+                'Date' => '{date}',
+                'Pickup Location' => '{pickup_location}',
+                'Delivery Location' => '{delivery_location}',
+                'Miles' => '{miles}',
+                'Service' => '{service}',
+                'Service Rate' => '{service_rate}',
+                'Number of Items' => '{no_of_items}',
+                'Number of Crew' => '{no_of_crew}',
+                'Crew Rate' => '{crew_rate}',
+                'Delivery Rate' => '{delivery_rate}',
+                'Subtotal' => '{subtotal}',
+                'Software Fee' => '{software_fee}',
+                'Truck Fee' => '{truck_fee}',
+                'Down Payment' => '{downpayment}',
+                'Grand Total' => '{grand_total}',
+                'Coupon Code' => '{coupon_code}',
+                'Payment ID' => '{payment_id}',
+                'Status' => '{status}'
+            ]
+        ];
+        
+        return view('leads', compact('leadSources', 'agents', 'inventoryItems', 'templates', 'placeholders'));
     }
 
     public function edit($id)
@@ -430,7 +442,42 @@ class TransactionController extends Controller
         $agents = \App\Models\Agent::pluck('company_name', 'id');
         $inventoryItems = \App\Models\InventoryItem::with('category')->get();
         $templates = \App\Models\EmailTemplate::all();
-        return view('leads', compact('transaction', 'leadSources', 'agents', 'inventoryItems', 'templates'));
+        
+        // Define placeholders for transaction data
+        $placeholders = [
+            'Transaction' => [
+                'First Name' => '{firstname}',
+                'Last Name' => '{lastname}',
+                'Email' => '{email}',
+                'Phone' => '{phone}',
+                'Lead Source' => '{lead_source}',
+                'Lead Type' => '{lead_type}',
+                'Assigned Agent' => '{assigned_agent}',
+                'Sales Name' => '{sales_name}',
+                'Sales Email' => '{sales_email}',
+                'Sales Location' => '{sales_location}',
+                'Date' => '{date}',
+                'Pickup Location' => '{pickup_location}',
+                'Delivery Location' => '{delivery_location}',
+                'Miles' => '{miles}',
+                'Service' => '{service}',
+                'Service Rate' => '{service_rate}',
+                'Number of Items' => '{no_of_items}',
+                'Number of Crew' => '{no_of_crew}',
+                'Crew Rate' => '{crew_rate}',
+                'Delivery Rate' => '{delivery_rate}',
+                'Subtotal' => '{subtotal}',
+                'Software Fee' => '{software_fee}',
+                'Truck Fee' => '{truck_fee}',
+                'Down Payment' => '{downpayment}',
+                'Grand Total' => '{grand_total}',
+                'Coupon Code' => '{coupon_code}',
+                'Payment ID' => '{payment_id}',
+                'Status' => '{status}'
+            ]
+        ];
+        
+        return view('leads', compact('transaction', 'leadSources', 'agents', 'inventoryItems', 'templates', 'placeholders'));
     }
 
     public function store(Request $request)
@@ -982,15 +1029,7 @@ class TransactionController extends Controller
     public function show($id)
     {
         $transaction = \App\Models\Transaction::findOrFail($id);
-        return response()->json([
-            'email' => $transaction->email,
-            'firstname' => $transaction->firstname,
-            'lastname' => $transaction->lastname,
-            'pickup_location' => $transaction->pickup_location,
-            'delivery_location' => $transaction->delivery_location,
-            'date' => $transaction->date,
-            // Add more fields as needed
-        ]);
+        return response()->json($transaction);
     }
 
     public function sendEmail(Request $request)

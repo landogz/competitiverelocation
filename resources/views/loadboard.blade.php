@@ -456,13 +456,13 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-12">
-                                    <div class="mb-3">
+                            <div class="mb-3">
                                 <label for="emailRecipient" class="form-label">To</label>
                                 <input type="email" class="form-control" id="emailRecipient" name="recipient" readonly required>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12">
-                                    <div class="mb-3">
+                            <div class="mb-3">
                                 <label for="emailTemplateSelect" class="form-label">Select Template</label>
                                 <select class="form-select" id="emailTemplateSelect">
                                     <option value="">Select a template</option>
@@ -472,8 +472,8 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="emailSubject" class="form-label">Subject</label>
@@ -484,8 +484,8 @@
                             <div class="mb-3">
                                 <label for="emailMessage" class="form-label">Message</label>
                                 <div class="card">
-                                <div class="card-body">
-                                        <div id="quillEmailEditor" style="height: 250px;"></div>
+                                    <div class="card-body">
+                                        <textarea id="ckeditorEmailEditor" name="message" style="height: 250px;"></textarea>
                                         <input type="hidden" id="emailMessage" name="message">
                                     </div>
                                 </div>
@@ -506,8 +506,14 @@
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <!-- Lightbox2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<link href="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.css" rel="stylesheet">
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 <style>
+    
+    /* Hide CKEditor notifications */
+    .cke_notifications_area {
+        display: none !important;
+    }
     .fs-14 { font-size: 14px; }
     .avatar-md { width: 48px; height: 48px; }
     .avatar-sm { width: 32px; height: 32px; }
@@ -1071,6 +1077,16 @@
         resize: vertical;
         overflow: auto;
     }
+
+    /* DataTables Processing Indicator */
+    #transactionsTable_processing {
+        z-index: 99 !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        padding: 1rem !important;
+        margin-top: 1rem !important;
+    }
 </style>
 
 <!-- jQuery -->
@@ -1087,8 +1103,8 @@
 <!-- Lightbox2 JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
-<!-- Quill JS -->
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<!-- CKEditor -->
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -1125,18 +1141,16 @@
                     action: 'add_new'
                 },
                 success: function(response) {
-                    if (response.new_count > 0) {
+                    if (response.success) {
                         // Reload table data silently if new transactions were added
                         $('#transactionsTable').DataTable().ajax.reload(null, false);
                         
-                        // Update the stats boxes with fresh counts using IDs
-                        $('#totalTransactions').text(parseInt($('#totalTransactions').text()) + response.new_count);
-                        $('#pendingTransactions').text(parseInt($('#pendingTransactions').text()) + response.new_count);
-                        $('#inProgressTransactions').text(parseInt($('#inProgressTransactions').text()) + response.new_count);
-                        $('#completedTransactions').text(parseInt($('#completedTransactions').text()) + response.new_count);
+                        // Only show toast if there are new transactions
+                        if (response.new_count > 0) {
+                            showToast(`Sync completed: ${response.new_count} new transactions added`);
 
-                        // Show toast notification
-                        showToast(`${response.new_count} new transaction${response.new_count > 1 ? 's' : ''} added`);
+                            location.reload();
+                        }
                     }
                 },
                 error: function(xhr) {
@@ -1167,6 +1181,30 @@
         // Show loading overlay only on first load
         $('.dataTables-loading-overlay').show();
 
+        // Function to initialize event handlers
+        function initializeEventHandlers() {
+            // Remove existing event handlers to prevent duplicates
+            $('[data-bs-toggle="modal"]').off('click');
+            $('.dropdown-item').off('click');
+
+            // Initialize view details buttons
+            $('[data-bs-toggle="modal"]').on('click', function(e) {
+                e.preventDefault();
+                var targetModal = $(this).data('bs-target');
+                var modal = new bootstrap.Modal(document.querySelector(targetModal));
+                modal.show();
+            });
+
+            // Initialize dropdown actions
+            $('.dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                var action = $(this).attr('onclick');
+                if (action) {
+                    eval(action);
+                }
+            });
+        }
+
         // Initialize DataTable
         var table = $('#transactionsTable').DataTable({
             processing: true,
@@ -1180,7 +1218,8 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 data: function(d) {
-                    // Add any additional search parameters here if needed
+                    // Add a flag to indicate if this is not the first load
+                    d.skip_initial = true;
                     return d;
                 },
                 error: function(xhr, error, thrown) {
@@ -1191,43 +1230,26 @@
                         title: 'Error',
                         text: 'An error occurred while loading the data. Please try again.'
                     });
-                },
-                beforeSend: function() {
-                    // Show loading overlay only on initial load
-                    if (!this.data || !this.data.search || !this.data.search.value) {
-                        $('.loading-overlay').addClass('active');
-                    }
-                },
-                complete: function() {
-                    setTimeout(function() {
-                        $('.loading-overlay').removeClass('active');
-                    }, 500);
                 }
             },
-            columnDefs: [
-                {
-                    targets: [0, 7, 8, 9],
-                    className: 'd-none d-md-table-cell'
-                },
-                {
-                    targets: [3, 4, 5, 6],
-                    className: 'd-none d-lg-table-cell'
-                },
-                {
-                    targets: [1],
-                    className: 'all'
-                },
-                {
-                    targets: [2],
-                    className: 'all date-column',
-                    width: '100px'
-                },
-                {
-                    targets: [3],
-                    className: 'd-none d-lg-table-cell',
-                    width: '150px'
-                }
-            ],
+            // Add initial data from blade template
+            data: {!! json_encode($transactions->map(function($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'firstname' => $transaction->firstname,
+                    'lastname' => $transaction->lastname,
+                    'email' => $transaction->email,
+                    'date' => $transaction->date,
+                    'services' => $transaction->services,
+                    'pickup_location' => $transaction->pickup_location,
+                    'delivery_location' => $transaction->delivery_location,
+                    'miles' => $transaction->miles,
+                    'grand_total' => $transaction->grand_total,
+                    'assigned_agent_company_name' => $transaction->assigned_agent_company_name,
+                    'status' => $transaction->status
+                ];
+            })) !!},
             columns: [
                 { 
                     data: 'transaction_id', 
@@ -1382,7 +1404,7 @@
                                     Actions
                                 </button>
                                 <ul class="dropdown-menu shadow-sm border-0">
-                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#transactionModal${data}">
+                                    <li><a class="dropdown-item view-details" href="#" data-bs-toggle="modal" data-bs-target="#transactionModal${data}">
                                         <i class="fas fa-eye me-2 text-muted"></i> View Details
                                     </a></li>
                                     <li><a class="dropdown-item" href="/leads/${data}/edit">
@@ -1445,6 +1467,24 @@
                         table.search(input.value).draw();
                     }, 1000); // 1000ms debounce
                 });
+            },
+            drawCallback: function() {
+                // Initialize Bootstrap tooltips and popovers
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Initialize view details click handlers
+                $('.view-details').off('click').on('click', function(e) {
+                    e.preventDefault();
+                    var targetModal = $(this).data('bs-target');
+                    var modalElement = document.querySelector(targetModal);
+                    if (modalElement) {
+                        var modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                    }
+                });
             }
         });
 
@@ -1476,25 +1516,30 @@
                     action: 'add_new'
                 },
                 success: function(response) {
-                    if (response.new_count > 0) {
+                    if (response.success) {
+                        // Reload table data
                         table.ajax.reload();
-                    Swal.fire({
-                            icon: 'success',
-                        title: 'Success!',
-                            text: `Added ${response.new_count} new transactions`
-                    });
-            } else {
+                        
+                        // Only show success message if there are new transactions
+                        if (response.new_count > 0) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sync Completed!',
+                                text: `Added ${response.new_count} new transactions`
+                            });
+                        }
+                    } else {
                         Swal.fire({
-                            icon: 'info',
-                            title: 'No New Transactions',
-                            text: 'All transactions are up to date'
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message || 'Failed to sync transactions data'
                         });
                     }
                 },
                 error: function(xhr) {
-                Swal.fire({
+                    Swal.fire({
                         icon: 'error',
-                    title: 'Error!',
+                        title: 'Error!',
                         text: xhr.responseJSON?.message || 'Failed to sync transactions data'
                     });
                 },
@@ -1573,11 +1618,18 @@
         };
 
         // Add global sendEmail function
-        var quillEmailEditor;
+        var ckeditorEmailEditor;
         var currentTransaction = {};
         window.sendEmail = function(transactionId) {
             $.get(`/transactions/${transactionId}`, function(data) {
                 currentTransaction = data; // Store for placeholder replacement
+                // Format date fields for display in templates
+                if (currentTransaction.date) {
+                    currentTransaction.date_formatted = moment(currentTransaction.date).format('MMMM D, YYYY');
+                }
+                if (currentTransaction.created_at) {
+                    currentTransaction.created_at_formatted = moment(currentTransaction.created_at).format('MMMM D, YYYY');
+                }
                 $('#emailLoadId').val(transactionId);
                 $('#emailRecipient').val(data.email);
                 $('#emailSubject').val('');
@@ -1595,43 +1647,58 @@
             });
         }
 
+        // Initialize CKEditor for the email message
+        setTimeout(function() {
+            if (window.CKEDITOR) {
+                ckeditorEmailEditor = CKEDITOR.replace('ckeditorEmailEditor', {
+                    height: 250,
+                    toolbarGroups: [
+                        { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+                        { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+                        { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+                        { name: 'forms', groups: [ 'forms' ] },
+                        '/',
+                        { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+                        { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+                        { name: 'links', groups: [ 'links' ] },
+                        { name: 'insert', groups: [ 'insert' ] },
+                        '/',
+                        { name: 'styles', groups: [ 'styles' ] },
+                        { name: 'colors', groups: [ 'colors' ] },
+                        { name: 'tools', groups: [ 'tools' ] },
+                        { name: 'others', groups: [ 'others' ] }
+                    ],
+                    extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+                    removeButtons: '',
+                    startupMode: 'wysiwyg',
+                    notification: {
+                        duration: 0
+                    }
+                });
+                ckeditorEmailEditor.on('change', function() {
+                    $('#emailMessage').val(ckeditorEmailEditor.getData());
+                });
+            }
+        }, 300);
+
         // When template is selected, load subject/content and replace placeholders
         $('#emailTemplateSelect').on('change', function() {
             const selected = this.selectedOptions[0];
             if (!selected || !selected.value) {
                 $('#emailSubject').val('');
-                quillEmailEditor.root.innerHTML = '';
+                if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
                 return;
             }
             // Replace placeholders in subject/content
             const subject = replacePlaceholders(selected.dataset.subject, currentTransaction);
             const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentTransaction);
             $('#emailSubject').val(subject);
-            quillEmailEditor.root.innerHTML = content;
+            if (ckeditorEmailEditor) ckeditorEmailEditor.setData(content);
         });
 
-        // Initialize Quill for the email message
-        var quillEmailEditor = new Quill('#quillEmailEditor', {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ 'font': [] }, { 'size': [] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'script': 'sub'}, { 'script': 'super' }],
-                    [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-                    [{ 'direction': 'rtl' }],
-                    [{ 'align': [] }],
-                    ['link', 'image', 'video'],
-                    ['clean']
-                ]
-            }
-        });
-
-        // On send, set hidden input to Quill HTML and send email via AJAX
+        // On send, set hidden input to CKEditor HTML and send email via AJAX
         $('#sendEmailBtn').click(function() {
-            $('#emailMessage').val(quillEmailEditor.root.innerHTML);
+            $('#emailMessage').val(ckeditorEmailEditor ? ckeditorEmailEditor.getData() : '');
             var formData = {
                 recipient: $('#emailRecipient').val(),
                 subject: $('#emailSubject').val(),
@@ -1652,31 +1719,31 @@
                 data: formData,
                 success: function(response) {
                     if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
                             text: 'Email sent successfully',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
                         $('#sendEmailModal').modal('hide');
                         // Optionally reset the form
                         $('#sendEmailForm')[0].reset();
-                        quillEmailEditor.root.innerHTML = '';
-                } else {
+                        if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
+                    } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',
                             text: response.message || 'Failed to send email'
                         });
-                }
+                    }
                 },
                 error: function(xhr) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
                         text: xhr.responseJSON?.message || 'Something went wrong. Please try again.'
-                });
+                    });
                 }
             });
         });

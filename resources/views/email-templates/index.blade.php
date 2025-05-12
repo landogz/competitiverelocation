@@ -3,10 +3,11 @@
 @section('title', 'Email Templates')
 
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 
 <style>
     .card {
@@ -138,10 +139,8 @@
     }
 
     .placeholder-list {
-        max-height: 300px;
+        max-height: 600px;
         overflow-y: auto;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
     }
 
     .placeholder-list::-webkit-scrollbar {
@@ -162,13 +161,100 @@
         background: #555;
     }
 
+    .accordion-button {
+        padding: 1rem;
+        font-weight: 500;
+        color: #1f2937;
+        background-color: #f8fafc;
+        border: none;
+        transition: all 0.2s ease;
+    }
+
+    .accordion-button:not(.collapsed) {
+        color: #3b82f6;
+        background-color: #eff6ff;
+        box-shadow: none;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(59, 130, 246, 0.1);
+    }
+
+    .accordion-button::after {
+        background-size: 1rem;
+        transition: all 0.2s ease;
+    }
+
+    .accordion-item {
+        border: none;
+        margin-bottom: 0.5rem;
+    }
+
+    .accordion-item:last-child {
+        margin-bottom: 0;
+    }
+
     .list-group-item {
-        border-color: #e5e7eb;
+        border: none;
+        padding: 0.75rem 1rem;
         transition: all 0.2s ease;
     }
 
     .list-group-item:hover {
         background-color: #f3f4f6;
+    }
+
+    .placeholder-item {
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .placeholder-item:hover {
+        border-left-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+
+    .placeholder-item small {
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .fas {
+        font-size: 0.875rem;
+    }
+
+    .text-primary {
+        color: #3b82f6 !important;
+    }
+
+    .text-muted {
+        color: #6b7280 !important;
     }
 
     .modal-content {
@@ -318,6 +404,137 @@
         border: 1px solid #e5e7eb !important;
         border-radius: 8px !important;
     }
+
+    /* CKEditor Table styles */
+    .cke_editable table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        border: 2px solid #bbb;
+        table-layout: fixed;
+    }
+    
+    .cke_editable table th {
+        padding: 10px;
+        background-color: #f2f2f2;
+        border: 1px solid #ccc;
+        font-weight: bold;
+        text-align: left;
+    }
+    
+    .cke_editable table td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        vertical-align: top;
+    }
+    
+    .cke_editable table tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    /* CKEditor custom styling */
+    .cke {
+        visibility: hidden;
+    }
+    
+    .cke_top {
+        border-bottom: 1px solid #e5e7eb !important;
+        background: #f9fafb !important;
+    }
+    
+    .cke_chrome {
+        border-color: #e5e7eb !important;
+        box-shadow: none !important;
+        border-radius: 8px !important;
+    }
+    
+    .cke_bottom {
+        border-top: 1px solid #e5e7eb !important;
+        background: #f9fafb !important;
+    }
+    
+    .cke_editable {
+        padding: 10px;
+        min-height: 200px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    /* Hide CKEditor notifications */
+    .cke_notifications_area {
+        display: none !important;
+    }
+
+    /* Quill Better Table styles */
+    .ql-table {
+        width: 36px;
+        font-size: 14px !important;
+        margin-right: 5px;
+    }
+    
+    .ql-table .fas {
+        display: inline-block;
+        line-height: 18px;
+    }
+    
+    .quill-better-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .quill-better-table td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        min-width: 25px;
+        word-break: break-word;
+    }
+    
+    table.quill-better-table .ql-picker.ql-table-colwidth {
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+    
+    table.quill-better-table .ql-picker.ql-table-colwidth .ql-picker-label {
+        padding: 0 4px;
+    }
+    
+    .ql-better-table .table-operations {
+        margin: 8px;
+    }
+    
+    .ql-better-table .table-operations .btn {
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .ql-better-table .table-buttons {
+        margin-bottom: 8px;
+    }
+    
+    .ql-better-table .table-buttons button {
+        margin-right: 8px;
+    }
+    
+    /* Fixed insertion tooltip */
+    .qlbt-operation-menu {
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        padding: 5px 0;
+        z-index: 10;
+    }
+    
+    .qlbt-operation-menu .qlbt-operation-item {
+        cursor: pointer;
+        padding: 5px 15px;
+        color: #595959;
+        line-height: 28px;
+        font-size: 14px;
+    }
+    
+    .qlbt-operation-menu .qlbt-operation-item:hover {
+        background-color: #f7f7f7;
+    }
 </style>
 
 @section('content')
@@ -435,21 +652,64 @@
                                 <label class="form-label">Content</label>
                                 <div class="row">
                                     <div class="col-md-9">
-                                        <div id="quill-editor" style="height: 400px;"></div>
-                                        <input type="hidden" name="content" id="quill-content">
+                                        <textarea name="content" id="editor"></textarea>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="card">
-                                            <div class="card-header">
+                                            <div class="card-header bg-transparent border-0">
                                                 <h5 class="card-title mb-0">Available Placeholders</h5>
                                             </div>
-                                            <div class="card-body">
-                                                <div class="list-group placeholder-list">
-                                                    @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                                    <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                                        {{ $field }}
-                                                    </button>
-                                                    @endforeach
+                                            <div class="card-body p-0">
+                                                <div class="placeholder-list">
+                                                    <div class="accordion" id="createPlaceholderAccordion">
+                                                        <!-- Transaction Fields -->
+                                                        <div class="accordion-item border-0">
+                                                            <h2 class="accordion-header" id="createTransactionHeading">
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#createTransactionCollapse">
+                                                                    <i class="fas fa-exchange-alt me-2 text-primary"></i>
+                                                                    Transaction Fields
+                                                                    <span class="badge bg-primary ms-2">{{ count($placeholders['Transaction']) }}</span>
+                                                                </button>
+                                                            </h2>
+                                                            <div id="createTransactionCollapse" class="accordion-collapse collapse" data-bs-parent="#createPlaceholderAccordion">
+                                                                <div class="accordion-body p-0">
+                                                                    <div class="list-group list-group-flush">
+                                                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
+                                                                        <button type="button" class="list-group-item list-group-item-action placeholder-item d-flex align-items-center" data-placeholder="{{ $placeholder }}">
+                                                                            <i class="fas fa-tag text-muted me-2"></i>
+                                                                            <span class="flex-grow-1">{{ $field }}</span>
+                                                                            <small class="text-muted">{{ $placeholder }}</small>
+                                                                        </button>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Lead Fields -->
+                                                        <div class="accordion-item border-0">
+                                                            <h2 class="accordion-header" id="createLeadHeading">
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#createLeadCollapse">
+                                                                    <i class="fas fa-user me-2 text-primary"></i>
+                                                                    Lead Fields
+                                                                    <span class="badge bg-primary ms-2">{{ count($placeholders['Lead']) }}</span>
+                                                                </button>
+                                                            </h2>
+                                                            <div id="createLeadCollapse" class="accordion-collapse collapse" data-bs-parent="#createPlaceholderAccordion">
+                                                                <div class="accordion-body p-0">
+                                                                    <div class="list-group list-group-flush">
+                                                                        @foreach($placeholders['Lead'] as $field => $placeholder)
+                                                                        <button type="button" class="list-group-item list-group-item-action placeholder-item d-flex align-items-center" data-placeholder="{{ $placeholder }}">
+                                                                            <i class="fas fa-tag text-muted me-2"></i>
+                                                                            <span class="flex-grow-1">{{ $field }}</span>
+                                                                            <small class="text-muted">{{ $placeholder }}</small>
+                                                                        </button>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -513,21 +773,64 @@
                                     <label class="form-label">Content</label>
                                     <div class="row">
                                         <div class="col-md-9">
-                                            <div id="quill-editor-edit" style="height: 400px;"></div>
-                                            <input type="hidden" name="content" id="quill-content-edit">
+                                            <textarea name="content" id="editor-edit"></textarea>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="card">
-                                                <div class="card-header">
+                                                <div class="card-header bg-transparent border-0">
                                                     <h5 class="card-title mb-0">Available Placeholders</h5>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="list-group placeholder-list">
-                                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                                            {{ $field }}
-                                                        </button>
-                                                        @endforeach
+                                                <div class="card-body p-0">
+                                                    <div class="placeholder-list">
+                                                        <div class="accordion" id="editPlaceholderAccordion">
+                                                            <!-- Transaction Fields -->
+                                                            <div class="accordion-item border-0">
+                                                                <h2 class="accordion-header" id="editTransactionHeading">
+                                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editTransactionCollapse">
+                                                                        <i class="fas fa-exchange-alt me-2 text-primary"></i>
+                                                                        Transaction Fields
+                                                                        <span class="badge bg-primary ms-2">{{ count($placeholders['Transaction']) }}</span>
+                                                                    </button>
+                                                                </h2>
+                                                                <div id="editTransactionCollapse" class="accordion-collapse collapse" data-bs-parent="#editPlaceholderAccordion">
+                                                                    <div class="accordion-body p-0">
+                                                                        <div class="list-group list-group-flush">
+                                                                            @foreach($placeholders['Transaction'] as $field => $placeholder)
+                                                                            <button type="button" class="list-group-item list-group-item-action placeholder-item d-flex align-items-center" data-placeholder="{{ $placeholder }}">
+                                                                                <i class="fas fa-tag text-muted me-2"></i>
+                                                                                <span class="flex-grow-1">{{ $field }}</span>
+                                                                                <small class="text-muted">{{ $placeholder }}</small>
+                                                                            </button>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Lead Fields -->
+                                                            <div class="accordion-item border-0">
+                                                                <h2 class="accordion-header" id="editLeadHeading">
+                                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editLeadCollapse">
+                                                                        <i class="fas fa-user me-2 text-primary"></i>
+                                                                        Lead Fields
+                                                                        <span class="badge bg-primary ms-2">{{ count($placeholders['Lead']) }}</span>
+                                                                    </button>
+                                                                </h2>
+                                                                <div id="editLeadCollapse" class="accordion-collapse collapse" data-bs-parent="#editPlaceholderAccordion">
+                                                                    <div class="accordion-body p-0">
+                                                                        <div class="list-group list-group-flush">
+                                                                            @foreach($placeholders['Lead'] as $field => $placeholder)
+                                                                            <button type="button" class="list-group-item list-group-item-action placeholder-item d-flex align-items-center" data-placeholder="{{ $placeholder }}">
+                                                                                <i class="fas fa-tag text-muted me-2"></i>
+                                                                                <span class="flex-grow-1">{{ $field }}</span>
+                                                                                <small class="text-muted">{{ $placeholder }}</small>
+                                                                            </button>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -584,8 +887,7 @@
                                     <label class="form-label">Email Content</label>
                                     <div class="card">
                                         <div class="card-body">
-                                            <div id="emailEditor" style="height: 400px;"></div>
-                                            <input type="hidden" name="content" id="emailContent">
+                                            <textarea name="content" id="emailEditor"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -650,8 +952,7 @@
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label class="form-label">Email Body</label>
-                                <div id="customEmailEditor" style="height: 400px;"></div>
-                                <input type="hidden" name="body" id="customEmailContent">
+                                <textarea name="body" id="customEmailEditor"></textarea>
                             </div>
                         </div>
                     </div>
@@ -669,12 +970,168 @@
 
 @endsection
 
-<!-- Include CKEditor and SweetAlert2 from CDN -->
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<!-- Include SweetAlert2 from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let editor, editEditor;
+    let editor, editEditor, emailEditor, customEmailEditor;
+
+    // Initialize editors with CKEditor
+    editor = CKEDITOR.replace('editor', {
+        height: 400,
+        toolbarGroups: [
+            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+            { name: 'forms', groups: [ 'forms' ] },
+            '/',
+            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+            { name: 'links', groups: [ 'links' ] },
+            { name: 'insert', groups: [ 'insert' ] },
+            '/',
+            { name: 'styles', groups: [ 'styles' ] },
+            { name: 'colors', groups: [ 'colors' ] },
+            { name: 'tools', groups: [ 'tools' ] },
+            { name: 'others', groups: [ 'others' ] }
+        ],
+        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+        removeButtons: '',
+        startupMode: 'wysiwyg',
+        notification: {
+            duration: 0
+        }
+    });
+
+    // Edit modal editor
+    editEditor = CKEDITOR.replace('editor-edit', {
+        height: 400,
+        toolbarGroups: [
+            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+            { name: 'forms', groups: [ 'forms' ] },
+            '/',
+            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+            { name: 'links', groups: [ 'links' ] },
+            { name: 'insert', groups: [ 'insert' ] },
+            '/',
+            { name: 'styles', groups: [ 'styles' ] },
+            { name: 'colors', groups: [ 'colors' ] },
+            { name: 'tools', groups: [ 'tools' ] },
+            { name: 'others', groups: [ 'others' ] }
+        ],
+        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+        removeButtons: '',
+        startupMode: 'wysiwyg',
+        notification: {
+            duration: 0
+        }
+    });
+
+    // Email editor for test emails
+    emailEditor = CKEDITOR.replace('emailEditor', {
+        height: 400,
+        toolbarGroups: [
+            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+            { name: 'forms', groups: [ 'forms' ] },
+            '/',
+            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+            { name: 'links', groups: [ 'links' ] },
+            { name: 'insert', groups: [ 'insert' ] },
+            '/',
+            { name: 'styles', groups: [ 'styles' ] },
+            { name: 'colors', groups: [ 'colors' ] },
+            { name: 'tools', groups: [ 'tools' ] },
+            { name: 'others', groups: [ 'others' ] }
+        ],
+        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+        removeButtons: '',
+        startupMode: 'wysiwyg',
+        notification: {
+            duration: 0
+        }
+    });
+
+    // Custom email editor
+    customEmailEditor = CKEDITOR.replace('customEmailEditor', {
+        height: 400,
+        toolbarGroups: [
+            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+            { name: 'forms', groups: [ 'forms' ] },
+            '/',
+            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+            { name: 'links', groups: [ 'links' ] },
+            { name: 'insert', groups: [ 'insert' ] },
+            '/',
+            { name: 'styles', groups: [ 'styles' ] },
+            { name: 'colors', groups: [ 'colors' ] },
+            { name: 'tools', groups: [ 'tools' ] },
+            { name: 'others', groups: [ 'others' ] }
+        ],
+        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+        removeButtons: '',
+        startupMode: 'wysiwyg',
+        notification: {
+            duration: 0
+        }
+    });
+
+    // Function to insert text into CKEditor
+    function insertTextIntoCKEditor(editor, text) {
+        if (!editor) return;
+        
+        try {
+            // This is the correct way to insert text in CKEditor 4
+            var selection = editor.getSelection();
+            if (selection) {
+                var range = selection.getRanges()[0];
+                if (range) {
+                    range.insertNode(new CKEDITOR.dom.text(text));
+                    range.select();
+                }
+            }
+        } catch (error) {
+            console.error('Error inserting text into CKEditor:', error);
+            // Fallback methods
+            try {
+                editor.insertText(text);
+            } catch (e) {
+                try {
+                    editor.insertHtml(text);
+                } catch (e2) {
+                    console.error('All methods to insert text failed');
+                }
+            }
+        }
+    }
+
+    // Handle placeholder clicks for both create and edit modals
+    document.querySelectorAll('.placeholder-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const placeholder = this.dataset.placeholder;
+            const activeModal = document.querySelector('.modal.show');
+            let editorInstance;
+
+            if (activeModal.id === 'createTemplateModal') {
+                editorInstance = editor;
+            } else if (activeModal.id === 'editTemplateModal') {
+                editorInstance = editEditor;
+            }
+
+            if (editorInstance) {
+                // Use our helper function
+                insertTextIntoCKEditor(editorInstance, placeholder);
+            }
+        });
+    });
 
     // Initialize DataTable
     var table = $('#templatesTable').DataTable({
@@ -737,7 +1194,6 @@ document.addEventListener('DOMContentLoaded', function() {
             subject: data.subject,
             description: data.description || ''
         }).draw();
-        attachEventListeners();
     }
 
     // Function to update table row
@@ -750,109 +1206,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 subject: data.subject,
                 description: data.description || ''
             }).draw();
-            attachEventListeners();
         }
     }
-
-    // Handle placeholder clicks for both create and edit modals
-    document.querySelectorAll('.placeholder-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const placeholder = this.dataset.placeholder;
-            const activeModal = document.querySelector('.modal.show');
-            let quillInstance;
-
-            if (activeModal.id === 'createTemplateModal') {
-                quillInstance = quill;
-            } else if (activeModal.id === 'editTemplateModal') {
-                quillInstance = quillEdit;
-            }
-
-            if (quillInstance) {
-                const range = quillInstance.getSelection();
-                if (range) {
-                    quillInstance.insertText(range.index, placeholder);
-                } else {
-                    quillInstance.insertText(quillInstance.getLength(), placeholder);
-                }
-            }
-        });
-    });
-
-    // Configure image handler for Quill
-    function imageHandler() {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        input.click();
-
-        input.onchange = async () => {
-            const file = input.files[0];
-            if (file) {
-                try {
-                    // Convert image to base64
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const range = this.quill.getSelection(true);
-                        this.quill.insertEmbed(range.index, 'image', e.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                } catch (error) {
-                    console.error('Error uploading image:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Failed to upload image. Please try again.'
-                    });
-                }
-            }
-        };
-    }
-
-    // Full Quill toolbar options with image handler
-    var fullToolbar = [
-        [{ 'font': [] }, { 'size': [] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'script': 'sub'}, { 'script': 'super' }],
-        [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-        [{ 'direction': 'rtl' }],
-        [{ 'align': [] }],
-        ['link', 'image', 'video', 'formula'],
-        ['clean']
-    ];
-
-    // Initialize Quill for Create Modal with image handler
-    var quill = new Quill('#quill-editor', {
-        theme: 'snow',
-        modules: {
-            toolbar: {
-                container: fullToolbar,
-                handlers: {
-                    image: imageHandler
-                }
-            }
-        }
-    });
-
-    // Initialize Quill for Edit Modal with image handler
-    var quillEdit = new Quill('#quill-editor-edit', {
-        theme: 'snow',
-        modules: {
-            toolbar: {
-                container: fullToolbar,
-                handlers: {
-                    image: imageHandler
-                }
-            }
-        }
-    });
 
     // Handle create form submission
     document.getElementById('createTemplateForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        formData.set('content', quill.root.innerHTML);
+        
+        // Make sure to get data from CKEditor
+        if (editor && typeof editor.getData === 'function') {
+            formData.set('content', editor.getData());
+        } else {
+            console.error('Create editor not initialized properly');
+        }
 
         // Show loading state
         Swal.fire({
@@ -880,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('createTemplateModal'));
                 modal.hide();
                 this.reset();
-                quill.root.innerHTML = '';
+                editor.getData();
 
                 // Show success message
                 Swal.fire({
@@ -907,7 +1274,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editTemplateForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        formData.set('content', quillEdit.root.innerHTML);
+        
+        // Make sure to get data from CKEditor
+        if (editEditor && typeof editEditor.getData === 'function') {
+            formData.set('content', editEditor.getData());
+        } else {
+            console.error('Edit editor not initialized properly');
+        }
+        
         formData.append('_method', 'PUT');
 
         // Show loading state
@@ -957,24 +1331,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // When opening edit modal, set Quill content
-    window.setQuillEditContent = function(html) {
-        quillEdit.root.innerHTML = html || '';
+    // When opening edit modal, set CKEditor content
+    window.setEditorContent = function(html) {
+        // Add a slight delay to ensure the editor is fully initialized
+        setTimeout(function() {
+            if (editEditor && typeof editEditor.setData === 'function') {
+                editEditor.setData(html || '');
+            } else {
+                console.error('Edit editor not fully initialized');
+            }
+        }, 100);
     };
 
-    // When opening create modal, clear Quill content
-    window.clearQuillContent = function() {
-        quill.root.innerHTML = '';
+    // When opening create modal, clear CKEditor content
+    window.clearEditorContent = function() {
+        // Add a slight delay to ensure the editor is fully initialized
+        setTimeout(function() {
+            if (editor && typeof editor.setData === 'function') {
+                editor.setData('');
+            } else {
+                console.error('Create editor not fully initialized');
+            }
+        }, 100);
     };
 
     // Replace CKEditor setData calls in modal events
     document.getElementById('createTemplateModal').addEventListener('hidden.bs.modal', function () {
-        clearQuillContent();
+        clearEditorContent();
         this.querySelector('form').reset();
     });
 
     document.getElementById('editTemplateModal').addEventListener('hidden.bs.modal', function () {
-        setQuillEditContent('');
+        setEditorContent('');
         this.querySelector('form').reset();
     });
 
@@ -995,7 +1383,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.querySelector('[name="name"]').value = data.name || '';
                 form.querySelector('[name="subject"]').value = data.subject || '';
                 form.querySelector('[name="description"]').value = data.description || '';
-                setQuillEditContent(data.content || '');
+                
+                // Set CKEditor content with a slight delay to ensure editor is ready
+                setTimeout(function() {
+                    if (editEditor && typeof editEditor.setData === 'function') {
+                        editEditor.setData(data.content || '');
+                    } else {
+                        console.error('Edit editor not initialized properly');
+                    }
+                }, 100);
+                
                 // Hide skeletons, show fields
                 document.getElementById('editModalSkeletons').style.display = 'none';
                 document.getElementById('editModalFields').style.display = '';
@@ -1085,7 +1482,15 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/email-templates/${templateId}`)
                 .then(response => response.json())
                 .then(data => {
-                    emailQuill.root.innerHTML = data.content || '';
+                    // Set CKEditor content with a slight delay to ensure editor is ready
+                    setTimeout(function() {
+                        if (emailEditor && typeof emailEditor.setData === 'function') {
+                            emailEditor.setData(data.content || '');
+                        } else {
+                            console.error('Email editor not initialized properly');
+                        }
+                    }, 100);
+                    
                     form.querySelector('[name="subject"]').value = data.subject || '';
                     // Hide skeletons, show fields
                     document.getElementById('modalSkeletons').style.display = 'none';
@@ -1103,7 +1508,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle test form submission
     document.getElementById('testTemplateForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        document.getElementById('emailContent').value = emailQuill.root.innerHTML;
+        
+        // Create formData from the form
+        const formData = new FormData(this);
+        
+        // Get the email content from CKEditor
+        if (emailEditor && typeof emailEditor.getData === 'function') {
+            formData.set('content', emailEditor.getData());
+        } else {
+            console.error('Email editor not initialized properly');
+        }
         
         // Show loading state
         Swal.fire({
@@ -1116,7 +1530,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch(this.action, {
             method: 'POST',
-            body: new FormData(this),
+            body: formData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json'
@@ -1158,32 +1572,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 text: error.message || 'Something went wrong. Please try again later.'
             });
         });
-    });
-
-    // Initialize Quill editor for email content
-    var emailQuill = new Quill('#emailEditor', {
-        theme: 'snow',
-        modules: {
-            toolbar: {
-                container: fullToolbar,
-                handlers: {
-                    image: imageHandler
-                }
-            }
-        }
-    });
-
-    // Initialize Quill editor for custom email
-    var customEmailQuill = new Quill('#customEmailEditor', {
-        theme: 'snow',
-        modules: {
-            toolbar: {
-                container: fullToolbar,
-                handlers: {
-                    image: imageHandler
-                }
-            }
-        }
     });
 
     // CC Email Tags Functionality
@@ -1261,8 +1649,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add CC emails to form data
         formData.set('cc', ccEmails.join(','));
         
-        // Add email body
-        formData.set('body', customEmailQuill.root.innerHTML);
+        // Add email body from CKEditor
+        if (customEmailEditor && typeof customEmailEditor.getData === 'function') {
+            formData.set('body', customEmailEditor.getData());
+        } else {
+            console.error('Custom email editor not initialized properly');
+        }
         
         // Validate required fields
         const to = formData.get('to');
@@ -1349,16 +1741,55 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sendCustomEmailModal').addEventListener('hidden.bs.modal', function () {
         ccTags.innerHTML = '<input type="text" class="cc-input border-0" style="flex: 1; min-width: 100px;" placeholder="Add CC recipients">';
         this.querySelector('form').reset();
-        customEmailQuill.root.innerHTML = '';
+        customEmailEditor.setData('');
     });
 
-    // Attach event listeners to row buttons
+    // Attach event listeners using event delegation (works across all DataTable pages)
+    $('#templatesTable').on('click', '.edit-template', handleEdit);
+    $('#templatesTable').on('click', '.delete-template', handleDelete);
+    $('#templatesTable').on('click', '.test-template', function() {
+        const templateId = this.dataset.id;
+        const form = document.getElementById('testTemplateForm');
+        form.action = `/email-templates/${templateId}/test`;
+        // Reset form
+        form.reset();
+        // Show skeletons, hide fields
+        document.getElementById('modalSkeletons').style.display = '';
+        document.getElementById('modalFields').style.display = 'none';
+        // Fetch template content
+        fetch(`/email-templates/${templateId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Set CKEditor content with a slight delay to ensure editor is ready
+                setTimeout(function() {
+                    if (emailEditor && typeof emailEditor.setData === 'function') {
+                        emailEditor.setData(data.content || '');
+                    } else {
+                        console.error('Email editor not initialized properly');
+                    }
+                }, 100);
+                
+                form.querySelector('[name="subject"]').value = data.subject || '';
+                // Hide skeletons, show fields
+                document.getElementById('modalSkeletons').style.display = 'none';
+                document.getElementById('modalFields').style.display = '';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Hide skeletons, show fields anyway (fallback)
+                document.getElementById('modalSkeletons').style.display = 'none';
+                document.getElementById('modalFields').style.display = '';
+            });
+    });
+    
+    // For direct DOM elements (legacy approach)
     function attachEventListeners() {
-        $('.edit-template').off('click');
-        $('.delete-template').off('click');
-        $('.edit-template').on('click', handleEdit);
-        $('.delete-template').on('click', handleDelete);
+        $('.edit-template').off('click').on('click', handleEdit);
+        $('.delete-template').off('click').on('click', handleDelete);
+        $('.test-template').off('click'); // Remove any direct handlers to avoid double-triggering
     }
+    
+    // Initialize for initial page load
     attachEventListeners();
 });
 </script>

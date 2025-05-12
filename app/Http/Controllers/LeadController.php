@@ -12,16 +12,7 @@ class LeadController extends Controller
     public function show($id)
     {
         $transaction = Transaction::findOrFail($id);
-        return response()->json([
-            'id' => $transaction->id,
-            'firstname' => $transaction->firstname,
-            'lastname' => $transaction->lastname,
-            'email' => $transaction->email,
-            'pickup_location' => $transaction->pickup_location,
-            'delivery_location' => $transaction->delivery_location,
-            'date' => $transaction->date,
-            // Add any other fields you want to use as placeholders
-        ]);
+        return response()->json($transaction);
     }
 
     public function sendEmail(Request $request, $id)

@@ -126,6 +126,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/callcenter/{lead}/logs', [CallCenterController::class, 'storeLog'])->name('callcenter.logs.store');
     Route::get('/callcenter/{lead}/logs', [CallCenterController::class, 'viewLogs'])->name('callcenter.logs.view');
     Route::post('/callcenter/{lead}/send-email', [CallCenterController::class, 'sendEmail'])->name('callcenter.send-email');
+    Route::post('/callcenter/datatable', [CallCenterController::class, 'datatable'])->name('callcenter.datatable');
+    Route::get('/callcenter/{id}/data', [CallCenterController::class, 'getLeadData'])->name('callcenter.get-lead-data');
 
     Route::get('/salesreports', function () {
         return view('salesreports');

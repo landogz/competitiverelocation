@@ -524,6 +524,64 @@
     </div>
 </div>
 
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="sendEmailModalLabel"><i class="fas fa-envelope me-2"></i>Send Email</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sendEmailForm">
+                <input type="hidden" id="emailLoadId" name="load_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailRecipient" class="form-label">To</label>
+                                <input type="email" class="form-control" id="emailRecipient" name="recipient" readonly required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <select class="form-select" id="emailTemplateSelect">
+                                    <option value="">Select a template</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" data-subject="{{ $template->subject }}" data-content="{{ htmlspecialchars($template->content) }}">
+                                            {{ $template->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailSubject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="emailSubject" name="subject" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailMessage" class="form-label">Message</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <textarea id="ckeditorEmailEditor" name="message" style="height: 250px;"></textarea>
+                                        <input type="hidden" id="emailMessage" name="message">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <!-- Lightbox2 CSS -->
@@ -1623,6 +1681,15 @@
                 // Show template selection modal
                 const templateModal = new bootstrap.Modal(document.getElementById('templateSelectionModal'));
                 templateModal.show();
+
+                currentTransaction = data; // Store for placeholder replacement
+                // Format date fields for display in templates
+                if (currentTransaction.date) {
+                    currentTransaction.date_formatted = moment(currentTransaction.date).format('MMMM D, YYYY');
+                }
+                if (currentTransaction.created_at) {
+                    currentTransaction.created_at_formatted = moment(currentTransaction.created_at).format('MMMM D, YYYY');
+                }
             })
             .catch(error => {
                 Swal.fire({
@@ -1714,6 +1781,114 @@
     // Handle modal hidden events
     document.getElementById('sendQuoteModal').addEventListener('hidden.bs.modal', function () {
         quoteEditor.setData('');
+        this.querySelector('form').reset();
+    });
+
+    // Initialize CKEditor for email
+    var ckeditorEmailEditor;
+    setTimeout(function() {
+        if (window.CKEDITOR) {
+            ckeditorEmailEditor = CKEDITOR.replace('ckeditorEmailEditor', {
+                height: 250,
+                toolbarGroups: [
+                    { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+                    { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+                    { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+                    { name: 'forms', groups: [ 'forms' ] },
+                    '/',
+                    { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+                    { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+                    { name: 'links', groups: [ 'links' ] },
+                    { name: 'insert', groups: [ 'insert' ] },
+                    '/',
+                    { name: 'styles', groups: [ 'styles' ] },
+                    { name: 'colors', groups: [ 'colors' ] },
+                    { name: 'tools', groups: [ 'tools' ] },
+                    { name: 'others', groups: [ 'others' ] }
+                ],
+                extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+                removeButtons: '',
+                startupMode: 'wysiwyg',
+                notification: {
+                    duration: 0
+                }
+            });
+            ckeditorEmailEditor.on('change', function() {
+                $('#emailMessage').val(ckeditorEmailEditor.getData());
+            });
+        }
+    }, 300);
+
+    // When template is selected, load subject/content and replace placeholders
+    $('#emailTemplateSelect').on('change', function() {
+        const selected = this.selectedOptions[0];
+        if (!selected || !selected.value) {
+            $('#emailSubject').val('');
+            if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
+            return;
+        }
+        // Replace placeholders in subject/content
+        const subject = replacePlaceholders(selected.dataset.subject, currentTransaction);
+        const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentTransaction);
+        $('#emailSubject').val(subject);
+        if (ckeditorEmailEditor) ckeditorEmailEditor.setData(content);
+    });
+
+    // On send, set hidden input to CKEditor HTML and send email via AJAX
+    $('#sendEmailBtn').click(function() {
+        $('#emailMessage').val(ckeditorEmailEditor ? ckeditorEmailEditor.getData() : '');
+        var formData = {
+            recipient: $('#emailRecipient').val(),
+            subject: $('#emailSubject').val(),
+            message: $('#emailMessage').val(),
+            load_id: $('#emailLoadId').val(),
+            template_id: $('#emailTemplateSelect').val(),
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+        // Show loading state
+        Swal.fire({
+            title: 'Sending Email...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+        $.ajax({
+            url: '/loadboard/send-email',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Email sent successfully',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    $('#sendEmailModal').modal('hide');
+                    // Optionally reset the form
+                    $('#sendEmailForm')[0].reset();
+                    if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.message || 'Failed to send email'
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.message || 'Something went wrong'
+                });
+            }
+        });
+    });
+
+    // Handle modal hidden event
+    $('#sendEmailModal').on('hidden.bs.modal', function () {
+        if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
         this.querySelector('form').reset();
     });
 });

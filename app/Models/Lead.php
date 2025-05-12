@@ -39,7 +39,8 @@ class Lead extends Model
         'downpayment',
         'grand_total',
         'uploaded_image',
-        'date'
+        'date',
+        'transaction_id'
     ];
 
     protected $casts = [

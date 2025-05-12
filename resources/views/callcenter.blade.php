@@ -3,6 +3,12 @@
 @section('title', 'Call Center')
 
 @section('content')
+<!-- Add Select2 CSS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
@@ -27,9 +33,16 @@
                 <div class="card-header bg-white">
                     <h4 class="card-title mb-0">Possible Leads</h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body position-relative">
+                    <div class="loading-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:10; align-items:center; justify-content:center;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-hover datatable mb-0" id="datatable_1">
+                        <table class="table table-hover table-striped table-bordered table-sm datatable mb-0" id="datatable_1">
                             <thead class="table-light">
                               <tr>
                                 <th>ID</th>
@@ -39,6 +52,7 @@
                                 <th>Sales Name</th>
                                 <th>Move Date</th>
                                 <th>Status</th>
+                                <th>Company</th>
                                 <th class="text-center">Actions</th>
                               </tr>
                             </thead>
@@ -187,7 +201,7 @@
     </div>
 </div>
 
-<!-- Add Email Modal -->
+<!-- Send Email Modal -->
 <div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content border-0 shadow">
@@ -195,34 +209,42 @@
                 <h5 class="modal-title" id="sendEmailModalLabel"><i class="fas fa-envelope me-2"></i>Send Email</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="sendEmailForm" method="POST">
-                @csrf
+            <form id="sendEmailForm">
+                <input type="hidden" id="emailLeadId" name="lead_id">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label class="form-label">Email Template</label>
-                                <select class="form-select" id="emailTemplate" name="template_id" required>
-                                    <option value="">Select Template</option>
+                                <label for="emailRecipient" class="form-label">To</label>
+                                <input type="email" class="form-control" id="emailRecipient" name="recipient" readonly required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="emailTemplateSelect" class="form-label">Select Template</label>
+                                <select class="form-select" id="emailTemplateSelect">
+                                    <option value="">Select a template</option>
                                     @foreach($templates as $template)
-                                        <option value="{{ $template->id }}">{{ $template->name }}</option>
+                                        <option value="{{ $template->id }}" data-subject="{{ $template->subject }}" data-content="{{ htmlspecialchars($template->content) }}">
+                                            {{ $template->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label class="form-label">Subject</label>
-                                <input type="text" class="form-control" name="subject" required>
+                                <label for="emailSubject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="emailSubject" name="subject" required>
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label class="form-label">Email Content</label>
+                                <label for="emailMessage" class="form-label">Message</label>
                                 <div class="card">
                                     <div class="card-body">
-                                        <div id="emailEditor" style="height: 400px;"></div>
-                                        <input type="hidden" name="content" id="emailContent">
+                                        <textarea id="ckeditorEmailEditor" name="message" style="height: 250px;"></textarea>
+                                        <input type="hidden" id="emailMessage" name="message">
                                     </div>
                                 </div>
                             </div>
@@ -230,12 +252,8 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Close
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-1"></i>Send Email
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
                 </div>
             </form>
         </div>
@@ -266,6 +284,32 @@
     .ql-editor {
         line-height: 1.4 !important;
     }
+    .loading-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.7);
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+    }
+    .loading-overlay.active {
+        display: flex !important;
+    }
+    /* Hide CKEditor notifications */
+    .cke_notifications_area {
+        display: none !important;
+    }
+    /* Add this to hide notifications */
+    .cke_notification {
+        display: none !important;
+    }
+    .cke_notification_area {
+        display: none !important;
+    }
 </style>
 <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
@@ -287,7 +331,74 @@
         font-size: 0.875rem;
     }
     
-    /* Existing styles remain unchanged */
+    /* Fix table responsiveness */
+    .table-responsive {
+        overflow-x: unset;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* DataTable Styles */
+    .dataTables_wrapper {
+        padding: 0.5rem;
+    }
+    
+    .dataTables_wrapper .row:first-child,
+    .dataTables_wrapper .row:last-child {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dataTables_filter input {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        margin-left: 0.5rem;
+    }
+    
+    .dataTables_length select {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        margin: 0 0.3rem;
+    }
+    
+    .dataTables_paginate .paginate_button {
+        padding: 0.375rem 0.75rem;
+        margin: 0 0.2rem;
+        border-radius: 0.25rem;
+        border: none;
+    }
+    
+    .dataTables_paginate .paginate_button.current {
+        background: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #fff !important;
+    }
+    
+    .dataTables_paginate .paginate_button:hover {
+        background: #e9ecef;
+        color: #212529 !important;
+        border: none;
+    }
+    
+    .loading-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.7);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .loading-overlay.active {
+        display: flex !important;
+    }
+    
+    /* Card Styles */
     .card {
         transition: all 0.3s ease;
         margin-bottom: 1.5rem;
@@ -297,6 +408,7 @@
         border-bottom: 1px solid #eee;
     }
     
+    /* Table Styles */
     .table {
         margin-bottom: 0;
     }
@@ -351,29 +463,6 @@
         border-bottom-right-radius: 0.5rem;
     }
     
-    /* DataTable Styles */
-    .dataTables_wrapper {
-        padding: 1rem;
-    }
-    
-    .dataTables_filter input,
-    .dataTables_length select {
-        border: 1px solid #dee2e6;
-        border-radius: 0.25rem;
-        padding: 0.375rem 0.75rem;
-    }
-    
-    .dataTables_paginate .paginate_button {
-        padding: 0.375rem 0.75rem;
-        margin: 0 0.2rem;
-    }
-    
-    .dataTables_paginate .paginate_button.current {
-        background: #0d6efd !important;
-        border-color: #0d6efd;
-        color: #fff !important;
-    }
-    
     /* Responsive Styles */
     @media (max-width: 768px) {
         .page-title-box {
@@ -420,13 +509,25 @@
         }
 
         // Initialize DataTable
+        var $overlay = $('.loading-overlay');
+        
+        // First, destroy any existing tables to prevent duplicates
+        if ($.fn.DataTable.isDataTable('#datatable_1')) {
+            $('#datatable_1').DataTable().destroy();
+        }
+        
+        // Remove any existing DataTables controls before initialization
+        $('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate').remove();
+        
+        // Initialize the DataTable with deferRender and no initial load
         table = $('#datatable_1').DataTable({
             processing: true,
             serverSide: true,
+            deferRender: true,
             pageLength: 10,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             ajax: {
-                url: '{{ route("leads.datatable") }}',
+                url: '{{ route("callcenter.datatable") }}',
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -435,6 +536,12 @@
                     @if(Auth::user()->privilege === 'agent')
                     d.company = '{{ Auth::user()->last_name }}';
                     @endif
+                },
+                beforeSend: function() {
+                    $overlay.addClass('active');
+                },
+                complete: function() {
+                    $overlay.removeClass('active');
                 }
             },
             columns: [
@@ -443,24 +550,59 @@
                 { data: 'phone' },
                 { data: 'email' },
                 { data: 'sales_name' },
-                {
+                { 
                     data: 'date',
                     render: function(data, type, row) {
-                        if (type === 'display' || type === 'filter') {
+                        if (type === 'display') {
                             return row.date_display;
                         }
                         return data;
-                    },
-                    name: 'Move Date'
+                    }
                 },
-                { data: 'status' },
-                { data: 'actions', orderable: false, searchable: false }
+                { 
+                    data: 'status',
+                    render: function(data, type, row) {
+                        return data; // This ensures HTML is rendered properly
+                    }
+                },
+                { data: 'company_name' },
+                { 
+                    data: 'actions',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                }
             ],
-            order: [[0, 'desc']]
+            order: [[0, 'desc']],
+            responsive: true,
+            dom: '<"row"<"col-sm-12"tr>><"row g-3 mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)",
+                zeroRecords: "No matching records found",
+                paginate: {
+                    first: '<i class="fas fa-angle-double-left"></i>',
+                    previous: '<i class="fas fa-angle-left"></i>',
+                    next: '<i class="fas fa-angle-right"></i>',
+                    last: '<i class="fas fa-angle-double-right"></i>'
+                }
+            },
+            drawCallback: function() {
+                // Reinitialize tooltips after table redraw
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl)
+                });
+            },
+            // Prevent initial load
+            initComplete: function() {
+                // Don't load data initially
+                table.ajax.reload(null, false);
+            }
         });
-
-        // Remove silent sync on page load
-        // silentSync();
 
         // Add sync button functionality
         $('#syncLeads').on('click', function() {
@@ -481,18 +623,18 @@
                     @endif
                 },
                 success: function(response) {
-                    if (response.new_count > 0) {
+                    if (response.success) {
                         table.ajax.reload();
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            text: `Added ${response.new_count} new leads`
+                            text: `Added ${response.new_count} new leads and updated ${response.updated_count} existing leads`
                         });
                     } else {
                         Swal.fire({
-                            icon: 'info',
-                            title: 'No New Leads',
-                            text: 'All leads are up to date'
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message || 'Failed to sync leads'
                         });
                     }
                 },
@@ -510,14 +652,40 @@
             });
         });
 
-        // Remove any existing DataTables controls before initialization
-        $('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate').remove();
+        // Add silent sync function
+        function silentSync() {
+            $.ajax({
+                url: "{{ route('leads.sync') }}",
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                data: {
+                    action: 'add_new',
+                    @if(Auth::user()->privilege === 'agent')
+                    company: '{{ Auth::user()->last_name }}'
+                    @endif
+                },
+                success: function(response) {
+                    if (response.success) {
+                        table.ajax.reload();
+                        // Only show toast if there are new leads
+                        if (response.new_count > 0) {
+                            showToast(`Added ${response.new_count} new leads`);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Silent sync failed:', xhr.responseJSON?.message || 'Unknown error');
+                }
+            });
+        }
 
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
+        // Perform initial sync when page loads
+        silentSync();
+
+        // Set up periodic silent sync every 5 minutes
+        setInterval(silentSync, 300000); // 300000 ms = 5 minutes
 
         // Handle Create Lead form submission
         $('#submitLeadForm').on('click', function(e) {
@@ -673,9 +841,7 @@
         $(document).on('click', '.send-quote', function(e) {
             e.preventDefault();
             var leadId = $(this).data('id');
-            // You may want to open a modal for sending a quote/email
-            // For now, just show a placeholder alert
-            Swal.fire('Send Quote/Email', 'Lead ID: ' + leadId, 'info');
+            sendEmail(leadId);
         });
 
         // Handle delete button click
@@ -894,43 +1060,19 @@
             // Create edit modal HTML
             var modalHtml = `
                 <div class="modal fade" id="editLeadModal" tabindex="-1" aria-labelledby="editLeadModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
+                    <div class="modal-dialog">
                         <div class="modal-content border-0 shadow">
                             <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title" id="editLeadModalLabel"><i class="fas fa-edit me-2"></i>Edit Lead</h5>
+                                <h5 class="modal-title" id="editLeadModalLabel"><i class="fas fa-edit me-2"></i>Update Lead Status</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <form id="editLeadForm" action="/callcenter/${leadId}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="modal-body">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="edit_name" class="form-label">Name <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" id="edit_name" name="name" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="edit_phone" class="form-label">Phone <span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" id="edit_phone" name="phone" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="edit_email" class="form-label">Email</label>
-                                                <input type="email" class="form-control" id="edit_email" name="email">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="edit_company" class="form-label">Company</label>
-                                                <input type="text" class="form-control" id="edit_company" name="company">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="form-group mb-0">
                                                 <label for="edit_status" class="form-label">Status <span class="text-danger">*</span></label>
                                                 <select class="form-select" id="edit_status" name="status" required>
                                                     <option value="">Select Status</option>
@@ -942,33 +1084,14 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="edit_source" class="form-label">Source</label>
-                                                <select class="form-select" id="edit_source" name="source">
-                                                    <option value="">Select Source</option>
-                                                    <option value="website">Website</option>
-                                                    <option value="referral">Referral</option>
-                                                    <option value="social">Social Media</option>
-                                                    <option value="email">Email Campaign</option>
-                                                    <option value="other">Other</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="edit_notes" class="form-label">Notes</label>
-                                                <textarea class="form-control" id="edit_notes" name="notes" rows="3"></textarea>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="modal-footer bg-light">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                        <i class="fas fa-times me-1"></i>Close
+                                        <i class="fas fa-times me-1"></i>Cancel
                                     </button>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-1"></i>Update Lead
+                                        <i class="fas fa-save me-1"></i>Update Status
                                     </button>
                                 </div>
                             </form>
@@ -983,22 +1106,19 @@
             // Add the new modal to the body
             $('body').append(modalHtml);
             
-            // Set form values
-            $('#edit_name').val(leadData.name);
-            $('#edit_phone').val(leadData.phone);
-            $('#edit_email').val(leadData.email);
-            $('#edit_company').val(leadData.company);
+            // Get the status from the row data and set it
+            var row = table.row($(`.edit-lead[data-id="${leadId}"]`).closest('tr')).data();
+            var status = '';
             
-            // Get the status from the badge text and convert to lowercase
-            var status = leadData.status || 'new';
+            if (row && row.status) {
+                // Extract status value from the HTML badge
+                var statusText = $(row.status).text().trim().toLowerCase();
+                status = statusText;
+            } else {
+                status = 'new';
+            }
+            
             $('#edit_status').val(status);
-
-            // Get the source from the row data
-            var source = leadData.source || 'website';
-            $('#edit_source').val(source);
-
-            // Set notes if available
-            $('#edit_notes').val(leadData.notes || '');
 
             // Show the modal
             var editModal = new bootstrap.Modal(document.getElementById('editLeadModal'));
@@ -1011,8 +1131,8 @@
                 
                 // Show loading state with SweetAlert2
                 Swal.fire({
-                    title: 'Updating Lead',
-                    text: 'Please wait while we update the data...',
+                    title: 'Updating Status',
+                    text: 'Please wait...',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
                     showConfirmButton: false,
@@ -1021,17 +1141,11 @@
                     }
                 });
 
-                // Create FormData object
+                // Create FormData object with only the status field
                 var formData = new FormData();
                 formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
                 formData.append('_method', 'PUT');
-                formData.append('name', $('#edit_name').val());
-                formData.append('phone', $('#edit_phone').val());
-                formData.append('email', $('#edit_email').val());
-                formData.append('company', $('#edit_company').val());
                 formData.append('status', $('#edit_status').val());
-                formData.append('source', $('#edit_source').val());
-                formData.append('notes', $('#edit_notes').val());
                 
                 $.ajax({
                     url: form.attr('action'),
@@ -1040,27 +1154,27 @@
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        // Show success message with SweetAlert2
+                        // Show success message
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            text: 'Lead updated successfully',
+                            text: 'Status updated successfully',
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
                             // Close the modal
                             $('#editLeadModal').modal('hide');
                             
-                            // Reload the table data
-                            reloadTableData();
+                            // Reload the DataTable
+                            table.ajax.reload(null, false);
                         });
                     },
                     error: function(xhr) {
-                        // Show error message with SweetAlert2
+                        // Show error message
                         Swal.fire({
                             icon: 'error',
                             title: 'Error!',
-                            text: xhr.responseJSON?.message || 'Failed to update lead',
+                            text: xhr.responseJSON?.message || 'Failed to update status',
                             confirmButtonText: 'OK'
                         });
                     }
@@ -1068,102 +1182,113 @@
             });
         }
 
-        // Initialize Quill editor for email content
-        var emailQuill = new Quill('#emailEditor', {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ 'font': [] }, { 'size': [] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'script': 'sub'}, { 'script': 'super' }],
-                    [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-                    [{ 'direction': 'rtl' }],
-                    [{ 'align': [] }],
-                    ['link', 'image', 'video'],
-                    ['clean']
-                ]
-            }
-        });
-
-        // Handle send email button click
-        $(document).on('click', '.send-email-btn', function(e) {
-            e.preventDefault();
-            var leadId = $(this).data('lead-id');
-            var row = $(this).closest('tr');
-            var leadEmail = row.find('td:eq(3)').text().trim();
-            
-            // Set the form action
-            $('#sendEmailForm').attr('action', `/callcenter/${leadId}/send-email`);
-            
-            // Reset form and show modal
-            $('#sendEmailForm')[0].reset();
-            emailQuill.root.innerHTML = '';
-            
-            // Show the modal
-            var sendEmailModal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
-            sendEmailModal.show();
-        });
-
-        // Handle email template selection change
-        $('#emailTemplate').on('change', function() {
-            var templateId = $(this).val();
-            if (templateId) {
-                // Show loading state
-                Swal.fire({
-                    title: 'Loading...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+        // Add global sendEmail function
+        var ckeditorEmailEditor;
+        var currentLead = {};
+        window.sendEmail = function(leadId) {
+            $.get(`/callcenter/${leadId}/data`, function(data) {
+                currentLead = data; // Store for placeholder replacement
+                // Format date fields for display in templates
+                if (currentLead.date) {
+                    currentLead.date_formatted = moment(currentLead.date).format('MMMM D, YYYY');
+                }
+                if (currentLead.created_at) {
+                    currentLead.created_at_formatted = moment(currentLead.created_at).format('MMMM D, YYYY');
+                }
+                $('#emailLeadId').val(leadId);
+                $('#emailRecipient').val(data.email);
+                $('#emailSubject').val('');
+                $('#emailMessage').val('');
+                $('#emailTemplateSelect').val('').trigger('change');
                 
-                // Fetch template content
-                fetch(`/email-templates/${templateId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        emailQuill.root.innerHTML = data.content || '';
-                        $('#sendEmailForm [name="subject"]').val(data.subject || '');
-                        Swal.close();
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: 'Failed to load template'
-                        });
+                // Initialize CKEditor if not already initialized
+                if (!ckeditorEmailEditor) {
+                    ckeditorEmailEditor = CKEDITOR.replace('ckeditorEmailEditor', {
+                        height: 250,
+                        toolbarGroups: [
+                            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+                            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+                            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+                            { name: 'forms', groups: [ 'forms' ] },
+                            '/',
+                            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+                            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+                            { name: 'links', groups: [ 'links' ] },
+                            { name: 'insert', groups: [ 'insert' ] },
+                            '/',
+                            { name: 'styles', groups: [ 'styles' ] },
+                            { name: 'colors', groups: [ 'colors' ] },
+                            { name: 'tools', groups: [ 'tools' ] },
+                            { name: 'others', groups: [ 'others' ] }
+                        ],
+                        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+                        removeButtons: '',
+                        startupMode: 'wysiwyg',
+                        notification: {
+                            duration: 0
+                        }
                     });
+                    
+                    ckeditorEmailEditor.on('change', function() {
+                        $('#emailMessage').val(ckeditorEmailEditor.getData());
+                    });
+                } else {
+                    ckeditorEmailEditor.setData('');
+                }
+                
+                $('#sendEmailModal').modal('show');
+            });
+        };
+
+        // Helper: Replace placeholders in a string with lead data
+        function replacePlaceholders(str, data) {
+            if (!str) return '';
+            return str.replace(/\{(\w+)\}/g, function(match, key) {
+                // Directly map all placeholders to data object properties
+                return typeof data[key] !== 'undefined' && data[key] !== null ? data[key] : match;
+            });
+        }
+
+        // When template is selected, load subject/content and replace placeholders in both
+        $('#emailTemplateSelect').on('change', function() {
+            const selected = this.selectedOptions[0];
+            if (!selected || !selected.value) {
+                $('#emailSubject').val('');
+                if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
+                return;
             }
+            // Replace placeholders in subject and content using current lead data
+            const subject = replacePlaceholders(selected.dataset.subject, currentLead);
+            const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentLead);
+            $('#emailSubject').val(subject);
+            if (ckeditorEmailEditor) ckeditorEmailEditor.setData(content);
         });
 
-        // Handle send email form submission
-        $('#sendEmailForm').on('submit', function(e) {
-            e.preventDefault();
-            document.getElementById('emailContent').value = emailQuill.root.innerHTML;
+        // On send, set hidden input to CKEditor HTML and send email via AJAX
+        $('#sendEmailBtn').click(function() {
+            $('#emailMessage').val(ckeditorEmailEditor ? ckeditorEmailEditor.getData() : '');
+            var formData = {
+                recipient: $('#emailRecipient').val(),
+                subject: $('#emailSubject').val(),
+                message: $('#emailMessage').val(),
+                lead_id: $('#emailLeadId').val(),
+                template_id: $('#emailTemplateSelect').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')
+            };
             
             // Show loading state
             Swal.fire({
                 title: 'Sending Email...',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
             
             $.ajax({
-                url: $(this).attr('action'),
-                type: 'POST',
-                data: new FormData(this),
-                processData: false,
-                contentType: false,
+                url: '/callcenter/send-email',
+                method: 'POST',
+                data: formData,
                 success: function(response) {
                     if (response.success) {
-                        // Close modal
-                        $('#sendEmailModal').modal('hide');
-                        
-                        // Show success message
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
@@ -1171,85 +1296,40 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
+                        $('#sendEmailModal').modal('hide');
+                        // Reset the form
+                        $('#sendEmailForm')[0].reset();
+                        if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
                     } else {
-                        throw new Error(response.message || 'Failed to send email');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                            text: response.message || 'Failed to send email'
+                        });
                     }
                 },
                 error: function(xhr) {
-                    console.error('Error:', xhr);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: xhr.responseJSON?.message || 'Something went wrong. Please try again later.'
+                        text: xhr.responseJSON?.message || 'Something went wrong. Please try again.'
                     });
                 }
             });
         });
 
-        // Handle Add Log button click
-        $(document).on('click', '.add-log-btn', function(e) {
-            e.preventDefault();
-            var leadId = $(this).data('lead-id') || $(this).data('id');
-            // Close any open modals first
-            $('.modal').modal('hide');
-            // Set the form action
-            $('#addLogForm').attr('action', `/callcenter/${leadId}/logs`);
-            // Show the modal after a short delay to allow backdrop to clear
-            setTimeout(function() {
-                var addLogModal = new bootstrap.Modal(document.getElementById('addLogModal'));
-                addLogModal.show();
-            }, 400);
-        });
-
-        // Handle Add Log form submission via AJAX
-        $('#addLogForm').on('submit', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            var url = form.attr('action');
-            var leadId = url.split('/')[2]; // Extract lead ID from URL
-            // Show loading state
-            Swal.fire({
-                title: 'Saving...',
-                text: 'Please wait while we save the log',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-            // Create FormData object
-            var formData = new FormData(form[0]);
-            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Log added successfully',
-                        icon: 'success',
-                        confirmButtonText: 'Close'
-                    });
-                    // Close the modal
-                    $('#addLogModal').modal('hide');
-                    // Reset the form
-                    form[0].reset();
-                    // Reload logs modal
-                    loadLogsModal(leadId);
-                },
-                error: function(xhr) {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: xhr.responseJSON?.message || 'Something went wrong',
-                        icon: 'error',
-                        confirmButtonText: 'Close'
-                    });
-                }
-            });
+        // Initialize Select2 for email template selection
+        $('#emailTemplateSelect').select2({
+            dropdownParent: $('#sendEmailModal'),
+            width: '100%',
+            placeholder: 'Select a template',
+            allowClear: true,
+            theme: 'bootstrap-5'
         });
     });
 </script>
+
+<!-- Add Select2 JS before the closing body tag -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 @endsection

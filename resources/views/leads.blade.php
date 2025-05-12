@@ -4,9 +4,7 @@
 
 <!-- Required Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-<!-- Quill Editor CSS -->
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 <!-- Select2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -18,47 +16,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 
 <style>
+    /* CKEditor custom styling */
+    .cke {
+        visibility: hidden;
+    }
     
+    .cke_top {
+        border-bottom: 1px solid #e5e7eb !important;
+        background: #f9fafb !important;
+    }
     
-    .ql-editor p {
-        margin: 0 0 10px 0 !important;
-        line-height: 1.4 !important;
-    }
-    .ql-editor {
-        line-height: 1.4 !important;
-    }
-
-    /* Quill Editor Background Color */
-    .ql-container {
-        background-color: #ffffff !important;
-    }
-
-    .ql-toolbar {
-        background-color: #f8f9fa !important;
-        border-top-left-radius: 8px !important;
-        border-top-right-radius: 8px !important;
-    }
-
-    .ql-editor {
-        background-color: #ffffff !important;
-        min-height: 200px !important;
-        border-bottom-left-radius: 8px !important;
-        border-bottom-right-radius: 8px !important;
-    }
-
-    .ql-container.ql-snow {
-        border: 1px solid #e5e7eb !important;
+    .cke_chrome {
+        border-color: #e5e7eb !important;
+        box-shadow: none !important;
         border-radius: 8px !important;
     }
     
-    /* Make Quill editor adjustable in height */
-    .ql-container {
-        min-height: 400px;
-        max-height: 600px;
-        resize: vertical;
-        overflow: auto;
+    .cke_bottom {
+        border-top: 1px solid #e5e7eb !important;
+        background: #f9fafb !important;
     }
-    </style>
+    
+    .cke_editable {
+        padding: 10px;
+        min-height: 200px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    /* Hide CKEditor notifications */
+    .cke_notifications_area {
+        display: none !important;
+    }
+    
+    /* CKEditor Table styles */
+    .cke_editable table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        border: 2px solid #bbb;
+        table-layout: fixed;
+    }
+    
+    .cke_editable table th {
+        padding: 10px;
+        background-color: #f2f2f2;
+        border: 1px solid #ccc;
+        font-weight: bold;
+        text-align: left;
+    }
+    
+    .cke_editable table td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        vertical-align: top;
+    }
+    
+    .cke_editable table tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+</style>
 @section('content')
 <meta name="transaction-id" content="{{ $transaction->id }}">
 <div class="container-fluid">
@@ -975,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // Define sendEmail function globally
 let currentTransaction = {};
-let quillEmailEditor;
+let ckeditorEmailEditor;
 let sentEmailsTable;
 
 function reloadSentEmailsTable() {
@@ -999,11 +1016,20 @@ function sendEmail(transactionId) {
                 data = data.data;
             }
             currentTransaction = data; // Store for placeholder replacement
+            // Format date fields for display in templates
+            if (currentTransaction.date) {
+                currentTransaction.date_formatted = moment(currentTransaction.date).format('MMMM D, YYYY');
+            }
+            if (currentTransaction.created_at) {
+                currentTransaction.created_at_formatted = moment(currentTransaction.created_at).format('MMMM D, YYYY');
+            }
             document.getElementById('emailRecipient').value = data.email;
             document.getElementById('emailSubject').value = '';
             document.getElementById('emailMessage').value = '';
             document.getElementById('emailTemplateSelect').value = '';
-            quillEmailEditor.root.innerHTML = '';
+            if (ckeditorEmailEditor) {
+                ckeditorEmailEditor.setData('');
+            }
             
             // Show modal using Bootstrap 5
             const modal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
@@ -1033,6 +1059,35 @@ function replacePlaceholders(str, data) {
         }
         return (value !== undefined && value !== null) ? value : match;
     });
+}
+
+// Function to insert text into CKEditor
+function insertTextIntoCKEditor(editor, text) {
+    if (!editor) return;
+    
+    try {
+        // This is the correct way to insert text in CKEditor 4
+        var selection = editor.getSelection();
+        if (selection) {
+            var range = selection.getRanges()[0];
+            if (range) {
+                range.insertNode(new CKEDITOR.dom.text(text));
+                range.select();
+            }
+        }
+    } catch (error) {
+        console.error('Error inserting text into CKEditor:', error);
+        // Fallback methods
+        try {
+            editor.insertText(text);
+        } catch (e) {
+            try {
+                editor.insertHtml(text);
+            } catch (e2) {
+                console.error('All methods to insert text failed');
+            }
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1076,23 +1131,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize Quill editor
-    quillEmailEditor = new Quill('#quillEmailEditor', {
-        theme: 'snow',
-        modules: {
-            toolbar: [
-                [{ 'font': [] }, { 'size': [] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'color': [] }, { 'background': [] }],
-                [{ 'script': 'sub'}, { 'script': 'super' }],
-                [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-                [{ 'direction': 'rtl' }],
-                [{ 'align': [] }],
-                ['link', 'image', 'video'],
-                ['clean']
-            ]
+    // Initialize CKEditor
+    ckeditorEmailEditor = CKEDITOR.replace('quillEmailEditor', {
+        height: 250,
+        toolbarGroups: [
+            { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+            { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+            { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+            { name: 'forms', groups: [ 'forms' ] },
+            '/',
+            { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+            { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+            { name: 'links', groups: [ 'links' ] },
+            { name: 'insert', groups: [ 'insert' ] },
+            '/',
+            { name: 'styles', groups: [ 'styles' ] },
+            { name: 'colors', groups: [ 'colors' ] },
+            { name: 'tools', groups: [ 'tools' ] },
+            { name: 'others', groups: [ 'others' ] }
+        ],
+        extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+        removeButtons: '',
+        startupMode: 'wysiwyg',
+        notification: {
+            duration: 0
         }
+    });
+    
+    // Update hidden field when CKEditor content changes
+    ckeditorEmailEditor.on('change', function() {
+        document.getElementById('emailMessage').value = ckeditorEmailEditor.getData();
     });
 
     // Initialize Select2 for email template dropdown
@@ -1112,14 +1180,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const selected = this.selectedOptions[0];
         if (!selected || !selected.value) {
             $('#emailSubject').val('');
-            quillEmailEditor.root.innerHTML = '';
+            ckeditorEmailEditor.setData('');
             return;
         }
         // Replace placeholders in subject/content
         const subject = replacePlaceholders(selected.dataset.subject, currentTransaction);
         const content = replacePlaceholders($('<textarea/>').html(selected.dataset.content).text(), currentTransaction);
         $('#emailSubject').val(subject);
-        quillEmailEditor.root.innerHTML = content;
+        ckeditorEmailEditor.setData(content);
     });
 
     // Add click event listener to the send email button
@@ -1141,11 +1209,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         data = data.data;
                     }
                     currentTransaction = data; // Store for placeholder replacement
+                    // Format date fields for display in templates
+                    if (currentTransaction.date) {
+                        currentTransaction.date_formatted = moment(currentTransaction.date).format('MMMM D, YYYY');
+                    }
+                    if (currentTransaction.created_at) {
+                        currentTransaction.created_at_formatted = moment(currentTransaction.created_at).format('MMMM D, YYYY');
+                    }
                     document.getElementById('emailRecipient').value = data.email;
                     document.getElementById('emailSubject').value = '';
                     document.getElementById('emailMessage').value = '';
                     document.getElementById('emailTemplateSelect').value = '';
-                    quillEmailEditor.root.innerHTML = '';
+                    ckeditorEmailEditor.setData('');
                     
                     // Show modal using Bootstrap 5
                     const modal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
@@ -1164,10 +1239,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = {
             recipient: document.getElementById('emailRecipient').value,
             subject: document.getElementById('emailSubject').value,
-            message: quillEmailEditor.root.innerHTML,
+            message: ckeditorEmailEditor.getData(),
             template_id: document.getElementById('emailTemplateSelect').value,
             _token: document.querySelector('meta[name="csrf-token"]').content
         };
+
+        // Update hidden input for form submission compatibility with previous Quill implementation
+        document.getElementById('emailMessage').value = formData.message;
 
         // Show loading state
         Swal.fire({
@@ -1219,8 +1297,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('emailRecipient').value = '';
                 document.getElementById('emailSubject').value = '';
                 document.getElementById('emailTemplateSelect').value = '';
-                if (quillEmailEditor) {
-                    quillEmailEditor.root.innerHTML = '';
+                if (ckeditorEmailEditor) {
+                    ckeditorEmailEditor.setData('');
                 }
                 
                 // Reload the sent emails table
@@ -1282,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <label for="emailMessage" class="form-label">Message</label>
                                 <div class="card">
                                     <div class="card-body">
-                                        <div id="quillEmailEditor" style="height: 250px;"></div>
+                                        <textarea id="quillEmailEditor" name="message" style="height: 250px;"></textarea>
                                         <input type="hidden" id="emailMessage" name="message">
                                     </div>
                                 </div>
