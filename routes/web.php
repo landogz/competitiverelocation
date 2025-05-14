@@ -16,6 +16,9 @@ use App\Http\Controllers\CallCenterController;
 use App\Http\Controllers\SalesRepController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\ServiceRateController;
+use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\BestAgentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -129,17 +132,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/callcenter/datatable', [CallCenterController::class, 'datatable'])->name('callcenter.datatable');
     Route::get('/callcenter/{id}/data', [CallCenterController::class, 'getLeadData'])->name('callcenter.get-lead-data');
 
-    Route::get('/salesreports', function () {
-        return view('salesreports');
-    });
+    Route::get('/salesreports', [SalesReportController::class, 'index'])->name('salesreports.index');
+    Route::get('/salesreports/export', [SalesReportController::class, 'export'])->name('salesreports.export');
+    Route::get('/salesreports/performance-data', [SalesReportController::class, 'getPerformanceData'])->name('salesreports.performance-data');
+    Route::get('/salesreports/stats-data', [SalesReportController::class, 'getStatsData'])->name('salesreports.stats-data');
+    Route::get('/salesreports/category-data', [SalesReportController::class, 'getCategoryData'])->name('salesreports.category-data');
+    Route::get('/salesreports/agent-data', [SalesReportController::class, 'getAgentData'])->name('salesreports.agent-data');
 
-    Route::get('/bestagents', function () {
-        return view('bestagents');
-    });
+    Route::get('/bestagents', [BestAgentsController::class, 'index'])->name('bestagents.index');
+    Route::get('/bestagents/stats-data', [BestAgentsController::class, 'getStatsData'])->name('bestagents.stats-data');
+    Route::get('/bestagents/performance-data', [BestAgentsController::class, 'getPerformanceData'])->name('bestagents.performance-data');
+    Route::get('/bestagents/export', [BestAgentsController::class, 'export'])->name('bestagents.export');
+    Route::get('/bestagents/detailed-stats', [BestAgentsController::class, 'getDetailedAgentStats'])->name('bestagents.detailed-stats');
 
-    Route::get('/servicerates', function () {
-        return view('servicerates');
-    });
+    Route::get('/servicerates', [ServiceRateController::class, 'index'])->name('servicerates.index');
+    Route::post('/servicerates/{id}', [ServiceRateController::class, 'update'])->name('servicerates.update');
+    Route::post('/servicerates-batch', [ServiceRateController::class, 'updateBatch'])->name('servicerates.update-batch');
 
     Route::get('/settings', function () {
         return view('settings');

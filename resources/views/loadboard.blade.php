@@ -1113,6 +1113,15 @@
         // Configure moment.js
         moment.locale('en');
 
+        // Handle modal backdrop cleanup issue
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            // Remove any lingering backdrop
+            $('.modal-backdrop').remove();
+            // Ensure body doesn't have the modal-open class
+            $('body').removeClass('modal-open');
+            $('body').css('padding-right', '');
+        });
+
         // Toast function for silent sync
         function showToast(message) {
             Swal.fire({
@@ -1147,7 +1156,7 @@
                         
                         // Only show toast if there are new transactions
                         if (response.new_count > 0) {
-                            showToast(`Sync completed: ${response.new_count} new transactions added`);
+                            showToast(`Sync completed: ${response.new_count} new transactions added, ${response.skipped_count} skipped`);
 
                             location.reload();
                         }
@@ -1525,7 +1534,13 @@
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Sync Completed!',
-                                text: `Added ${response.new_count} new transactions`
+                                text: `Added ${response.new_count} new transactions, skipped ${response.skipped_count} existing transactions`
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Sync Completed',
+                                text: `No new transactions found. Skipped ${response.skipped_count} existing transactions.`
                             });
                         }
                     } else {

@@ -1,0 +1,883 @@
+@extends('includes.app')
+
+@section('title', 'Best Agents')
+
+@section('content')
+<div class="container-fluid">
+    <!-- Page Title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-flex align-items-center justify-content-between">
+                <h4 class="mb-0">Best Performing Agents</h4>
+                <div class="page-title-right d-flex align-items-center">
+                    <select id="statsRange" class="form-select form-select-sm me-2" style="width: auto;">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="last_7_days" selected>Last 7 Days</option>
+                        <option value="this_week">This Week</option>
+                        <option value="last_week">Last Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="last_3_months">Last 3 Months</option>
+                    </select>
+                    <button class="btn btn-primary" id="exportBtn">
+                        <i class="fas fa-download me-1"></i> Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-h-100">
+                <div class="card-body" data-stat="totalAgents">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Agents</span>
+                            <h4 class="mb-3">
+                                <span class="counter-value" data-target="25">0</span>
+                                <span class="text-success ms-2 fs-12">
+                                    <i class="fas fa-arrow-up me-1"></i>4%
+                                </span>
+                            </h4>
+                            <div class="text-nowrap">
+                                <span class="badge bg-soft-success text-success">+2</span>
+                                <span class="ms-1 text-muted">From last period</span>
+                            </div>
+                        </div>
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-soft-primary rounded-circle fs-3">
+                                <i class="fas fa-users text-primary"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-h-100">
+                <div class="card-body" data-stat="totalSales">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Sales</span>
+                            <h4 class="mb-3">
+                                $<span class="counter-value" data-target="154320">0</span>
+                                <span class="text-success ms-2 fs-12">
+                                    <i class="fas fa-arrow-up me-1"></i>12%
+                                </span>
+                            </h4>
+                            <div class="text-nowrap">
+                                <span class="badge bg-soft-success text-success">+$16.5k</span>
+                                <span class="ms-1 text-muted">From last period</span>
+                            </div>
+                        </div>
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-soft-success rounded-circle fs-3">
+                                <i class="fas fa-chart-line text-success"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-h-100">
+                <div class="card-body" data-stat="averageRating">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted mb-3 lh-1 d-block text-truncate">Average Rating</span>
+                            <h4 class="mb-3">
+                                <span class="counter-value" data-target="4.8">0</span>
+                                <span class="text-success ms-2 fs-12">
+                                    <i class="fas fa-star text-warning"></i>
+                                </span>
+                            </h4>
+                            <div class="text-nowrap">
+                                <span class="badge bg-soft-success text-success">+0.2</span>
+                                <span class="ms-1 text-muted">From last period</span>
+                            </div>
+                        </div>
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-soft-warning rounded-circle fs-3">
+                                <i class="fas fa-star text-warning"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card card-h-100">
+                <div class="card-body" data-stat="successRate">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted mb-3 lh-1 d-block text-truncate">Success Rate</span>
+                            <h4 class="mb-3">
+                                <span class="counter-value" data-target="92">0</span>%
+                                <span class="text-success ms-2 fs-12">
+                                    <i class="fas fa-arrow-up me-1"></i>3%
+                                </span>
+                            </h4>
+                            <div class="text-nowrap">
+                                <span class="badge bg-soft-success text-success">+2%</span>
+                                <span class="ms-1 text-muted">From last period</span>
+                            </div>
+                        </div>
+                        <div class="avatar-sm flex-shrink-0">
+                            <span class="avatar-title bg-soft-info rounded-circle fs-3">
+                                <i class="fas fa-check-circle text-info"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 3 Agents Podium -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Top Performers Podium</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-end justify-content-center" style="min-height: 300px;">
+                        <!-- Second Place -->
+                        <div class="col-md-4 col-sm-12 text-center order-md-1 order-2">
+                            <div class="position-relative">
+                                <div class="podium-block" style="height: 200px; background: linear-gradient(to bottom, #E5E5E5, #D0D0D0); border-radius: 5px 5px 0 0; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <div class="agent-picture mb-2">
+                                        <img src="{{ asset('assets/images/users/avatar-2.jpg') }}" alt="2nd Place" class="rounded-circle img-thumbnail shadow-sm" width="80">
+                                        <div class="position-badge" style="position: absolute; top: -10px; right: -10px; background: linear-gradient(to bottom right, #C0C0C0, #A9A9A9); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">2</div>
+                                    </div>
+                                    <h5 class="text-dark mb-1">Jane Smith</h5>
+                                    <div class="text-muted small mb-2">$39,800 in sales</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- First Place -->
+                        <div class="col-md-4 col-sm-12 text-center order-md-2 order-1 mb-4 mb-md-0">
+                            <div class="position-relative">
+                                <div class="podium-block" style="height: 250px; background: linear-gradient(to bottom, #FFD700, #FFC107); border-radius: 5px 5px 0 0; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                    <div class="agent-picture mb-2">
+                                        <img src="{{ asset('assets/images/users/avatar-1.jpg') }}" alt="1st Place" class="rounded-circle img-thumbnail shadow-sm" width="100">
+                                        <div class="position-badge" style="position: absolute; top: -15px; right: -15px; background: linear-gradient(to bottom right, #FFD700, #FFC107); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">1</div>
+                                    </div>
+                                    <h4 class="text-dark mb-1">John Doe</h4>
+                                    <div class="text-muted mb-2">$45,000 in sales</div>
+                                    <div class="mb-3">
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                    </div>
+                                </div>
+                                <div class="winner-badge" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%);">
+                                    <i class="fas fa-crown fa-2x" style="color: #FFD700; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Third Place -->
+                        <div class="col-md-4 col-sm-12 text-center order-md-3 order-3">
+                            <div class="position-relative">
+                                <div class="podium-block" style="height: 160px; background: linear-gradient(to bottom, #CD7F32, #B87333); border-radius: 5px 5px 0 0; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    <div class="agent-picture mb-2">
+                                        <img src="{{ asset('assets/images/users/avatar-3.jpg') }}" alt="3rd Place" class="rounded-circle img-thumbnail shadow-sm" width="70">
+                                        <div class="position-badge" style="position: absolute; top: -10px; right: -10px; background: linear-gradient(to bottom right, #CD7F32, #B87333); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">3</div>
+                                    </div>
+                                    <h5 class="text-light mb-1">Mark Johnson</h5>
+                                    <div class="text-light small mb-2">$37,500 in sales</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);">
+                <div class="card-header" style="background: linear-gradient(to right, rgba(91, 115, 232, 0.05), rgba(0, 136, 255, 0.02)); border-bottom: 1px solid rgba(0, 0, 0, 0.05); border-radius: 10px 10px 0 0; padding: 15px 20px;">
+                    <h4 class="card-title mb-0">Agent Performance Trends</h4>
+                </div>
+                <div class="card-body">
+                    <div id="performanceChart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);">
+                <div class="card-header" style="background: linear-gradient(to right, rgba(91, 115, 232, 0.05), rgba(0, 136, 255, 0.02)); border-bottom: 1px solid rgba(0, 0, 0, 0.05); border-radius: 10px 10px 0 0; padding: 15px 20px;">
+                    <h4 class="card-title mb-0">Sales Distribution</h4>
+                </div>
+                <div class="card-body">
+                    <div id="salesDistribution" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Best Agents Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);">
+                <div class="card-header" style="background: linear-gradient(to right, rgba(91, 115, 232, 0.05), rgba(0, 136, 255, 0.02)); border-bottom: 1px solid rgba(0, 0, 0, 0.05); border-radius: 10px 10px 0 0; padding: 15px 20px;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h4 class="card-title mb-0" style="font-weight: 600; color: #333;">
+                            <i class="fas fa-user-tie me-2" style="color: #5b73e8;"></i>Top Performing Agents
+                        </h4>
+                        <div>
+                            <input type="text" id="agentSearch" class="form-control form-control-sm" placeholder="Search agents..." style="width: 200px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table id="agentsTable" class="table table-centered table-hover table-striped mb-0">
+                            <thead style="position: sticky; top: 0; z-index: 100;">
+                                <tr class="table-light">
+                                    <th style="font-weight: 600; padding: 12px 15px;">Rank</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Agent</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Total Sales</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Revenue</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Rating</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Success Rate</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Status</th>
+                                    <th style="font-weight: 600; padding: 12px 15px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Table will be populated dynamically via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Counter Animation for initial load
+    initCounters();
+    
+    // Initialize search functionality for agents table
+    document.getElementById('agentSearch').addEventListener('keyup', function() {
+        const searchValue = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#agentsTable tbody tr');
+        
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchValue) ? '' : 'none';
+        });
+    });
+    
+    // Initialize Performance Chart
+    var performanceChart;
+    const initialOptions = {
+        series: [{
+            name: 'John Doe',
+            data: [31, 40, 28, 51, 42, 109, 100]
+        }, {
+            name: 'Jane Smith',
+            data: [11, 32, 45, 32, 34, 52, 41]
+        }, {
+            name: 'Mark Johnson',
+            data: [21, 22, 35, 42, 44, 62, 51]
+        }],
+        chart: {
+            height: 350,
+            type: 'area',
+            toolbar: {
+                show: false
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth'
+        },
+        xaxis: {
+            type: 'datetime',
+            categories: ["2025-02-01", "2025-02-02", "2025-02-03", "2025-02-04", "2025-02-05", "2025-02-06", "2025-02-07"]
+        },
+        tooltip: {
+            x: {
+                format: 'dd/MM/yy HH:mm'
+            },
+        },
+    };
+
+    // Initialize performance chart
+    performanceChart = new ApexCharts(document.querySelector("#performanceChart"), initialOptions);
+    performanceChart.render();
+    
+    // Initialize Sales Distribution Chart
+    var distributionOptions = {
+        series: [44, 55, 13, 43],
+        chart: {
+            type: 'donut',
+            height: 350,
+            dropShadow: {
+                enabled: true,
+                top: 0,
+                left: 0,
+                blur: 3,
+                opacity: 0.2
+            }
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '70%'
+                }
+            }
+        },
+        colors: ['#0088ff', '#5b73e8', '#ffaa46', '#50a5f1'],
+        labels: ['Local Moving', 'Long Distance', 'Storage', 'Other'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '13px',
+            markers: {
+                width: 10,
+                height: 10,
+                radius: 5
+            },
+            itemMargin: {
+                horizontal: 8,
+                vertical: 0
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val.toFixed(1) + "%";
+            },
+            style: {
+                fontSize: '13px',
+                fontFamily: 'Helvetica, Arial, sans-serif',
+                fontWeight: '500'
+            }
+        },
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    width: 200
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
+    };
+
+    var distributionChart = new ApexCharts(document.querySelector("#salesDistribution"), distributionOptions);
+    distributionChart.render();
+    
+    // Handle date range selection
+    document.getElementById('statsRange').addEventListener('change', function() {
+        const range = this.value;
+        fetchAgentStatsData(range);
+        fetchAgentPerformanceData(range);
+    });
+    
+    // Function to initialize counter animations
+    function initCounters() {
+        const counters = document.querySelectorAll('.counter-value');
+        counters.forEach(counter => {
+            const target = parseFloat(counter.getAttribute('data-target'));
+            const duration = 2000; // 2 seconds
+            const step = target / (duration / 16); // 60fps
+            let current = 0;
+    
+            const updateCounter = () => {
+                current += step;
+                if (current < target) {
+                    counter.textContent = Math.floor(current).toLocaleString();
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = target.toLocaleString();
+                }
+            };
+    
+            updateCounter();
+        });
+    }
+
+    // Function to fetch agent stats data
+    function fetchAgentStatsData(range) {
+        // Add loading indicators to all stat cards
+        document.querySelectorAll('.card-h-100 .card-body').forEach(card => {
+            card.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 120px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        });
+        
+        // Fetch data for the stats
+        const url = new URL(`${window.location.origin}/bestagents/stats-data`);
+        url.searchParams.append('range', range);
+        
+        fetch(url.toString())
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Received stats data:', data);
+                    updateStatsCards(data.stats);
+                    // Also update the podium with top 3 agents
+                    if (data.topAgents && data.topAgents.length >= 3) {
+                        updatePodium(data.topAgents);
+                    }
+                } else {
+                    console.error('Error in response:', data);
+                    showStatsError();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stats data:', error);
+                showStatsError();
+            });
+    }
+    
+    // Function to update all stats cards with new data
+    function updateStatsCards(stats) {
+        // Total Agents
+        updateStatCard(
+            'totalAgents', 
+            stats.totalAgents.value,
+            stats.totalAgents.percentChange,
+            stats.totalAgents.isPositive,
+            stats.totalAgents.difference,
+            false // not currency
+        );
+        
+        // Total Sales
+        updateStatCard(
+            'totalSales', 
+            stats.totalSales.value,
+            stats.totalSales.percentChange,
+            stats.totalSales.isPositive,
+            stats.totalSales.difference,
+            true // is currency
+        );
+        
+        // Average Rating
+        updateStatCard(
+            'averageRating', 
+            stats.averageRating.value,
+            stats.averageRating.percentChange,
+            stats.averageRating.isPositive,
+            stats.averageRating.difference,
+            false // not currency
+        );
+        
+        // Success Rate
+        updateStatCard(
+            'successRate', 
+            stats.successRate.value,
+            stats.successRate.percentChange,
+            stats.successRate.isPositive,
+            stats.successRate.difference,
+            false // not currency
+        );
+    }
+    
+    // Helper function to update a single stat card
+    function updateStatCard(id, value, percentChange, isPositive, difference, isCurrency) {
+        // Get the card elements
+        const card = document.querySelector(`.card-h-100 [data-stat="${id}"]`);
+        if (!card) return;
+        
+        // Format values
+        const formattedPercent = parseFloat(percentChange).toFixed(2);
+        const formattedDiff = parseFloat(difference).toFixed(2);
+        const direction = isPositive ? 'up' : 'down';
+        const colorClass = isPositive ? 'success' : 'danger';
+        
+        // Create the HTML
+        let html = `
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    <span class="text-muted mb-3 lh-1 d-block text-truncate">${getStatTitle(id)}</span>
+                    <h4 class="mb-3">
+                        ${isCurrency ? '$' : ''}${id === 'successRate' ? '<span class="counter-value" data-target="' + value + '">0</span>%' : 
+                          '<span class="counter-value" data-target="' + value + '">0</span>'}
+                        <span class="text-${colorClass} ms-2 fs-12">
+                            <i class="fas fa-arrow-${direction} me-1"></i>${formattedPercent}%
+                        </span>
+                    </h4>
+                    <div class="text-nowrap">
+                        <span class="badge bg-soft-${colorClass} text-${colorClass}">
+                            ${isPositive ? '+' : ''}${isCurrency ? '$' : ''}${formattedDiff}${id === 'totalSales' ? 'k' : (id === 'successRate' ? '%' : '')}
+                        </span>
+                        <span class="ms-1 text-muted">From previous period</span>
+                    </div>
+                </div>
+                <div class="avatar-sm flex-shrink-0">
+                    <span class="avatar-title bg-soft-${getIconColorClass(id)} rounded-circle fs-3">
+                        <i class="${getIconClass(id)} text-${getIconColorClass(id)}"></i>
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        // Update the card
+        card.innerHTML = html;
+        
+        // Initialize the counter
+        initCounter(card.querySelector('.counter-value'));
+    }
+    
+    // Function to update the podium with top agents
+    function updatePodium(topAgents) {
+        // First place (position 0)
+        const firstPlace = topAgents[0];
+        const firstPlaceBlock = document.querySelector('.podium-block:nth-child(1)');
+        if (firstPlaceBlock) {
+            updatePodiumAgent(firstPlaceBlock, firstPlace, 1);
+        }
+        
+        // Second place (position 1)
+        const secondPlace = topAgents[1];
+        const secondPlaceBlock = document.querySelector('.podium-block:nth-child(2)');
+        if (secondPlaceBlock) {
+            updatePodiumAgent(secondPlaceBlock, secondPlace, 2);
+        }
+        
+        // Third place (position 2)
+        const thirdPlace = topAgents[2];
+        const thirdPlaceBlock = document.querySelector('.podium-block:nth-child(3)');
+        if (thirdPlaceBlock) {
+            updatePodiumAgent(thirdPlaceBlock, thirdPlace, 3);
+        }
+    }
+    
+    // Helper function to update podium agent
+    function updatePodiumAgent(block, agent, position) {
+        // Find elements within the block
+        const nameElement = block.querySelector('h4, h5');
+        const salesElement = block.querySelector('.text-muted, .text-light');
+        const imageElement = block.querySelector('img');
+        
+        // Update elements if they exist
+        if (nameElement) nameElement.textContent = agent.name;
+        if (salesElement) salesElement.textContent = `$${agent.revenue.toLocaleString()} in sales`;
+        if (imageElement && agent.avatar) imageElement.src = agent.avatar;
+    }
+    
+    // Function to get the title for a stat card
+    function getStatTitle(id) {
+        const titles = {
+            totalAgents: 'Total Agents',
+            totalSales: 'Total Sales',
+            averageRating: 'Average Rating',
+            successRate: 'Success Rate'
+        };
+        return titles[id] || id;
+    }
+    
+    // Function to get the icon class for a stat card
+    function getIconClass(id) {
+        const icons = {
+            totalAgents: 'fas fa-users',
+            totalSales: 'fas fa-chart-line',
+            averageRating: 'fas fa-star',
+            successRate: 'fas fa-check-circle'
+        };
+        return icons[id] || 'fas fa-chart-bar';
+    }
+    
+    // Function to get the icon color class for a stat card
+    function getIconColorClass(id) {
+        const colors = {
+            totalAgents: 'primary',
+            totalSales: 'success',
+            averageRating: 'warning',
+            successRate: 'info'
+        };
+        return colors[id] || 'primary';
+    }
+    
+    // Function to show error in stats cards
+    function showStatsError() {
+        document.querySelectorAll('.card-h-100 .card-body').forEach(card => {
+            card.innerHTML = '<div class="alert alert-danger">Error loading statistics</div>';
+        });
+    }
+    
+    // Function to initialize counter animation
+    function initCounter(counterElement) {
+        if (!counterElement) return;
+        
+        const target = parseFloat(counterElement.getAttribute('data-target'));
+        const duration = 2000; // 2 seconds
+        const step = target / (duration / 16); // 60fps
+        let current = 0;
+
+        const updateCounter = () => {
+            current += step;
+            if (current < target) {
+                counterElement.textContent = Number.isInteger(target) ? 
+                    Math.floor(current).toLocaleString() : 
+                    current.toFixed(1);
+                requestAnimationFrame(updateCounter);
+            } else {
+                counterElement.textContent = Number.isInteger(target) ? 
+                    target.toLocaleString() : 
+                    target.toFixed(1);
+            }
+        };
+
+        updateCounter();
+    }
+    
+    // Function to fetch agent performance data
+    function fetchAgentPerformanceData(range) {
+        // Show loading indicator for performance chart
+        document.getElementById('performanceChart').innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 350px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // Show loading indicator for distribution chart
+        document.getElementById('salesDistribution').innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 350px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // Properly encode the URL
+        const url = new URL(`${window.location.origin}/bestagents/performance-data`);
+        url.searchParams.append('range', range);
+        
+        fetch(url.toString())
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Received performance data:', data);
+                    
+                    // Update performance chart
+                    updatePerformanceChart(data.performance);
+                    
+                    // Update distribution chart
+                    updateDistributionChart(data.distribution);
+                    
+                    // Update agents table
+                    if (data.agents && data.agents.length > 0) {
+                        updateAgentsTable(data.agents);
+                    }
+                } else {
+                    console.error('Error in response:', data);
+                    document.getElementById('performanceChart').innerHTML = '<div class="alert alert-danger">Failed to load chart data</div>';
+                    document.getElementById('salesDistribution').innerHTML = '<div class="alert alert-danger">Failed to load chart data</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching performance data:', error);
+                document.getElementById('performanceChart').innerHTML = '<div class="alert alert-danger">Error loading data</div>';
+                document.getElementById('salesDistribution').innerHTML = '<div class="alert alert-danger">Error loading data</div>';
+            });
+    }
+    
+    // Function to update performance chart
+    function updatePerformanceChart(performanceData) {
+        // Clean up the chart container
+        document.getElementById('performanceChart').innerHTML = '';
+        
+        // Completely destroy the existing chart if it exists
+        if (performanceChart) {
+            performanceChart.destroy();
+        }
+        
+        // Create fresh chart options
+        const freshOptions = {
+            series: performanceData.series,
+            chart: {
+                height: 350,
+                type: 'area',
+                toolbar: {
+                    show: false
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            xaxis: {
+                type: 'category',
+                categories: performanceData.dates
+            },
+            tooltip: {
+                x: {
+                    format: 'dd/MM/yy HH:mm'
+                },
+            },
+        };
+        
+        // Create a completely new chart
+        setTimeout(() => {
+            performanceChart = new ApexCharts(document.querySelector("#performanceChart"), freshOptions);
+            performanceChart.render();
+        }, 100);
+    }
+    
+    // Function to update distribution chart
+    function updateDistributionChart(distributionData) {
+        // Clean up the chart container
+        document.getElementById('salesDistribution').innerHTML = '';
+        
+        // Create fresh chart options
+        const freshOptions = {
+            series: distributionData.values,
+            chart: {
+                type: 'donut',
+                height: 350,
+                dropShadow: {
+                    enabled: true,
+                    top: 0,
+                    left: 0,
+                    blur: 3,
+                    opacity: 0.2
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '70%'
+                    }
+                }
+            },
+            colors: ['#0088ff', '#5b73e8', '#ffaa46', '#50a5f1'],
+            labels: distributionData.labels,
+            legend: {
+                position: 'bottom',
+                horizontalAlign: 'center',
+                fontSize: '13px',
+                markers: {
+                    width: 10,
+                    height: 10,
+                    radius: 5
+                },
+                itemMargin: {
+                    horizontal: 8,
+                    vertical: 0
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return val.toFixed(1) + "%";
+                }
+            },
+            responsive: [{
+                breakpoint: 480,
+                options: {
+                    chart: {
+                        width: 200
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }]
+        };
+        
+        // Create a completely new chart
+        setTimeout(() => {
+            distributionChart = new ApexCharts(document.querySelector("#salesDistribution"), freshOptions);
+            distributionChart.render();
+        }, 100);
+    }
+    
+    // Function to update agents table
+    function updateAgentsTable(agents) {
+        const tableBody = document.querySelector('#agentsTable tbody');
+        if (!tableBody) return;
+        
+        // Clear existing rows
+        tableBody.innerHTML = '';
+        
+        // Add new rows for each agent
+        agents.forEach((agent, index) => {
+            // Determine badge style based on rank
+            let badgeStyle = '';
+            if (index === 0) {
+                badgeStyle = 'style="background-color: #FFD700; color: #000;"';
+            } else if (index === 1) {
+                badgeStyle = 'style="background-color: #C0C0C0; color: #000;"';
+            } else if (index === 2) {
+                badgeStyle = 'style="background-color: #CD7F32; color: #fff;"';
+            }
+            
+            // Generate star rating HTML
+            const fullStars = Math.floor(agent.rating);
+            const hasHalfStar = agent.rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+            
+            let starsHtml = '';
+            for (let i = 0; i < fullStars; i++) {
+                starsHtml += '<i class="fas fa-star text-warning"></i>';
+            }
+            if (hasHalfStar) {
+                starsHtml += '<i class="fas fa-star-half-alt text-warning"></i>';
+            }
+            for (let i = 0; i < emptyStars; i++) {
+                starsHtml += '<i class="far fa-star text-warning"></i>';
+            }
+            
+            // Create row HTML
+            const row = `
+                <tr>
+                    <td style="padding: 12px 15px;">
+                        <span class="badge ${index < 3 ? '' : 'bg-secondary'}" ${badgeStyle}>${index + 1}</span>
+                    </td>
+                    <td style="padding: 12px 15px;">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <img src="${agent.avatar || '{{ asset("assets/images/users") }}/avatar-' + (index + 1) + '.jpg'}" alt="user" class="rounded-circle" width="40">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0" style="font-size: 14px;">${agent.name}</h6>
+                                <small class="text-muted" style="font-size: 12px;">${agent.position || 'Agent'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 15px;">${agent.sales}</td>
+                    <td style="padding: 12px 15px; font-weight: 500;">$${agent.revenue.toLocaleString()}</td>
+                    <td style="padding: 12px 15px;">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${agent.rating.toFixed(1)}</span>
+                            <div>
+                                ${starsHtml}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 15px;">${agent.successRate}%</td>
+                    <td style="padding: 12px 15px;">
+                        <span class="badge bg-soft-${agent.status === 'Active' ? 'success' : 'warning'} text-${agent.status === 'Active' ? 'success' : 'warning'}" style="font-weight: 500; padding: 5px 10px; border-radius: 4px;">${agent.status}</span>
+                    </td>
+                    <td style="padding: 12px 15px;">
+                        <button class="btn btn-sm btn-soft-primary">View Profile</button>
+                    </td>
+                </tr>
+            `;
+            
+            // Add to table
+            tableBody.innerHTML += row;
+        });
+    }
+    
+    // Export Button
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        window.location.href = "{{ route('bestagents.export') }}";
+    });
+});
+</script>
+@endsection

@@ -233,13 +233,22 @@ class TransactionController extends Controller
             ]);
 
             $created = 0;
-            $updated = 0;
+            $skipped = 0;
             $errors = [];
 
             foreach ($transactions as $data) {
                 try {
                     // Check if transaction already exists
                     $existingTransaction = Transaction::where('transaction_id', $data['id'])->first();
+
+                    // Skip if transaction already exists in the database
+                    if ($existingTransaction) {
+                        $skipped++;
+                        Log::info('Skipped existing transaction', [
+                            'transaction_id' => $data['id']
+                        ]);
+                        continue;
+                    }
 
                     $transactionData = [
                         'transaction_id' => $data['id'],
@@ -275,55 +284,25 @@ class TransactionController extends Controller
                         'payment_id' => $data['payment_id'] ?? null,
                         'uploaded_image' => $data['uploaded_image'] ?? null,
                         'services' => $data['services'] ?? [],
+                        'created_at' => !empty($data['created_at']) && $data['created_at'] !== '1970-01-01 00:00:00' ? 
+                                date('Y-m-d H:i:s', strtotime($data['created_at'])) : now(),
                         'last_synced_at' => now(),
+                        'status' => 'pending'
                     ];
 
                     // Log the transaction data for debugging
                     Log::info('Transaction sync debug', [
                         'api_id' => $data['id'],
-                        'exists' => $existingTransaction ? true : false,
+                        'exists' => false,
                         'transactionData' => $transactionData
                     ]);
 
-                    // // Handle image data if present
-                    // if (isset($data['image_data']) && !empty($data['image_data'])) {
-                    //     try {
-                    //         // Decode base64 image data
-                    //         $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $data['image_data']));
-                            
-                    //         // Generate unique filename
-                    //         $filename = 'transaction_' . $data['id'] . '_' . time() . '.jpg';
-                            
-                    //         // Save image to storage
-                    //         $path = Storage::disk('public')->put('transaction_images/' . $filename, $imageData);
-                            
-                    //         if ($path) {
-                    //             $transactionData['uploaded_image'] = 'storage/transaction_images/' . $filename;
-                    //         }
-                    //     } catch (\Exception $e) {
-                    //         Log::error('Error processing image for transaction', [
-                    //             'transaction_id' => $data['id'],
-                    //             'error' => $e->getMessage()
-                    //         ]);
-                    //     }
-                    // }
-
-                    if ($existingTransaction) {
-                        // Update existing transaction
-                        $existingTransaction->update($transactionData);
-                        $updated++;
-                        Log::info('Updated existing transaction', [
-                            'transaction_id' => $data['id']
-                        ]);
-                    } else {
-                        // Create new transaction
-                        $transactionData['status'] = 'pending';
-                        Transaction::create($transactionData);
-                        $created++;
-                        Log::info('Created new transaction', [
-                            'transaction_id' => $data['id']
-                        ]);
-                    }
+                    // Create new transaction
+                    Transaction::create($transactionData);
+                    $created++;
+                    Log::info('Created new transaction', [
+                        'transaction_id' => $data['id']
+                    ]);
 
                 } catch (\Exception $e) {
                     Log::error('Error processing transaction', [
@@ -340,19 +319,19 @@ class TransactionController extends Controller
 
             Log::info('Sync completed', [
                 'created' => $created,
-                'updated' => $updated,
+                'skipped' => $skipped,
                 'errors' => count($errors),
                 'error_details' => $errors
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => "Sync completed: {$created} new, {$updated} updated",
+                'message' => "Sync completed: {$created} new, {$skipped} skipped",
                 'new_count' => $created,
-                'updated_count' => $updated,
+                'skipped_count' => $skipped,
                 'data' => [
                     'created' => $created,
-                    'updated' => $updated,
+                    'skipped' => $skipped,
                     'errors' => $errors
                 ]
             ]);

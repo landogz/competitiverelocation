@@ -544,7 +544,7 @@ class CallCenterController extends Controller
             return 'Competitve Relocation Services';
         }
         
-        $agent = \App\Models\Agent::find($agentId);
+        $agent = \App\Models\Agent::where('external_id', $agentId)->first();
         return $agent ? $agent->company_name : 'Unknown Agent ('.$agentId.')';
     }
 }

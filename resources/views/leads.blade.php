@@ -1097,6 +1097,221 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTransaction.id = transactionId;
     }
 
+    // Add event listeners to the quantity-input fields
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('blur', updateInventoryItem);
+        input.addEventListener('change', updateInventoryItem);
+    });
+
+    // Add event listeners to lead information and contact info fields
+    const leadInfoFields = [
+        'firstname', 'lastname', 'email', 'phone', 'lead_source', 
+        'lead_type', 'assigned_agent', 'service', 'date', 'no_of_items',
+        'pickup_location', 'delivery_location', 'sales_name', 'sales_email', 
+        'sales_location', 'insurance_number'
+    ];
+    
+    leadInfoFields.forEach(fieldName => {
+        const element = document.querySelector(`[name="${fieldName}"]`);
+        if (element) {
+            element.addEventListener('blur', function() {
+                updateTransactionField(fieldName, this.value);
+            });
+            
+            // For select elements, use change event
+            if (element.tagName === 'SELECT') {
+                element.addEventListener('change', function() {
+                    updateTransactionField(fieldName, this.value);
+                });
+            }
+        }
+    });
+    
+    // Function to update a single transaction field
+    function updateTransactionField(field, value) {
+        if (!transactionId) {
+            console.error('No transaction ID found');
+            return;
+        }
+        
+        fetch(`/leads/${transactionId}/update-field`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                field: field,
+                value: value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Quietly show success message in toast
+                showToast(`Updated ${field.replace('_', ' ')}`, 'success');
+                
+                // If field might affect calculations, recalculate fees
+                if (['service', 'no_of_items', 'miles', 'pickup_location', 'delivery_location'].includes(field)) {
+                    if (typeof calculateFees === 'function') {
+                        calculateFees();
+                    }
+                    
+                    // If address fields changed, recalculate route
+                    if (['pickup_location', 'delivery_location'].includes(field)) {
+                        if (typeof calculateRoute === 'function') {
+                            calculateRoute();
+                        }
+                    }
+                }
+            } else {
+                throw new Error(data.message || 'Failed to update field');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast(`Error updating ${field.replace('_', ' ')}`, 'error');
+        });
+    }
+
+    // Function to update inventory item quantity when it changes
+    function updateInventoryItem(event) {
+        const itemId = event.target.dataset.itemId;
+        const quantity = parseInt(event.target.value) || 0;
+        
+        if (!transactionId) {
+            console.error('No transaction ID found');
+            return;
+        }
+        
+        fetch(`/leads/${transactionId}/update-inventory`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+                quantity: quantity
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the total volume display
+                updateInventorySummary();
+                
+                // Show success toast if quantity > 0
+                if (quantity > 0) {
+                    showToast('Inventory item updated', 'success');
+                }
+            } else {
+                throw new Error(data.message || 'Failed to update inventory item');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error updating inventory item', 'error');
+        });
+    }
+    
+    // Function to fetch and update inventory summary
+    function updateInventorySummary() {
+        fetch(`/leads/${transactionId}/added-inventory-items`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update total volume and weight
+                    let totalVolume = 0;
+                    let totalWeight = 0;
+                    
+                    // Clear and repopulate the added items table
+                    const addedItemsContainer = document.getElementById('added-inventory-items');
+                    if (addedItemsContainer) {
+                        addedItemsContainer.innerHTML = '';
+                        
+                        data.data.forEach(item => {
+                            totalVolume += parseFloat(item.total_volume);
+                            
+                            // Add row to the table
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${item.name}</td>
+                                <td>${item.category}</td>
+                                <td>${parseFloat(item.cubic_ft).toFixed(2)}</td>
+                                <td>${item.quantity}</td>
+                                <td>${parseFloat(item.total_volume).toFixed(2)}</td>
+                            `;
+                            addedItemsContainer.appendChild(row);
+                        });
+                    }
+                    
+                    // Update the total volume and weight inputs
+                    document.getElementById('total_volume').value = totalVolume.toFixed(2);
+                    document.getElementById('total_weight').value = totalWeight.toFixed(2);
+                    
+                    // Update fees based on new volumes
+                    if (typeof calculateFees === 'function') {
+                        calculateFees();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching inventory summary:', error);
+            });
+    }
+    
+    // Helper function to show toast messages
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+        
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            </div>
+            <div class="toast-message">${message}</div>
+            <button class="toast-close">&times;</button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'toast-out 0.3s forwards';
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, 3000);
+        
+        // Close button
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            toast.style.animation = 'toast-out 0.3s forwards';
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        });
+    }
+    
+    // Initialize inventory summary on page load
+    if (transactionId) {
+        updateInventorySummary();
+    }
+
     // Initialize DataTable for sent emails
     sentEmailsTable = $('#sentEmailsTable').DataTable({
         processing: true,

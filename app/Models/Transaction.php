@@ -43,7 +43,8 @@ class Transaction extends Model
         'payment_id',
         'uploaded_image',
         'services',
-        'last_synced_at'
+        'last_synced_at',
+        'created_at'
     ];
 
     protected $casts = [
@@ -60,7 +61,8 @@ class Transaction extends Model
         'truck_fee' => 'decimal:2',
         'downpayment' => 'decimal:2',
         'grand_total' => 'decimal:2',
-        'last_synced_at' => 'datetime'
+        'last_synced_at' => 'datetime',
+        'created_at' => 'datetime'
     ];
 
     public function inventoryItems()
@@ -73,5 +75,10 @@ class Transaction extends Model
     public function sentEmails()
     {
         return $this->hasMany(SentEmail::class);
+    }
+    
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class, 'assigned_agent');
     }
 } 

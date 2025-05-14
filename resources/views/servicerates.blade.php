@@ -9,6 +9,17 @@
         <div class="col-sm-12">
             <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
                 <h4 class="page-title">Service Rates</h4>
+                <div>
+                    <button id="editRates" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Edit Rates
+                    </button>
+                    <button id="saveRates" class="btn btn-success d-none">
+                        <i class="fas fa-save me-1"></i> Save Changes
+                    </button>
+                    <button id="cancelEdit" class="btn btn-secondary d-none">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                </div>
             </div><!--end page-title-box-->
         </div><!--end col-->
     </div><!--end row-->
@@ -32,51 +43,37 @@
                                     <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Delivery Service</h5>
                                 </div>
                                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                                    <div class="table-responsive">
                                         <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                            <tr>
+                                            <thead class="table-light">
+                                                <tr>
                                                     <th>Value Range</th>
                                                     <th>Rate</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                                    <td>Less than $750</td>
-                                                    <td><span class="badge bg-primary">$79.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$750 - Less than $1500</td>
-                                                    <td><span class="badge bg-primary">$159.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$1500 - Less than $2000</td>
-                                                    <td><span class="badge bg-primary">$179.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$2000 - Less than $2750</td>
-                                                    <td><span class="badge bg-primary">$194.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$2750 - Less than $4000</td>
-                                                    <td><span class="badge bg-primary">$224.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$4000 - Less than $6000</td>
-                                                    <td><span class="badge bg-primary">$284.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$6000 - Less than $8000</td>
-                                                    <td><span class="badge bg-primary">$314.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$8000 - Less than $10000</td>
-                                                    <td><span class="badge bg-primary">$344.99</span> light assembly</td>
-                            </tr>
-                            <tr>
-                                                    <td>$10000 and more</td>
-                                                    <td><span class="badge bg-primary">$384.99</span> light assembly</td>
-                            </tr>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($serviceRates->where('service_type', 'delivery') as $rate)
+                                                <tr data-id="{{ $rate->id }}">
+                                                    <td>
+                                                        <span class="rate-display">{{ $rate->value_range }}</span>
+                                                        <input type="text" class="form-control rate-edit d-none" 
+                                                            name="value_range" value="{{ $rate->value_range }}">
+                                                    </td>
+                                                    <td>
+                                                        <span class="rate-display">
+                                                            <span class="badge bg-{{ $rate->badge_color }}">${{ number_format($rate->rate, 2) }}</span>
+                                                            {{ $rate->description }}
+                                                        </span>
+                                                        <div class="input-group rate-edit d-none">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" class="form-control" name="rate" 
+                                                                value="{{ $rate->rate }}" step="0.01" min="0">
+                                                            <input type="text" class="form-control" name="description" 
+                                                                value="{{ $rate->description }}">
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
                                             </tbody>
                                         </table>
                                     </div>
@@ -91,19 +88,45 @@
                                     <h5 class="mb-0"><i class="fas fa-couch me-2"></i>Furniture Removal</h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
+                                    @foreach($serviceRates->where('service_type', 'furniture_removal') as $rate)
+                                    <div class="d-flex align-items-center mb-3" data-id="{{ $rate->id }}">
                                         <div class="flex-shrink-0">
                                             <div class="avatar-sm rounded-circle bg-success bg-opacity-10 text-center">
                                                 <i class="fas fa-dollar-sign fa-2x text-success"></i>
                                             </div>
                                         </div>
                                         <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$175.00</h4>
-                                            <p class="text-muted mb-0">Base rate for furniture removal</p>
+                                            <h4 class="mb-1">
+                                                <span class="rate-display">${{ number_format($rate->rate, 2) }}</span>
+                                                <div class="input-group rate-edit d-none">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" name="rate" 
+                                                        value="{{ $rate->rate }}" step="0.01" min="0">
+                                                </div>
+                                            </h4>
+                                            <p class="text-muted mb-0">
+                                                <span class="rate-display">{{ $rate->description }}</span>
+                                                <input type="text" class="form-control rate-edit d-none" 
+                                                    name="description" value="{{ $rate->description }}">
+                                            </p>
                                         </div>
                                     </div>
+                                    @endforeach
+                                    
                                     <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i> Any additional items: <strong>$75.00</strong>
+                                        @foreach($serviceRates->where('service_type', 'furniture_removal_additional') as $rate)
+                                        <div data-id="{{ $rate->id }}">
+                                            <i class="fas fa-info-circle me-2"></i> 
+                                            <span class="rate-display">{{ $rate->description }}: <strong>${{ number_format($rate->rate, 2) }}</strong></span>
+                                            <div class="input-group mt-2 rate-edit d-none">
+                                                <input type="text" class="form-control" name="description" 
+                                                    value="{{ $rate->description }}">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" name="rate" 
+                                                    value="{{ $rate->rate }}" step="0.01" min="0">
+                                            </div>
+                                        </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
@@ -116,150 +139,84 @@
                                     <h5 class="mb-0"><i class="fas fa-people-carry me-2"></i>Moving Service</h5>
                                 </div>
                                 <div class="card-body">
+                                    @if($serviceRates->where('service_type', 'moving')->isNotEmpty())
                                     <div class="alert alert-warning mb-3">
-                                        <i class="fas fa-clock me-2"></i> 3 hours minimum (2 hours labor, 1 hour travel)
+                                        <i class="fas fa-clock me-2"></i> 
+                                        <span class="rate-display">{{ $serviceRates->where('service_type', 'moving')->first()->description }}</span>
+                                        <input type="text" class="form-control rate-edit d-none mt-2" 
+                                            name="description" data-id="{{ $serviceRates->where('service_type', 'moving')->first()->id }}"
+                                            value="{{ $serviceRates->where('service_type', 'moving')->first()->description }}">
                                     </div>
+                                    @endif
                                     <div class="table-responsive">
                                         <table class="table table-hover mb-0">
                                             <thead class="table-light">
                                                 <tr>
                                                     <th>Crew Size</th>
                                                     <th>Rate</th>
-                            </tr>
+                                                </tr>
                                             </thead>
                                             <tbody>
-                            <tr>
-                                                    <td>2 men</td>
-                                                    <td><span class="badge bg-info">$270.00</span></td>
-                            </tr>
-                            <tr>  
-                                                    <td>3 men</td>
-                                                    <td><span class="badge bg-info">$465.00</span></td>
-                            </tr>
-                            <tr>
-                                                    <td>4 men</td>
-                                                    <td><span class="badge bg-info">$465.00</span></td>
-                            </tr>
-                            <tr> 
-                                                    <td>5 men</td>
-                                                    <td><span class="badge bg-info">$465.00</span></td>
-                            </tr>
-                            </tbody>
+                                                @foreach($serviceRates->where('service_type', 'moving') as $rate)
+                                                <tr data-id="{{ $rate->id }}">
+                                                    <td>
+                                                        <span class="rate-display">{{ $rate->category }}</span>
+                                                        <input type="text" class="form-control rate-edit d-none" 
+                                                            name="category" value="{{ $rate->category }}">
+                                                    </td>
+                                                    <td>
+                                                        <span class="rate-display">
+                                                            <span class="badge bg-{{ $rate->badge_color }}">${{ number_format($rate->rate, 2) }}</span>
+                                                        </span>
+                                                        <div class="input-group rate-edit d-none">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" class="form-control" name="rate" 
+                                                                value="{{ $rate->rate }}" step="0.01" min="0">
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Other Services Card -->
+                        <!-- Other Services Cards -->
+                        @foreach($serviceRates->whereIn('service_type', ['cleaning', 'rearranging', 'mattress_removal', 'hoisting', 'exterminator']) as $rate)
                         <div class="col-lg-6 col-xl-4 mb-4">
                             <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5 class="mb-0"><i class="fas fa-broom me-2"></i>Cleaning Service</h5>
+                                <div class="card-header bg-{{ $rate->badge_color }} @if($rate->badge_color != 'warning') text-white @else text-dark @endif">
+                                    <h5 class="mb-0"><i class="{{ $rate->icon }} me-2"></i>{{ $rate->title }}</h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center" data-id="{{ $rate->id }}">
                                         <div class="flex-shrink-0">
-                                            <div class="avatar-sm rounded-circle bg-warning bg-opacity-10 text-center">
-                                                <i class="fas fa-clock fa-2x text-warning"></i>
+                                            <div class="avatar-sm rounded-circle bg-{{ $rate->badge_color }} bg-opacity-10 text-center">
+                                                <i class="fas fa-clock fa-2x text-{{ $rate->badge_color }}"></i>
                                             </div>
                                         </div>
                                         <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$135/H</h4>
-                                            <p class="text-muted mb-0">Professional cleaning service</p>
+                                            <h4 class="mb-1">
+                                                <span class="rate-display">${{ number_format($rate->rate, 2) }}/H</span>
+                                                <div class="input-group rate-edit d-none">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" name="rate" 
+                                                        value="{{ $rate->rate }}" step="0.01" min="0">
+                                                </div>
+                                            </h4>
+                                            <p class="text-muted mb-0">
+                                                <span class="rate-display">{{ $rate->description }}</span>
+                                                <input type="text" class="form-control rate-edit d-none" 
+                                                    name="description" value="{{ $rate->description }}">
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Rearranging Card -->
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-danger text-white">
-                                    <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Rearranging</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0">
-                                            <div class="avatar-sm rounded-circle bg-danger bg-opacity-10 text-center">
-                                                <i class="fas fa-clock fa-2x text-danger"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$150/H</h4>
-                                            <p class="text-muted mb-0">Professional rearranging service</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mattress Removal Card -->
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-secondary text-white">
-                                    <h5 class="mb-0"><i class="fas fa-bed me-2"></i>Mattress Removal</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0">
-                                            <div class="avatar-sm rounded-circle bg-secondary bg-opacity-10 text-center">
-                                                <i class="fas fa-clock fa-2x text-secondary"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$125/H</h4>
-                                            <p class="text-muted mb-0">Professional mattress removal service</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hoisting Card -->
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-dark text-white">
-                                    <h5 class="mb-0"><i class="fas fa-crane me-2"></i>Hoisting</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0">
-                                            <div class="avatar-sm rounded-circle bg-dark bg-opacity-10 text-center">
-                                                <i class="fas fa-clock fa-2x text-dark"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$350/H</h4>
-                                            <p class="text-muted mb-0">Professional hoisting service</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Exterminator Card -->
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-purple text-white">
-                                    <h5 class="mb-0"><i class="fas fa-bug me-2"></i>Exterminator Service</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0">
-                                            <div class="avatar-sm rounded-circle bg-purple bg-opacity-10 text-center">
-                                                <i class="fas fa-clock fa-2x text-purple"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 ms-3">
-                                            <h4 class="mb-1">$650/H</h4>
-                                            <p class="text-muted mb-0">Exterminator, washing and replacing moving blankets</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
                 <div class="card-footer bg-white">
@@ -308,6 +265,109 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Edit functionality
+        const editBtn = document.getElementById('editRates');
+        const saveBtn = document.getElementById('saveRates');
+        const cancelBtn = document.getElementById('cancelEdit');
+        
+        if (editBtn && saveBtn && cancelBtn) {
+            editBtn.addEventListener('click', function() {
+                editBtn.classList.add('d-none');
+                saveBtn.classList.remove('d-none');
+                cancelBtn.classList.remove('d-none');
+                
+                // Show all edit fields
+                document.querySelectorAll('.rate-display').forEach(function(el) {
+                    el.classList.add('d-none');
+                });
+                
+                document.querySelectorAll('.rate-edit').forEach(function(el) {
+                    el.classList.remove('d-none');
+                });
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                editBtn.classList.remove('d-none');
+                saveBtn.classList.add('d-none');
+                cancelBtn.classList.add('d-none');
+                
+                // Hide all edit fields
+                document.querySelectorAll('.rate-display').forEach(function(el) {
+                    el.classList.remove('d-none');
+                });
+                
+                document.querySelectorAll('.rate-edit').forEach(function(el) {
+                    el.classList.add('d-none');
+                });
+            });
+            
+            saveBtn.addEventListener('click', function() {
+                // Show loading state
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+                saveBtn.disabled = true;
+                
+                const formData = {};
+                
+                // Collect all the data from input fields
+                document.querySelectorAll('[data-id]').forEach(function(row) {
+                    const id = row.dataset.id;
+                    const data = {};
+                    
+                    row.querySelectorAll('input[name]').forEach(function(input) {
+                        data[input.name] = input.value;
+                    });
+                    
+                    formData[id] = data;
+                });
+                
+                // Send the data to the server
+                fetch('{{ route('servicerates.update-batch') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        Swal.fire({
+                            title: 'Success!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        // Show error message
+                        Swal.fire({
+                            title: 'Error!',
+                            text: data.message || 'Something went wrong',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Something went wrong',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                })
+                .finally(() => {
+                    // Reset button state
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save Changes';
+                    saveBtn.disabled = false;
+                });
+            });
+        }
+        
         // Search functionality
         const searchInput = document.getElementById('searchRates');
         if (searchInput) {
