@@ -19,6 +19,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ServiceRateController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\BestAgentsController;
+use App\Http\Controllers\CalendarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +167,14 @@ Route::middleware(['auth'])->group(function () {
         return view('calendar');
     });
 
+    Route::get('/calendar_trans', function () {
+        return view('calendar_from_trans');
+    });
+
+    // Transaction Calendar Routes
+    Route::get('/transaction-calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
+
     Route::get('/customer', function () {
         return view('customer.customer');
     });
@@ -246,4 +255,44 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transactions/{id}', [TransactionController::class, 'show'])->name('transactions.show');
 
     Route::post('/loadboard/send-email', [TransactionController::class, 'sendEmail'])->name('loadboard.sendEmail');
+});
+
+// Add this route at the end of the file
+Route::get('/debug/calendar-agents', function() {
+    $transactions = \App\Models\Transaction::with('agent')->get();
+    $agents = \App\Models\Agent::all();
+    $users = \App\Models\User::where('privilege', 'agent')->get();
+    
+    return [
+        'transaction_count' => $transactions->count(),
+        'agent_count' => $agents->count(),
+        'agent_users_count' => $users->count(),
+        'sample_transactions' => $transactions->take(5)->map(function($transaction) {
+            return [
+                'id' => $transaction->id,
+                'name' => $transaction->firstname . ' ' . $transaction->lastname,
+                'date' => $transaction->date,
+                'assigned_agent' => $transaction->assigned_agent,
+                'agent' => $transaction->agent ? [
+                    'id' => $transaction->agent->id,
+                    'company' => $transaction->agent->company_name
+                ] : null
+            ];
+        }),
+        'agents' => $agents->map(function($agent) {
+            return [
+                'id' => $agent->id,
+                'company' => $agent->company_name,
+                'transaction_count' => \App\Models\Transaction::where('assigned_agent', $agent->id)->count()
+            ];
+        }),
+        'agent_users' => $users->map(function($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->first_name . ' ' . $user->last_name,
+                'agent_id' => $user->agent_id,
+                'assigned_transactions' => \App\Models\Transaction::where('assigned_agent', $user->agent_id)->count()
+            ];
+        })
+    ];
 });

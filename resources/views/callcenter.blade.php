@@ -625,10 +625,24 @@
                 success: function(response) {
                     if (response.success) {
                         table.ajax.reload();
+                        
+                        // Build the message text based on what was actually updated
+                        let messageText = '';
+                        if (response.new_count > 0 && response.updated_count > 0) {
+                            messageText = `Successfully synchronized ${response.new_count} new leads and ${response.updated_count} existing records`;
+                        } else if (response.new_count > 0) {
+                            messageText = `Successfully synchronized ${response.new_count} new leads`;
+                        } else if (response.updated_count > 0) {
+                            messageText = `Successfully synchronized ${response.updated_count} existing records`;
+                        } else {
+                            messageText = 'All records are up to date. No changes were required.';
+                        }
+                        
                         Swal.fire({
                             icon: 'success',
-                            title: 'Success!',
-                            text: `Added ${response.new_count} new leads and updated ${response.updated_count} existing leads`
+                            title: 'Synchronization Complete',
+                            text: messageText,
+                            confirmButtonText: 'Continue'
                         });
                     } else {
                         Swal.fire({

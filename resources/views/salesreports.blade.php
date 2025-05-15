@@ -37,6 +37,25 @@
         </div>
     </div>
 
+    <!-- Agent View Notice -->
+    @if(auth()->user()->privilege === 'agent')
+    @php
+        $agent = auth()->user()->agent_id ? \App\Models\Agent::find(auth()->user()->agent_id) : null;
+        $companyName = $agent ? $agent->company_name : 'your company';
+    @endphp
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle me-3 fs-4"></i>
+                <div>
+                    <strong>Agent View:</strong> You're viewing sales data for <strong>{{ $companyName }}</strong>. 
+                    All statistics and charts are filtered to show only your assigned transactions.
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="row">
         <div class="col-xl-3 col-md-6">
@@ -175,7 +194,13 @@
         <div class="col-xl-6">
             <div class="card" style="height: 410px;">
                 <div class="card-header">
-                    <h4 class="card-title mb-0">Agent Assignment Status</h4>
+                    <h4 class="card-title mb-0">
+                        @if(auth()->user()->privilege === 'agent')
+                        Your Assignment Rate
+                        @else
+                        Agent Assignment Status
+                        @endif
+                    </h4>
                 </div>
                 <div class="card-body">
                     <div id="agentAssignmentChart" style="height: 330px;"></div>
@@ -604,55 +629,66 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Function to update performance chart
     function updatePerformanceChart(data) {
-                    // Clean up the chart container
-                    document.getElementById('salesChart').innerHTML = '';
-                    
+        // Clean up the chart container
+        document.getElementById('salesChart').innerHTML = '';
+        
         // Completely destroy the existing chart if it exists
-                    if (salesChart) {
-                        salesChart.destroy();
-                    }
-                    
-                    // Create fresh chart options to avoid any shared state issues
-                    const freshOptions = {
-                        series: [
-                            {
-                                name: 'Sales',
-                                data: data.sales
-                            },
-                            {
-                                name: 'Revenue',
-                                data: data.revenue
-                            }
-                        ],
-                        chart: {
-                            height: 350,
-                            type: 'area',
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
-                        stroke: {
-                            curve: 'smooth'
-                        },
-                        xaxis: {
-                            type: 'category', // Use category instead of datetime for non-standard date formats
-                            categories: data.dates
-                        },
-                        tooltip: {
-                            x: {
-                                format: 'dd/MM/yy HH:mm'
-                            },
-                        },
-                    };
-                    
-                    // Create a completely new chart
-                    setTimeout(() => {
-                        salesChart = new ApexCharts(document.querySelector("#salesChart"), freshOptions);
-                        salesChart.render();
-                    }, 100);
+        if (salesChart) {
+            try {
+                salesChart.destroy();
+            } catch (error) {
+                console.error('Error destroying existing chart:', error);
+            }
+        }
+        
+        // Create fresh chart options to avoid any shared state issues
+        const freshOptions = {
+            series: [
+                {
+                    name: 'Sales',
+                    data: data.sales
+                },
+                {
+                    name: 'Revenue',
+                    data: data.revenue
+                }
+            ],
+            chart: {
+                height: 350,
+                type: 'area',
+                toolbar: {
+                    show: false
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth'
+            },
+            xaxis: {
+                type: 'category', // Use category instead of datetime for non-standard date formats
+                categories: data.dates
+            },
+            tooltip: {
+                x: {
+                    format: 'dd/MM/yy HH:mm'
+                },
+            },
+        };
+        
+        // Create a completely new chart
+        try {
+            console.log('Creating sales performance chart with options:', freshOptions);
+            setTimeout(() => {
+                salesChart = new ApexCharts(document.querySelector("#salesChart"), freshOptions);
+                salesChart.render();
+            }, 100);
+        } catch (error) {
+            console.error('Error rendering sales performance chart:', error);
+            document.getElementById('salesChart').innerHTML = 
+                '<div class="alert alert-danger">Error rendering chart: ' + error.message + '</div>';
+        }
     }
 
     // Function to fetch sales data
@@ -834,8 +870,15 @@ document.addEventListener("DOMContentLoaded", function() {
         };
         
         // Create and render the chart
-        const categoryChart = new ApexCharts(document.querySelector("#salesByCategory"), options);
-        categoryChart.render();
+        try {
+            console.log('Creating category chart with options:', options);
+            const categoryChart = new ApexCharts(document.querySelector("#salesByCategory"), options);
+            categoryChart.render();
+        } catch (error) {
+            console.error('Error rendering category chart:', error);
+            document.getElementById('salesByCategory').innerHTML = 
+                '<div class="alert alert-danger">Error rendering chart: ' + error.message + '</div>';
+        }
     }
 
     // Function to fetch agent assignment data
@@ -894,6 +937,17 @@ document.addEventListener("DOMContentLoaded", function() {
         // Clean up the chart container
         document.getElementById('agentAssignmentChart').innerHTML = '';
         
+        // Define labels based on user privilege
+        let label1, label2;
+        
+        @if(auth()->user()->privilege === 'agent')
+        label1 = "Your Jobs";
+        label2 = "Other Jobs"; 
+        @else
+        label1 = "Assigned";
+        label2 = "Unassigned";
+        @endif
+        
         // Create options for the chart
         const options = {
             series: [data.assignedPercentage, data.unassignedPercentage],
@@ -916,7 +970,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             },
             colors: ['#34c38f', '#f46a6a'],
-            labels: ['Assigned', 'Unassigned'],
+            labels: [label1, label2],
             legend: {
                 position: 'bottom',
                 horizontalAlign: 'center',
@@ -960,8 +1014,15 @@ document.addEventListener("DOMContentLoaded", function() {
         };
         
         // Create and render the chart
-        const agentChart = new ApexCharts(document.querySelector("#agentAssignmentChart"), options);
-        agentChart.render();
+        try {
+            console.log('Creating agent chart with options:', options);
+            const agentChart = new ApexCharts(document.querySelector("#agentAssignmentChart"), options);
+            agentChart.render();
+        } catch (error) {
+            console.error('Error rendering agent chart:', error);
+            document.getElementById('agentAssignmentChart').innerHTML = 
+                '<div class="alert alert-danger">Error rendering chart: ' + error.message + '</div>';
+        }
     }
 });
 </script>

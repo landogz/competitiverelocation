@@ -15,20 +15,26 @@ class SalesReportController extends Controller
      */
     public function index()
     {
+        // Get agent ID if user has agent privileges
+        $agentId = null;
+        if (auth()->user()->privilege === 'agent') {
+            $agentId = auth()->user()->agent_id;
+        }
+
         // Get summary statistics
-        $stats = $this->getSummaryStats();
+        $stats = $this->getSummaryStats($agentId);
 
         // Get sales by category data
-        $salesByCategory = $this->getSalesByCategory();
+        $salesByCategory = $this->getSalesByCategory($agentId);
 
         // Get sales performance data
-        $salesPerformance = $this->getSalesPerformance();
+        $salesPerformance = $this->getSalesPerformance($agentId);
 
         // Get recent sales data
-        $recentSales = $this->getRecentSales();
+        $recentSales = $this->getRecentSales($agentId);
         
         // Get agent assignment statistics
-        $agentStats = $this->getAgentAssignmentStats();
+        $agentStats = $this->getAgentAssignmentStats($agentId);
 
         return view('salesreports', compact('stats', 'salesByCategory', 'salesPerformance', 'recentSales', 'agentStats'));
     }
@@ -36,37 +42,37 @@ class SalesReportController extends Controller
     /**
      * Get summary statistics for the dashboard
      */
-    private function getSummaryStats()
+    private function getSummaryStats($agentId = null)
     {
         $currentMonth = Carbon::now()->startOfMonth();
         $lastMonth = Carbon::now()->subMonth()->startOfMonth();
 
+        // Build base query
+        $query = Transaction::query()->where('status', 'completed');
+        $lastMonthQuery = Transaction::query()->where('status', 'completed');
+        
+        // Filter by agent if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+            $lastMonthQuery->where('assigned_agent', $agentId);
+        }
+
         // Total transactions count - add completed status filter
-        $totalSales = Transaction::whereMonth('created_at', $currentMonth->month)
-            ->where('status', 'completed')
-            ->count();
-        $lastMonthSales = Transaction::whereMonth('created_at', $lastMonth->month)
-            ->where('status', 'completed')
-            ->count();
+        $totalSales = $query->clone()->whereMonth('created_at', $currentMonth->month)->count();
+        $lastMonthSales = $lastMonthQuery->clone()->whereMonth('created_at', $lastMonth->month)->count();
         $salesPercentChange = $this->calculatePercentChange($lastMonthSales, $totalSales);
 
         // Total revenue - add completed status filter
-        $totalRevenue = Transaction::whereMonth('created_at', $currentMonth->month)
-            ->where('status', 'completed')
-            ->sum('grand_total');
-        $lastMonthRevenue = Transaction::whereMonth('created_at', $lastMonth->month)
-            ->where('status', 'completed')
-            ->sum('grand_total');
+        $totalRevenue = $query->clone()->whereMonth('created_at', $currentMonth->month)->sum('grand_total');
+        $lastMonthRevenue = $lastMonthQuery->clone()->whereMonth('created_at', $lastMonth->month)->sum('grand_total');
         $revenuePercentChange = $this->calculatePercentChange($lastMonthRevenue, $totalRevenue);
         $revenueDifference = $totalRevenue - $lastMonthRevenue;
 
         // New customers (unique customers this month) - add completed status filter
-        $newCustomers = Transaction::whereMonth('created_at', $currentMonth->month)
-            ->where('status', 'completed')
+        $newCustomers = $query->clone()->whereMonth('created_at', $currentMonth->month)
             ->distinct('email')
             ->count('email');
-        $lastMonthCustomers = Transaction::whereMonth('created_at', $lastMonth->month)
-            ->where('status', 'completed')
+        $lastMonthCustomers = $lastMonthQuery->clone()->whereMonth('created_at', $lastMonth->month)
             ->distinct('email')
             ->count('email');
         $customersPercentChange = $this->calculatePercentChange($lastMonthCustomers, $newCustomers);
@@ -108,24 +114,24 @@ class SalesReportController extends Controller
     /**
      * Get sales by category data
      */
-    private function getSalesByCategory()
+    private function getSalesByCategory($agentId = null)
     {
+        // Start with a base query
+        $query = Transaction::query()->where('status', 'completed');
+        
+        // Filter by agent if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+        }
+
         $categories = [
-            'Local Moving' => Transaction::where('lead_type', 'Local')
-                ->where('status', 'completed')
-                ->count(),
-            'Long Distance' => Transaction::where('lead_type', 'Long Distance')
-                ->where('status', 'completed')
-                ->count(),
-            'Storage' => Transaction::where('lead_type', 'Storage')
-                ->where('status', 'completed')
-                ->count(),
-            'Other' => Transaction::where(function($query) {
-                    $query->whereNotIn('lead_type', ['Local', 'Long Distance', 'Storage'])
+            'Local Moving' => $query->clone()->where('lead_type', 'Local')->count(),
+            'Long Distance' => $query->clone()->where('lead_type', 'Long Distance')->count(),
+            'Storage' => $query->clone()->where('lead_type', 'Storage')->count(),
+            'Other' => $query->clone()->where(function($q) {
+                    $q->whereNotIn('lead_type', ['Local', 'Long Distance', 'Storage'])
                         ->orWhereNull('lead_type');
-                })
-                ->where('status', 'completed')
-                ->count()
+                })->count()
         ];
 
         return $categories;
@@ -134,7 +140,7 @@ class SalesReportController extends Controller
     /**
      * Get sales performance data for the last 7 days
      */
-    private function getSalesPerformance()
+    private function getSalesPerformance($agentId = null)
     {
         $dates = [];
         $salesData = [];
@@ -148,16 +154,20 @@ class SalesReportController extends Controller
             
             $dates[] = $date;
             
+            // Build base query
+            $query = Transaction::query()->where('status', 'completed');
+            
+            // Filter by agent if needed
+            if ($agentId) {
+                $query->where('assigned_agent', $agentId);
+            }
+            
             // Count of transactions for the day - add completed status filter
-            $dailySales = Transaction::whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', 'completed')
-                ->count();
+            $dailySales = $query->clone()->whereBetween('created_at', [$startDate, $endDate])->count();
             $salesData[] = $dailySales;
             
             // Sum of revenue for the day - add completed status filter
-            $dailyRevenue = Transaction::whereBetween('created_at', [$startDate, $endDate])
-                ->where('status', 'completed')
-                ->sum('grand_total');
+            $dailyRevenue = $query->clone()->whereBetween('created_at', [$startDate, $endDate])->sum('grand_total');
             $revenueData[] = $dailyRevenue;
         }
 
@@ -171,13 +181,20 @@ class SalesReportController extends Controller
     /**
      * Get recent sales data
      */
-    private function getRecentSales()
+    private function getRecentSales($agentId = null)
     {
-        $recentTransactions = Transaction::select('id', 'transaction_id', 'firstname', 'lastname', 'email', 'assigned_agent', 'status', 'created_at', 'grand_total')
+        // Start with base query
+        $query = Transaction::query()
+            ->select('id', 'transaction_id', 'firstname', 'lastname', 'email', 'assigned_agent', 'status', 'created_at', 'grand_total')
             ->where('status', 'completed')
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
+            ->orderBy('created_at', 'desc');
+        
+        // Filter by agent if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+        }
+        
+        $recentTransactions = $query->limit(20)->get();
 
         return $recentTransactions->map(function ($transaction) {
             $agentName = 'Unassigned';
@@ -223,13 +240,22 @@ class SalesReportController extends Controller
     {
         $startDate = $request->input('start_date', Carbon::now()->subMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->format('Y-m-d'));
+        $agentId = auth()->user()->privilege === 'agent' ? auth()->user()->agent_id : null;
         
-        $transactions = Transaction::whereBetween('created_at', [
+        // Base query
+        $query = Transaction::query()
+            ->whereBetween('created_at', [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay()
             ])
-            ->where('status', 'completed')
-            ->get();
+            ->where('status', 'completed');
+        
+        // Apply agent filter if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+        }
+        
+        $transactions = $query->get();
 
         $filename = 'sales_report_' . Carbon::now()->format('Y-m-d') . '.csv';
         
@@ -304,30 +330,39 @@ class SalesReportController extends Controller
     /**
      * Get statistics on agent assignments
      */
-    private function getAgentAssignmentStats()
+    private function getAgentAssignmentStats($agentId = null)
     {
-        $totalTransactions = Transaction::where('status', 'completed')->count();
-        $assignedTransactions = Transaction::where('status', 'completed')->whereNotNull('assigned_agent')->count();
-        $unassignedTransactions = $totalTransactions - $assignedTransactions;
+        // Build base query
+        $query = Transaction::query();
         
-        $assignedPercentage = $totalTransactions > 0 ? round(($assignedTransactions / $totalTransactions) * 100, 1) : 0;
-        $unassignedPercentage = $totalTransactions > 0 ? round(($unassignedTransactions / $totalTransactions) * 100, 1) : 0;
+        // Filter by agent if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+        }
         
-        // Get top 5 agents by transaction count
-        $topAgents = Agent::join('transactions', 'agents.id', '=', 'transactions.assigned_agent')
-            ->where('transactions.status', 'completed')
-            ->select('agents.id', 'agents.contact_name', DB::raw('count(*) as transaction_count'))
-            ->groupBy('agents.id', 'agents.contact_name')
-            ->orderBy('transaction_count', 'desc')
-            ->limit(5)
-            ->get();
-            
+        // Get counts for assigned vs unassigned
+        $assigned = $query->clone()->whereNotNull('assigned_agent')->count();
+        
+        // If filtered by agent, all transactions will be assigned, so we need a different approach
+        if ($agentId) {
+            // Get total transactions in the system with the same criteria except agent filter
+            $total = Transaction::count();
+            $unassigned = $total - $assigned;
+        } else {
+            $unassigned = $query->clone()->whereNull('assigned_agent')->count();
+        }
+        
+        $total = $assigned + $unassigned;
+        
+        // Calculate percentages
+        $assignedPercentage = $total > 0 ? ($assigned / $total) * 100 : 0;
+        $unassignedPercentage = $total > 0 ? ($unassigned / $total) * 100 : 0;
+        
         return [
-            'assigned' => $assignedTransactions,
-            'unassigned' => $unassignedTransactions,
+            'assigned' => $assigned,
+            'unassigned' => $unassigned,
             'assignedPercentage' => $assignedPercentage,
-            'unassignedPercentage' => $unassignedPercentage,
-            'topAgents' => $topAgents
+            'unassignedPercentage' => $unassignedPercentage
         ];
     }
 
@@ -337,6 +372,7 @@ class SalesReportController extends Controller
     public function getPerformanceData(Request $request)
     {
         $range = $request->input('range', 'last_7_days');
+        $agentId = auth()->user()->privilege === 'agent' ? auth()->user()->agent_id : null;
         
         $dates = [];
         $salesData = [];
@@ -424,34 +460,42 @@ class SalesReportController extends Controller
                 
                 $dates[] = $dateLabel;
                 
-                $sales = Transaction::whereBetween('created_at', [
+                // Start with base query
+                $query = Transaction::query()->where('status', 'completed');
+                
+                // Apply agent filter if needed
+                if ($agentId) {
+                    $query->where('assigned_agent', $agentId);
+                }
+                
+                $sales = $query->clone()->whereBetween('created_at', [
                     $startDate->startOfDay(), 
                     $endDate->endOfDay()
-                ])
-                ->where('status', 'completed')
-                ->count();
+                ])->count();
                 $salesData[] = $sales;
                 
-                $revenue = Transaction::whereBetween('created_at', [
+                $revenue = $query->clone()->whereBetween('created_at', [
                     $startDate->startOfDay(), 
                     $endDate->endOfDay()
-                ])
-                ->where('status', 'completed')
-                ->sum('grand_total');
+                ])->sum('grand_total');
                 $revenueData[] = $revenue;
                 
             } else {
                 // Single day
                 $dates[] = $point->format('M d');
                 
-                $sales = Transaction::whereDate('created_at', $point)
-                    ->where('status', 'completed')
-                    ->count();
+                // Start with base query
+                $query = Transaction::query()->where('status', 'completed');
+                
+                // Apply agent filter if needed
+                if ($agentId) {
+                    $query->where('assigned_agent', $agentId);
+                }
+                
+                $sales = $query->clone()->whereDate('created_at', $point)->count();
                 $salesData[] = $sales;
                 
-                $revenue = Transaction::whereDate('created_at', $point)
-                    ->where('status', 'completed')
-                    ->sum('grand_total');
+                $revenue = $query->clone()->whereDate('created_at', $point)->sum('grand_total');
                 $revenueData[] = $revenue;
             }
         }
@@ -472,34 +516,31 @@ class SalesReportController extends Controller
     public function getStatsData(Request $request)
     {
         $range = $request->input('range', 'last_7_days');
+        $agentId = auth()->user()->privilege === 'agent' ? auth()->user()->agent_id : null;
         
         // Define date ranges based on selection
         list($currentStart, $currentEnd, $previousStart, $previousEnd) = $this->getDateRanges($range);
         
+        // Base queries
+        $currentQuery = Transaction::query()->where('status', 'completed');
+        $previousQuery = Transaction::query()->where('status', 'completed');
+        
+        // Apply agent filter if needed
+        if ($agentId) {
+            $currentQuery->where('assigned_agent', $agentId);
+            $previousQuery->where('assigned_agent', $agentId);
+        }
+        
         // Get stats for the current period
-        $currentSales = Transaction::whereBetween('created_at', [$currentStart, $currentEnd])
-            ->where('status', 'completed')
-            ->count();
-        $currentRevenue = Transaction::whereBetween('created_at', [$currentStart, $currentEnd])
-            ->where('status', 'completed')
-            ->sum('grand_total');
-        $currentCustomers = Transaction::whereBetween('created_at', [$currentStart, $currentEnd])
-            ->where('status', 'completed')
-            ->distinct('email')
-            ->count('email');
+        $currentSales = $currentQuery->clone()->whereBetween('created_at', [$currentStart, $currentEnd])->count();
+        $currentRevenue = $currentQuery->clone()->whereBetween('created_at', [$currentStart, $currentEnd])->sum('grand_total');
+        $currentCustomers = $currentQuery->clone()->whereBetween('created_at', [$currentStart, $currentEnd])->distinct('email')->count('email');
         $currentAvgOrderValue = $currentSales > 0 ? $currentRevenue / $currentSales : 0;
         
         // Get stats for the previous period
-        $previousSales = Transaction::whereBetween('created_at', [$previousStart, $previousEnd])
-            ->where('status', 'completed')
-            ->count();
-        $previousRevenue = Transaction::whereBetween('created_at', [$previousStart, $previousEnd])
-            ->where('status', 'completed')
-            ->sum('grand_total');
-        $previousCustomers = Transaction::whereBetween('created_at', [$previousStart, $previousEnd])
-            ->where('status', 'completed')
-            ->distinct('email')
-            ->count('email');
+        $previousSales = $previousQuery->clone()->whereBetween('created_at', [$previousStart, $previousEnd])->count();
+        $previousRevenue = $previousQuery->clone()->whereBetween('created_at', [$previousStart, $previousEnd])->sum('grand_total');
+        $previousCustomers = $previousQuery->clone()->whereBetween('created_at', [$previousStart, $previousEnd])->distinct('email')->count('email');
         $previousAvgOrderValue = $previousSales > 0 ? $previousRevenue / $previousSales : 0;
         
         // Calculate percentage changes
@@ -667,31 +708,29 @@ class SalesReportController extends Controller
     public function getCategoryData(Request $request)
     {
         $range = $request->input('range', 'last_7_days');
+        $agentId = auth()->user()->privilege === 'agent' ? auth()->user()->agent_id : null;
         
         // Define date ranges based on selection
         list($currentStart, $currentEnd, $previousStart, $previousEnd) = $this->getDateRanges($range);
         
-        // Get sales by category for the current period
+        // Base query
+        $query = Transaction::query()->where('status', 'completed')
+            ->whereBetween('created_at', [$currentStart, $currentEnd]);
+        
+        // Apply agent filter if needed
+        if ($agentId) {
+            $query->where('assigned_agent', $agentId);
+        }
+        
+        // Get category data
         $categories = [
-            'Local Moving' => Transaction::where('lead_type', 'Local')
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$currentStart, $currentEnd])
-                ->count(),
-            'Long Distance' => Transaction::where('lead_type', 'Long Distance')
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$currentStart, $currentEnd])
-                ->count(),
-            'Storage' => Transaction::where('lead_type', 'Storage')
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$currentStart, $currentEnd])
-                ->count(),
-            'Other' => Transaction::where(function($query) {
+            'Local Moving' => $query->clone()->where('lead_type', 'Local')->count(),
+            'Long Distance' => $query->clone()->where('lead_type', 'Long Distance')->count(),
+            'Storage' => $query->clone()->where('lead_type', 'Storage')->count(),
+            'Other' => $query->clone()->where(function($query) {
                     $query->whereNotIn('lead_type', ['Local', 'Long Distance', 'Storage'])
                         ->orWhereNull('lead_type');
-                })
-                ->where('status', 'completed')
-                ->whereBetween('created_at', [$currentStart, $currentEnd])
-                ->count()
+                })->count()
         ];
         
         // Calculate total for percentage calculations
@@ -723,49 +762,36 @@ class SalesReportController extends Controller
     public function getAgentData(Request $request)
     {
         $range = $request->input('range', 'last_7_days');
+        $agentId = auth()->user()->privilege === 'agent' ? auth()->user()->agent_id : null;
         
         // Define date ranges based on selection
         list($currentStart, $currentEnd, $previousStart, $previousEnd) = $this->getDateRanges($range);
         
-        // Get stats for the current period
-        $totalTransactions = Transaction::where('status', 'completed')
-            ->whereBetween('created_at', [$currentStart, $currentEnd])
-            ->count();
+        // Base query for filtering by date range
+        $query = Transaction::query()->whereBetween('created_at', [$currentStart, $currentEnd]);
         
-        $assignedTransactions = Transaction::where('status', 'completed')
-            ->whereNotNull('assigned_agent')
-            ->whereBetween('created_at', [$currentStart, $currentEnd])
-            ->count();
+        // If we're filtering by agent, we need to show percentage of all transactions assigned to this agent
+        if ($agentId) {
+            $assigned = $query->clone()->where('assigned_agent', $agentId)->count();
+            $total = $query->clone()->count(); // All transactions in this date range
+            $unassigned = $total - $assigned;
+        } else {
+            // Standard behavior - assigned vs unassigned transactions
+            $assigned = $query->clone()->whereNotNull('assigned_agent')->count();
+            $unassigned = $query->clone()->whereNull('assigned_agent')->count();
+        }
         
-        $unassignedTransactions = $totalTransactions - $assignedTransactions;
+        $total = $assigned + $unassigned;
         
-        $assignedPercentage = $totalTransactions > 0 ? round(($assignedTransactions / $totalTransactions) * 100, 1) : 0;
-        $unassignedPercentage = $totalTransactions > 0 ? round(($unassignedTransactions / $totalTransactions) * 100, 1) : 0;
+        $assignedPercentage = $total > 0 ? ($assigned / $total) * 100 : 0;
+        $unassignedPercentage = $total > 0 ? ($unassigned / $total) * 100 : 0;
         
-        // Get top 5 agents by transaction count
-        $topAgents = Agent::join('transactions', 'agents.id', '=', 'transactions.assigned_agent')
-            ->where('transactions.status', 'completed')
-            ->whereBetween('transactions.created_at', [$currentStart, $currentEnd])
-            ->select('agents.id', 'agents.contact_name', DB::raw('count(*) as transaction_count'))
-            ->groupBy('agents.id', 'agents.contact_name')
-            ->orderBy('transaction_count', 'desc')
-            ->limit(5)
-            ->get();
-            
         return response()->json([
             'success' => true,
-            'assigned' => $assignedTransactions,
-            'unassigned' => $unassignedTransactions,
+            'assigned' => $assigned,
+            'unassigned' => $unassigned,
             'assignedPercentage' => $assignedPercentage,
-            'unassignedPercentage' => $unassignedPercentage,
-            'topAgents' => $topAgents,
-            'total' => $totalTransactions,
-            'period' => [
-                'start' => $currentStart->format('Y-m-d'),
-                'end' => $currentEnd->format('Y-m-d'),
-                'description' => $this->getDateRangeDescription($range)
-            ],
-            'range' => $range
+            'unassignedPercentage' => $unassignedPercentage
         ]);
     }
 } 

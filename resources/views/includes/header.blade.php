@@ -323,6 +323,16 @@
                             </a>
                         </li><!--end nav-item-->
 
+
+                        @if(Auth::user()->privilege === 'agent')
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url('/salesreports') }}">
+                                <i class="fas fa-dollar-sign menu-icon"></i>                                    
+                                <span>Sales Report</span>
+                            </a>
+                        </li><!--end nav-item-->
+                        @endif
+
                         @if(Auth::user()->privilege !== 'agent')
                         <li class="nav-item">
                             <a class="nav-link" href="#sales" data-bs-toggle="collapse" role="button"

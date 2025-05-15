@@ -1,32 +1,94 @@
 @extends('includes.app')
 
-@section('title', 'Calendar')
+@section('title', 'Transaction Calendar')
 
 @section('content')
+
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+
+<!-- Lightbox CSS & JS - Updated to load before usage -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Initialize Lightbox -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pre-configure lightbox defaults
+    if (typeof lightbox !== 'undefined') {
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true,
+            'albumLabel': 'Image %1 of %2',
+            'fadeDuration': 300,
+            'fitImagesInViewport': true
+        });
+    }
+});
+</script>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
             <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
-                <h4 class="page-title">Calendar</h4>
+                <h4 class="page-title">Transaction Calendar</h4>
                 <div class="d-flex align-items-center">
-                    <button class="btn btn-primary btn-sm me-2" id="syncGoogleCalendar">
-                        <i class="fab fa-google me-1"></i> Sync Google Calendar
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm" id="addEvent">
-                        <i class="fas fa-plus me-1"></i> Add Event
+                    <button class="btn btn-outline-primary btn-sm" id="refreshCalendar">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh Calendar
                     </button>
                 </div>                                
             </div><!--end page-title-box-->
         </div><!--end col-->
     </div><!--end row-->
+    
+    @if(Auth::user() && Auth::user()->privilege === 'agent')
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <div>You are viewing only transactions assigned to you as an agent.</div>
+            </div>
+            
+            @if(App\Models\Transaction::where('assigned_agent', Auth::user()->agent_id)->count() === 0)
+            <div class="alert alert-warning d-flex align-items-center mt-2" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <div>
+                    <strong>No transactions found!</strong> There are currently no transactions assigned to your agent account.
+                    @if(App\Models\Transaction::count() > 0)
+                        The system has {{ App\Models\Transaction::count() }} total transaction(s).
+                    @endif
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+    
+    <!-- Status Color Legend -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <span class="legend-dot bg-success"></span> <span class="me-3">Completed</span>
+                <span class="legend-dot bg-warning"></span> <span class="me-3">Pending</span>
+                <span class="legend-dot bg-danger"></span> <span class="me-3">Canceled</span>
+                <span class="legend-dot bg-secondary"></span> <span>Other</span>
+            </div>
+        </div>
+    </div>
+    
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h4 class="card-title mb-0">Event Calendar</h4>
+                            <h4 class="card-title mb-0">Transaction Calendar</h4>
                         </div>
                         <div class="col-auto">
                             <div class="btn-group" role="group">
@@ -50,101 +112,297 @@
     </div> <!-- end row -->
 </div><!-- container -->
 
-<!-- Event Details Modal -->
-<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Transaction Details Modal -->
+<div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="transactionModalLabel">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Transaction Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="event-date text-center p-3 bg-light rounded">
-                            <h3 class="mb-0" id="eventDay">15</h3>
-                            <p class="mb-0" id="eventMonth">Apr</p>
+            <div class="modal-body bg-light p-0">
+                <!-- Header Info Section -->
+                <div class="bg-white p-4 mb-0 border-bottom">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <div class="event-date rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; flex-direction: column;">
+                                <h3 class="mb-0 fw-bold" id="eventDay">15</h3>
+                                <p class="mb-0 small text-uppercase" id="eventMonth">Apr</p>
                         </div>
                     </div>
-                    <div class="col-md-8">
-                        <h4 id="eventTitle">Event Title</h4>
-                        <p class="text-muted mb-1"><i class="far fa-clock me-2"></i> <span id="eventTime">9:00 AM - 10:00 AM</span></p>
-                        <p class="text-muted mb-1"><i class="fas fa-map-marker-alt me-2"></i> <span id="eventLocation">Location</span></p>
-                        <p class="text-muted mb-0"><i class="fas fa-user me-2"></i> <span id="eventOrganizer">Organizer</span></p>
+                        <div class="col-md-6">
+                            <h4 id="eventTitle" class="fw-bold mb-2 text-primary">Customer Name</h4>
+                            <p class="text-muted mb-1 d-flex align-items-center">
+                                <i class="far fa-calendar me-2 text-secondary"></i> 
+                                <span id="eventTime" class="text-dark">Date & Time</span>
+                            </p>
+                            <p class="text-muted mb-1 d-flex align-items-center">
+                                <i class="fas fa-truck me-2 text-secondary"></i> 
+                                <span id="eventService" class="text-dark">Service</span>
+                            </p>
                     </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="d-flex flex-column align-items-md-end">
+                                <span id="transactionStatus" class="badge mb-2 fs-6 px-3 py-2">Status</span>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user me-2 text-secondary"></i>
+                                    <span id="eventAgent" class="text-dark">Agent</span>
                 </div>
-                <div class="mb-3">
-                    <h6>Description</h6>
-                    <p id="eventDescription">Event description goes here.</p>
                 </div>
-                <div class="mb-3">
-                    <h6>Attendees</h6>
-                    <div id="eventAttendees" class="d-flex flex-wrap">
-                        <!-- Attendees will be added here dynamically -->
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="#" id="eventGoogleLink" class="btn btn-primary" target="_blank">
-                    <i class="fab fa-google me-1"></i> Open in Google Calendar
-                </a>
+                
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs nav-fill px-3 pt-3 bg-white" id="transactionTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active px-4" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer-tab-pane" type="button" role="tab" aria-controls="customer-tab-pane" aria-selected="true">
+                            <i class="fas fa-user me-2"></i>Customer
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4" id="move-tab" data-bs-toggle="tab" data-bs-target="#move-tab-pane" type="button" role="tab" aria-controls="move-tab-pane" aria-selected="false">
+                            <i class="fas fa-truck-loading me-2"></i>Move Details
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial-tab-pane" type="button" role="tab" aria-controls="financial-tab-pane" aria-selected="false">
+                            <i class="fas fa-dollar-sign me-2"></i>Financial & Services
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Tab Content -->
+                <div class="tab-content p-4 bg-white" id="transactionTabsContent">
+                    <!-- Customer Info Tab -->
+                    <div class="tab-pane fade show active" id="customer-tab-pane" role="tabpanel" aria-labelledby="customer-tab" tabindex="0">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-user-circle me-2 text-primary"></i>Customer Information</h6>
             </div>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Transaction ID:</span> 
+                                            <span class="fw-medium" id="transactionId"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Customer:</span> 
+                                            <span class="fw-medium" id="customerName"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Email:</span> 
+                                            <span class="fw-medium" id="customerEmail"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Phone:</span> 
+                                            <span class="fw-medium" id="customerPhone"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Lead Source:</span> 
+                                            <span class="fw-medium" id="leadSource"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between">
+                                            <span class="text-muted">Lead Type:</span> 
+                                            <span class="fw-medium" id="leadType"></span>
+                                        </p>
         </div>
     </div>
 </div>
-
-<!-- Add Event Modal -->
-<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addEventModalLabel">Add New Event</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-briefcase me-2 text-primary"></i>Sales Information</h6>
             </div>
-            <div class="modal-body">
-                <form id="addEventForm">
-                    <div class="mb-3">
-                        <label for="eventTitleInput" class="form-label">Event Title</label>
-                        <input type="text" class="form-control" id="eventTitleInput" required>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Assigned Agent:</span> 
+                                            <span class="fw-medium" id="assignedAgent"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Sales Rep:</span> 
+                                            <span class="fw-medium" id="salesName"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Sales Email:</span> 
+                                            <span class="fw-medium" id="salesEmail"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Sales Location:</span> 
+                                            <span class="fw-medium" id="salesLocation"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between">
+                                            <span class="text-muted">Created:</span> 
+                                            <span class="fw-medium" id="createdDate"></span>
+                                        </p>
                     </div>
-                    <div class="row mb-3">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Uploaded Images Gallery -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-image me-2 text-primary"></i>Uploaded Images</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="uploadedImagesGallery" class="uploaded-images-gallery"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Move Details Tab -->
+                    <div class="tab-pane fade" id="move-tab-pane" role="tabpanel" aria-labelledby="move-tab" tabindex="0">
+                        <div class="row">
                         <div class="col-md-6">
-                            <label for="eventStartDate" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="eventStartDate" required>
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Location Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Pickup Location:</span> 
+                                            <span class="fw-medium" id="pickupLocation"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Delivery Location:</span> 
+                                            <span class="fw-medium" id="deliveryLocation"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Total Miles:</span> 
+                                            <span class="fw-medium" id="totalMiles"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Additional Miles:</span> 
+                                            <span class="fw-medium" id="additionalMiles"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between">
+                                            <span class="text-muted">Mile Rate:</span> 
+                                            <span class="fw-medium" id="mileRate"></span>
+                                        </p>
+                                    </div>
+                                </div>
                         </div>
                         <div class="col-md-6">
-                            <label for="eventStartTime" class="form-label">Start Time</label>
-                            <input type="time" class="form-control" id="eventStartTime" required>
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-box me-2 text-primary"></i>Resource Details</h6>
+                        </div>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Items Count:</span> 
+                                            <span class="fw-medium" id="itemsCount"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Crew Count:</span> 
+                                            <span class="fw-medium" id="crewCount"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Crew Rate:</span> 
+                                            <span class="fw-medium" id="crewRate"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Delivery Rate:</span> 
+                                            <span class="fw-medium" id="deliveryRate"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Insurance #:</span> 
+                                            <span class="fw-medium" id="insuranceNumber"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between">
+                                            <span class="text-muted">Insurance Document:</span> 
+                                            <span>
+                                                <a href="#" id="insuranceDocLink" class="btn btn-sm btn-outline-primary d-none">
+                                                    <i class="fas fa-file-pdf me-1"></i> View
+                                                </a>
+                                                <span id="noInsuranceDoc" class="badge bg-light text-dark d-none">No document</span>
+                                            </span>
+                                        </p>
+                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="row mb-3">
+                    
+                    <!-- Financial Tab -->
+                    <div class="tab-pane fade" id="financial-tab-pane" role="tabpanel" aria-labelledby="financial-tab" tabindex="0">
+                        <!-- Services Section - Moved to the top -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-light py-3">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-concierge-bell me-2 text-primary"></i>Service Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="servicesContainer">
+                                    <!-- Services will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
                         <div class="col-md-6">
-                            <label for="eventEndDate" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="eventEndDate" required>
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-receipt me-2 text-primary"></i>Service Charges</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Service Rate:</span> 
+                                            <span class="fw-medium" id="serviceRate"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Subtotal:</span> 
+                                            <span class="fw-medium" id="subtotal"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Software Fee:</span> 
+                                            <span class="fw-medium" id="softwareFee"></span>
+                                        </p>
+                                        <p class="mb-0 d-flex justify-content-between">
+                                            <span class="text-muted">Truck Fee:</span> 
+                                            <span class="fw-medium" id="truckFee"></span>
+                                        </p>
+                                    </div>
+                                </div>
                         </div>
                         <div class="col-md-6">
-                            <label for="eventEndTime" class="form-label">End Time</label>
-                            <input type="time" class="form-control" id="eventEndTime" required>
+                                <div class="card border-0 shadow-sm mb-4">
+                                    <div class="card-header bg-light py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="fas fa-credit-card me-2 text-primary"></i>Payment Details</h6>
                         </div>
+                                    <div class="card-body">
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Downpayment:</span> 
+                                            <span class="fw-medium" id="downpayment"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Coupon Code:</span> 
+                                            <span class="fw-medium" id="couponCode"></span>
+                                        </p>
+                                        <p class="mb-2 d-flex justify-content-between">
+                                            <span class="text-muted">Payment ID:</span> 
+                                            <span class="fw-medium" id="paymentId"></span>
+                                        </p>
+                                        <div class="mt-3 p-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-25">
+                                            <p class="mb-0 d-flex justify-content-between align-items-center">
+                                                <span class="fw-bold text-primary fs-6">Grand Total:</span> 
+                                                <span class="fw-bold text-primary fs-5" id="grandTotal"></span>
+                                            </p>
                     </div>
-                    <div class="mb-3">
-                        <label for="eventLocationInput" class="form-label">Location</label>
-                        <input type="text" class="form-control" id="eventLocationInput">
                     </div>
-                    <div class="mb-3">
-                        <label for="eventDescriptionInput" class="form-label">Description</label>
-                        <textarea class="form-control" id="eventDescriptionInput" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="eventAttendeesInput" class="form-label">Attendees (comma separated emails)</label>
-                        <input type="text" class="form-control" id="eventAttendeesInput">
-                    </div>
-                </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveEvent">Save Event</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Close
+                </button>
+                <a href="#" id="viewTransaction" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-eye me-1"></i> View Full Transaction
+                </a>
             </div>
         </div>
     </div>
@@ -152,720 +410,417 @@
 
 @endsection
 
-<!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
-
-<!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-
-<!-- Google Calendar API -->
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize FullCalendar
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
+            initialDate: new Date(), // This already looks correct
             headerToolbar: {
                 left: 'dayGridMonth,timeGridWeek,timeGridDay',
                 center: 'title',
                 right: ''
             },
-            events: [], // Will be populated from Google Calendar
+            events: '/calendar/events', // Endpoint to fetch transaction events
             eventClick: function(info) {
                 // Prevent default behavior (redirection)
                 info.jsEvent.preventDefault();
-                openEventModal(info.event);
+                info.jsEvent.stopPropagation();
+                
+                // Remove any href attribute that might cause navigation
+                if (info.el.tagName === 'A') {
+                    info.el.removeAttribute('href');
+                }
+                
+                // Open the transaction modal
+                openTransactionModal(info.event);
+                return false; // Ensure no further propagation
             },
             dateClick: function(info) {
-                // Pre-fill the date in the add event form
-                document.getElementById('eventStartDate').value = info.dateStr;
-                document.getElementById('eventEndDate').value = info.dateStr;
-                
-                // Show the add event modal
-                var addEventModal = new bootstrap.Modal(document.getElementById('addEventModal'));
-                addEventModal.show();
+                // Optional: Add functionality for date clicks
             },
             eventDidMount: function(info) {
                 // Add tooltips to events
                 info.el.title = info.event.title;
-                
                 // Add custom styling to events
                 info.el.classList.add('fc-event-modern');
+                // Add status-based styling and color
+                if (info.event.extendedProps.status) {
+                    const status = info.event.extendedProps.status.toLowerCase();
+                    if (status === 'completed') {
+                        info.el.style.backgroundColor = '#1cc88a';
+                        info.el.style.borderLeft = '4px solid #169a6c';
+                        info.el.style.color = '#fff';
+                    } else if (status === 'pending') {
+                        info.el.style.backgroundColor = '#f6c23e';
+                        info.el.style.borderLeft = '4px solid #dda20a';
+                        info.el.style.color = '#fff';
+                    } else if (status === 'canceled') {
+                        info.el.style.backgroundColor = '#e74a3b';
+                        info.el.style.borderLeft = '4px solid #be2617';
+                        info.el.style.color = '#fff';
+            } else {
+                        info.el.style.backgroundColor = '#858796';
+                        info.el.style.borderLeft = '4px solid #6c757d';
+                        info.el.style.color = '#fff';
+                    }
+                } else {
+                    info.el.style.backgroundColor = '#858796';
+                    info.el.style.borderLeft = '4px solid #6c757d';
+                    info.el.style.color = '#fff';
+                }
+            },
+            eventContent: function(arg) {
+                // Get status for color
+                const status = arg.event.extendedProps.status ? arg.event.extendedProps.status.toLowerCase() : 'other';
+                let bg = '#858796', border = '#6c757d', text = '#fff';
+                if (status === 'completed') { bg = '#1cc88a'; border = '#169a6c'; }
+                else if (status === 'pending') { bg = '#f6c23e'; border = '#dda20a'; text = '#fff'; }
+                else if (status === 'canceled') { bg = '#e74a3b'; border = '#be2617'; text = '#fff'; }
+                
+                // Remove any URL from the event to prevent navigation
+                if (arg.event.url) {
+                    delete arg.event.url;
+                }
+                
+                // Main event container
+                const wrap = document.createElement('div');
+                wrap.className = 'fc-event-pro';
+                wrap.style.background = bg;
+                wrap.style.borderLeft = `4px solid ${border}`;
+                wrap.style.color = text;
+                // Title
+                const title = document.createElement('div');
+                title.className = 'fc-event-pro-title';
+                title.textContent = arg.event.title;
+                wrap.appendChild(title);
+                // (No time)
+                // Status badge
+                const badge = document.createElement('span');
+                badge.className = `fc-event-pro-badge fc-event-pro-badge-${status}`;
+                badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                wrap.appendChild(badge);
+                return { domNodes: [wrap] };
+            },
+            loading: function(isLoading) {
+                if (isLoading) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Loading Calendar',
+                        text: 'Please wait while we load your transactions...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                } else {
+                    // Close loading state
+                    Swal.close();
+                }
             }
         });
         
         calendar.render();
         
-        // Google Calendar API configuration
-        const API_KEY = 'AIzaSyDfJAEOOESD7IvZy6qBYvOz7opcYVnDksw'; // Replace with your Google API key
-        const CLIENT_ID = '677471639186-stq8l3ln4ag21k3thv9i7ll3kni37p5t.apps.googleusercontent.com'; // Replace with your Google Client ID
-        const SCOPES = 'https://www.googleapis.com/auth/calendar';
-        const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'];
-        const CALENDAR_ID = 'crsmoving08@gmail.com'; // Calendar ID
-        
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        let autoSyncInterval;
-        
-        // Initialize the Google API client
-        function gapiLoaded() {
-            console.log('gapi loaded');
-            gapi.load('client', initializeGapiClient);
-        }
-        
-        async function initializeGapiClient() {
-            try {
-                console.log('Initializing gapi client');
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: DISCOVERY_DOCS,
-                });
-                gapiInited = true;
-                console.log('gapi client initialized');
-                maybeEnableButtons();
-                
-                // Try to authenticate and load calendar data immediately
-                if (gisInited) {
-                    console.log('Both APIs initialized, attempting to load calendar data');
-                    attemptAutoLoad();
-                }
-            } catch (error) {
-                console.error('Error initializing gapi client:', error);
-            }
-        }
-        
-        function gisLoaded() {
-            console.log('gis loaded');
-            try {
-                // Get the current URL path
-                const currentPath = window.location.pathname;
-                console.log('Current path:', currentPath);
-                
-                // Create the token client with the current path as redirect URI
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
-                    scope: SCOPES,
-                    callback: '', // defined later
-                    redirect_uri: window.location.origin + currentPath
-                });
-                
-                gisInited = true;
-                console.log('gis initialized with redirect URI:', window.location.origin + currentPath);
-                maybeEnableButtons();
-                
-                // Try to authenticate and load calendar data immediately
-                if (gapiInited) {
-                    console.log('Both APIs initialized, attempting to load calendar data');
-                    attemptAutoLoad();
-                }
-            } catch (error) {
-                console.error('Error initializing gis:', error);
-            }
-        }
-        
-        function maybeEnableButtons() {
-            console.log('Checking if buttons should be enabled:', { gapiInited, gisInited });
-            if (gapiInited && gisInited) {
-                document.getElementById('syncGoogleCalendar').disabled = false;
-                console.log('Sync button enabled');
-            }
-        }
-        
-        // Function to attempt auto-loading of calendar data
-        function attemptAutoLoad() {
-            console.log('Attempting to auto-load calendar data');
+        // Function to open transaction modal
+        function openTransactionModal(event) {
+            const props = event.extendedProps;
+            const startDate = new Date(event.start);
             
-            // Define the callback function
-            tokenClient.callback = async (resp) => {
-                console.log('Auth callback received:', resp);
-                if (resp.error !== undefined) {
-                    console.error('Auth error:', resp.error);
-                    return;
-                }
-                
-                try {
-                    // Clear existing events
-                    calendar.removeAllEvents();
-                    console.log('Fetching events from Google Calendar');
-                    
-                    // Fetch events from Google Calendar
-                    const response = await gapi.client.calendar.events.list({
-                        'calendarId': CALENDAR_ID,
-                        'timeMin': new Date().toISOString(),
-                        'showDeleted': false,
-                        'singleEvents': true,
-                        'maxResults': 100,
-                        'orderBy': 'startTime',
-                    });
-                    
-                    console.log('Events fetched:', response);
-                    const events = response.result.items;
-                    
-                    // Add events to the calendar
-                    events.forEach(event => {
-                        const start = event.start.dateTime || event.start.date;
-                        const end = event.end.dateTime || event.end.date;
-                        
-                        calendar.addEvent({
-                            id: event.id,
-                            title: event.summary,
-                            start: start,
-                            end: end,
-                            extendedProps: {
-                                description: event.description || '',
-                                location: event.location || '',
-                                attendees: event.attendees || [],
-                                organizer: event.organizer || {},
-                                googleEventId: event.id
-                            }
-                        });
-                    });
-                    
-                    console.log('Calendar auto-loaded successfully');
-                    
-                    // Start auto-sync if not already running
-                    startAutoSync();
-                } catch (error) {
-                    console.error('Error auto-loading calendar:', error);
-                }
-            };
+            // Format date for display
+            const day = startDate.getDate();
+            const month = startDate.toLocaleString('default', { month: 'short' });
+            const formattedDate = startDate.toLocaleDateString();
+            const formattedTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
-            // Request access token
-            if (gapi.client.getToken() === null) {
-                console.log('No token, requesting access');
-                tokenClient.requestAccessToken({
-                    prompt: 'consent',
-                    redirect_uri: window.location.origin + window.location.pathname
-                });
+            // Update modal content with transaction data
+            document.getElementById('eventDay').textContent = day;
+            document.getElementById('eventMonth').textContent = month;
+            document.getElementById('eventTitle').textContent = event.title;
+            document.getElementById('eventTime').textContent = `${formattedDate} ${formattedTime}`;
+            document.getElementById('eventService').textContent = props.service || 'N/A';
+            
+            // Display only the agent's company name or 'Unassigned'
+            document.getElementById('eventAgent').textContent = props.agent_company ? props.agent_company : 'Unassigned';
+            
+            // Customer tab data
+            document.getElementById('transactionId').textContent = props.transaction_id || 'N/A';
+            document.getElementById('customerName').textContent = event.title || 'N/A'; // Already set to firstname + lastname
+            document.getElementById('customerEmail').textContent = props.email || 'N/A';
+            document.getElementById('customerPhone').textContent = props.phone || 'N/A';
+            document.getElementById('leadSource').textContent = props.lead_source || 'N/A';
+            document.getElementById('leadType').textContent = props.lead_type || 'N/A';
+            document.getElementById('assignedAgent').textContent = props.agent_company ? props.agent_company : 'Unassigned';
+            document.getElementById('salesName').textContent = props.sales_name || 'N/A';
+            document.getElementById('salesEmail').textContent = props.sales_email || 'N/A';
+            document.getElementById('salesLocation').textContent = props.sales_location || 'N/A';
+            
+            // Format created date
+            if (props.created_at) {
+                const dateObj = new Date(props.created_at.replace(/-/g, '/'));
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+                let formatted = dateObj.toLocaleString('en-US', options);
+                formatted = formatted.replace(',', '').replace(' AM', 'am').replace(' PM', 'pm');
+                document.getElementById('createdDate').textContent = formatted;
             } else {
-                console.log('Token exists, refreshing');
-                tokenClient.requestAccessToken({
-                    prompt: '',
-                    redirect_uri: window.location.origin + window.location.pathname
-                });
+                document.getElementById('createdDate').textContent = 'N/A';
             }
-        }
-        
-        // Sync Google Calendar button click handler
-        document.getElementById('syncGoogleCalendar').addEventListener('click', function() {
-            console.log('Sync button clicked');
-            if (gapiInited && gisInited) {
-                console.log('APIs initialized, proceeding with auth');
+            
+            // Set status with appropriate styling
+            const statusElement = document.getElementById('transactionStatus');
+            statusElement.textContent = props.status || 'N/A';
+            
+            // Update status badge color
+            statusElement.className = 'badge mb-2 fs-6 px-3 py-2'; // Reset class
+            if (props.status) {
+                const status = props.status.toLowerCase();
+                if (status === 'completed') {
+                    statusElement.classList.add('bg-success');
+                } else if (status === 'pending') {
+                    statusElement.classList.add('bg-warning');
+                } else if (status === 'canceled') {
+                    statusElement.classList.add('bg-danger');
+            } else {
+                    statusElement.classList.add('bg-secondary');
+                }
+            } else {
+                statusElement.classList.add('bg-secondary');
+            }
+            
+            // Move details tab data
+            document.getElementById('pickupLocation').textContent = props.pickup_location || 'N/A';
+            document.getElementById('deliveryLocation').textContent = props.delivery_location || 'N/A';
+            document.getElementById('totalMiles').textContent = props.miles ? `${props.miles} miles` : 'N/A';
+            document.getElementById('additionalMiles').textContent = props.add_mile ? `${props.add_mile} miles` : 'N/A';
+            document.getElementById('mileRate').textContent = props.mile_rate ? `$${props.mile_rate}` : 'N/A';
+            document.getElementById('itemsCount').textContent = props.no_of_items || 'N/A';
+            document.getElementById('crewCount').textContent = props.no_of_crew || 'N/A';
+            document.getElementById('crewRate').textContent = props.crew_rate ? `$${props.crew_rate}` : 'N/A';
+            document.getElementById('deliveryRate').textContent = props.delivery_rate ? `$${props.delivery_rate}` : 'N/A';
+            document.getElementById('insuranceNumber').textContent = props.insurance_number || 'N/A';
+            
+            // Handle insurance document link
+            const insuranceDocLink = document.getElementById('insuranceDocLink');
+            const noInsuranceDoc = document.getElementById('noInsuranceDoc');
+            
+            if (props.insurance_document) {
+                insuranceDocLink.href = props.insurance_document;
+                insuranceDocLink.classList.remove('d-none');
+                noInsuranceDoc.classList.add('d-none');
+            } else {
+                insuranceDocLink.classList.add('d-none');
+                noInsuranceDoc.classList.remove('d-none');
+            }
+            
+            // Financial tab data
+            document.getElementById('serviceRate').textContent = props.service_rate ? `$${props.service_rate}` : 'N/A';
+            document.getElementById('subtotal').textContent = props.subtotal ? `$${props.subtotal}` : 'N/A';
+            document.getElementById('softwareFee').textContent = props.software_fee ? `$${props.software_fee}` : 'N/A';
+            document.getElementById('truckFee').textContent = props.truck_fee ? `$${props.truck_fee}` : 'N/A';
+            document.getElementById('downpayment').textContent = props.downpayment ? `$${props.downpayment}` : 'N/A';
+            document.getElementById('couponCode').textContent = props.coupon_code || 'N/A';
+            document.getElementById('paymentId').textContent = props.payment_id || 'N/A';
+            document.getElementById('grandTotal').textContent = props.grand_total ? `$${props.grand_total}` : 'N/A';
+            
+            // Services tab data
+            const servicesContainer = document.getElementById('servicesContainer');
+            servicesContainer.innerHTML = '';
+            
+            if (props.services && Array.isArray(props.services) && props.services.length > 0) {
+                // Create a table element
+                const table = document.createElement('table');
+                table.className = 'table table-borderless';
                 
-                // Define the callback function
-                tokenClient.callback = async (resp) => {
-                    console.log('Auth callback received:', resp);
-                    if (resp.error !== undefined) {
-                        console.error('Auth error:', resp.error);
-                        Swal.fire({
-                            title: 'Authentication Error',
-                            text: 'Failed to authenticate with Google Calendar: ' + resp.error,
-                            icon: 'error'
-                        });
-                        return;
-                    }
+                // Create table header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                ['Service', 'Rate', 'Crew Rate', 'Crew Count', 'Delivery Cost', 'Subtotal'].forEach(heading => {
+                    const th = document.createElement('th');
+                    th.textContent = heading;
+                    th.className = heading === 'Subtotal' ? 'text-end' : '';
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // Create table body
+                const tbody = document.createElement('tbody');
+                let totalSubtotal = 0;
+                
+                props.services.forEach(service => {
+                    const tr = document.createElement('tr');
                     
-                    try {
-                        // Clear existing events
-                        calendar.removeAllEvents();
-                        console.log('Fetching events from Google Calendar');
-                        
-                        // Fetch events from Google Calendar
-                        const response = await gapi.client.calendar.events.list({
-                            'calendarId': CALENDAR_ID,
-                            'timeMin': new Date().toISOString(),
-                            'showDeleted': false,
-                            'singleEvents': true,
-                            'maxResults': 100,
-                            'orderBy': 'startTime',
-                        });
-                        
-                        console.log('Events fetched:', response);
-                        const events = response.result.items;
-                        
-                        // Add events to the calendar
-                        events.forEach(event => {
-                            const start = event.start.dateTime || event.start.date;
-                            const end = event.end.dateTime || event.end.date;
-                            
-                            calendar.addEvent({
-                                id: event.id,
-                                title: event.summary,
-                                start: start,
-                                end: end,
-                                extendedProps: {
-                                    description: event.description || '',
-                                    location: event.location || '',
-                                    attendees: event.attendees || [],
-                                    organizer: event.organizer || {},
-                                    googleEventId: event.id
-                                }
-                            });
-                        });
-                        
-                        // Show success message
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Google Calendar events have been synced.',
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                        
-                        // Start auto-sync if not already running
-                        startAutoSync();
-                    } catch (error) {
-                        console.error('Error fetching events:', error);
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Failed to fetch events from Google Calendar: ' + error.message,
-                            icon: 'error'
-                        });
+                    // Service name
+                    const tdName = document.createElement('td');
+                    tdName.textContent = service.name || 'N/A';
+                    tdName.className = 'fw-medium';
+                    tr.appendChild(tdName);
+                    
+                    // Rate
+                    const tdRate = document.createElement('td');
+                    tdRate.textContent = service.rate || '$0.00';
+                    tr.appendChild(tdRate);
+                    
+                    // Crew Rate
+                    const tdCrewRate = document.createElement('td');
+                    tdCrewRate.textContent = service.crew_rate || '$0.00';
+                    tr.appendChild(tdCrewRate);
+                    
+                    // Number of Crew
+                    const tdCrewCount = document.createElement('td');
+                    tdCrewCount.textContent = service.no_of_crew || '0';
+                    tr.appendChild(tdCrewCount);
+                    
+                    // Delivery Cost
+                    const tdDeliveryCost = document.createElement('td');
+                    tdDeliveryCost.textContent = service.delivery_cost || '$0.00';
+                    tr.appendChild(tdDeliveryCost);
+                    
+                    // Subtotal
+                    const tdSubtotal = document.createElement('td');
+                    tdSubtotal.textContent = service.subtotal || '$0.00';
+                    tdSubtotal.className = 'text-end fw-medium';
+                    tr.appendChild(tdSubtotal);
+                    
+                    tbody.appendChild(tr);
+                    
+                    // Calculate total
+                    if (service.subtotal) {
+                        const subtotalValue = parseFloat(service.subtotal.replace('$', '').replace(',', ''));
+                        if (!isNaN(subtotalValue)) {
+                            totalSubtotal += subtotalValue;
+                        }
                     }
-                };
+                });
                 
-                // Request access token
-                if (gapi.client.getToken() === null) {
-                    console.log('No token, requesting access');
-                    // Use a more specific approach for the token request
-                    tokenClient.requestAccessToken({
-                        prompt: 'consent',
-                        redirect_uri: window.location.origin + window.location.pathname
+                // Add total row
+                const totalRow = document.createElement('tr');
+                totalRow.className = 'border-top';
+                
+                // Empty cells for spacing
+                for (let i = 0; i < 5; i++) {
+                    const td = document.createElement('td');
+                    if (i === 4) {
+                        td.textContent = 'Total:';
+                        td.className = 'text-end fw-bold text-muted';
+                    }
+                    totalRow.appendChild(td);
+                }
+                
+                // Total amount
+                const tdTotal = document.createElement('td');
+                tdTotal.textContent = `$${totalSubtotal.toFixed(2)}`;
+                tdTotal.className = 'text-end fw-bold text-primary';
+                totalRow.appendChild(tdTotal);
+                
+                tbody.appendChild(totalRow);
+                table.appendChild(tbody);
+                servicesContainer.appendChild(table);
+                            } else {
+                const noServices = document.createElement('div');
+                noServices.className = 'text-center py-3 text-muted';
+                noServices.innerHTML = '<i class="fas fa-info-circle me-2"></i> No services information available';
+                servicesContainer.appendChild(noServices);
+            }
+            
+            // Set transaction view link
+            document.getElementById('viewTransaction').href = `/transactions/${event.id}`;
+            document.getElementById('viewTransaction').setAttribute('target', '_blank');
+            document.getElementById('viewTransaction').setAttribute('rel', 'noopener noreferrer');
+            
+            // Render uploaded images gallery with lightbox
+            const uploadedImagesGallery = document.getElementById('uploadedImagesGallery');
+            uploadedImagesGallery.innerHTML = '';
+            let imageUrls = [];
+            if (props.uploaded_image && typeof props.uploaded_image === 'string') {
+                imageUrls = props.uploaded_image.split(',').map(url => url.trim()).filter(url => url.length > 0);
+            }
+            if (imageUrls.length > 0) {
+                const galleryContainer = document.createElement('div');
+                galleryContainer.className = 'uploaded-images-gallery';
+                
+                imageUrls.forEach(function(imgUrl, idx) {
+                    const a = document.createElement('a');
+                    a.href = imgUrl;
+                    a.className = 'lightbox-image';
+                    a.setAttribute('data-lightbox', 'gallery-' + (props.transaction_id || 'calendar'));
+                    a.setAttribute('data-title', event.title + ' - Uploaded Image ' + (idx + 1));
+                    
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.alt = 'Uploaded Image ' + (idx + 1);
+                    img.className = 'img-thumbnail';
+                    img.style.height = '100%';
+                    img.style.width = '100%';
+                    img.style.objectFit = 'cover';
+                    
+                    a.appendChild(img);
+                    galleryContainer.appendChild(a);
+                });
+                
+                uploadedImagesGallery.appendChild(galleryContainer);
+                
+                // Initialize lightbox for these new elements
+                if (typeof lightbox !== 'undefined') {
+                    lightbox.option({
+                        'resizeDuration': 200,
+                        'wrapAround': true,
+                        'albumLabel': 'Image %1 of %2',
+                        'fadeDuration': 300,
+                        'fitImagesInViewport': true
                     });
                 } else {
-                    console.log('Token exists, refreshing');
-                    tokenClient.requestAccessToken({
-                        prompt: '',
-                        redirect_uri: window.location.origin + window.location.pathname
-                    });
+                    console.warn('Lightbox library not loaded. Images may not open in lightbox view.');
                 }
             } else {
-                console.error('APIs not initialized:', { gapiInited, gisInited });
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Google Calendar API is not properly initialized. Please refresh the page and try again.',
-                    icon: 'error'
-                });
-            }
-        });
-        
-        // Add Event button click handler
-        document.getElementById('addEvent').addEventListener('click', function() {
-            var addEventModal = new bootstrap.Modal(document.getElementById('addEventModal'));
-            addEventModal.show();
-        });
-        
-        // Save Event button click handler
-        document.getElementById('saveEvent').addEventListener('click', function() {
-            const title = document.getElementById('eventTitleInput').value;
-            const startDate = document.getElementById('eventStartDate').value;
-            const startTime = document.getElementById('eventStartTime').value;
-            const endDate = document.getElementById('eventEndDate').value;
-            const endTime = document.getElementById('eventEndTime').value;
-            const location = document.getElementById('eventLocationInput').value;
-            const description = document.getElementById('eventDescriptionInput').value;
-            const attendeesInput = document.getElementById('eventAttendeesInput').value;
-            
-            if (!title || !startDate || !startTime || !endDate || !endTime) {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Please fill in all required fields.',
-                    icon: 'error'
-                });
-                return;
+                uploadedImagesGallery.innerHTML = '<div class="text-center py-3 text-muted"><i class="fas fa-image me-2"></i>No images uploaded for this transaction.</div>';
             }
             
-            // Format dates for Google Calendar API
-            const startDateTime = new Date(startDate + 'T' + startTime);
-            const endDateTime = new Date(endDate + 'T' + endTime);
+            // Show modal
+            var transactionModal = new bootstrap.Modal(document.getElementById('transactionModal'));
+            transactionModal.show();
+        }
+        
+        // Refresh Calendar button handler
+        document.getElementById('refreshCalendar').addEventListener('click', function() {
+            // Show loading indicator
+            Swal.fire({
+                title: 'Refreshing Calendar',
+                text: 'Please wait while we refresh the calendar data...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
             
-            // Create attendees array
-            const attendees = attendeesInput.split(',').map(email => email.trim()).filter(email => email);
-            
-            // Create event object
-            const event = {
-                'summary': title,
-                'location': location,
-                'description': description,
-                'start': {
-                    'dateTime': startDateTime.toISOString(),
-                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                },
-                'end': {
-                    'dateTime': endDateTime.toISOString(),
-                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                },
-                'attendees': attendees.map(email => ({'email': email}))
-            };
-            
-            // If connected to Google Calendar, add event there
-            if (gapiInited && gisInited && gapi.client.getToken() !== null) {
-                gapi.client.calendar.events.insert({
-                    'calendarId': 'crsmoving08@gmail.com',
-                    'resource': event
-                }).then(response => {
-                    // Add event to local calendar
-                    calendar.addEvent({
-                        id: response.result.id,
-                        title: title,
-                        start: startDateTime,
-                        end: endDateTime,
-                        extendedProps: {
-                            description: description,
-                            location: location,
-                            attendees: attendees.map(email => ({'email': email})),
-                            googleEventId: response.result.id
-                        }
-                    });
-                    
-                    // Close modal and show success message
-                    bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Event has been added to your calendar.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    
-                    // Reset form
-                    document.getElementById('addEventForm').reset();
-                }).catch(error => {
-                    console.error('Error adding event to Google Calendar:', error);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Failed to add event to Google Calendar.',
-                        icon: 'error'
-                    });
-                });
-            } else {
-                // Add event to local calendar only
-                calendar.addEvent({
-                    title: title,
-                    start: startDateTime,
-                    end: endDateTime,
-                    extendedProps: {
-                        description: description,
-                        location: location,
-                        attendees: attendees.map(email => ({'email': email}))
-                    }
-                });
+            // Refresh calendar data
+            calendar.refetchEvents().then(() => {
+                // Close loading indicator
+                Swal.close();
                 
-                // Close modal and show success message
-                bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
+                // Show success notification
                 Swal.fire({
                     title: 'Success!',
-                    text: 'Event has been added to your calendar.',
+                    text: 'Calendar has been refreshed with the latest transaction data.',
                     icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
                 });
-                
-                // Reset form
-                document.getElementById('addEventForm').reset();
-            }
-        });
-        
-        // Function to open event details modal
-        function openEventModal(event) {
-            // Format date for display
-            const startDate = new Date(event.start);
-            const endDate = new Date(event.end);
-            
-            const day = startDate.getDate();
-            const month = startDate.toLocaleString('default', { month: 'short' });
-            
-            const startTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const endTime = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            // Update modal content
-            document.getElementById('eventDay').textContent = day;
-            document.getElementById('eventMonth').textContent = month;
-            document.getElementById('eventTitle').textContent = event.title;
-            document.getElementById('eventTime').textContent = `${startTime} - ${endTime}`;
-            document.getElementById('eventLocation').textContent = event.extendedProps.location || 'No location specified';
-            document.getElementById('eventOrganizer').textContent = event.extendedProps.organizer?.displayName || 'Unknown';
-            
-            // Handle HTML content in description
-            const descriptionElement = document.getElementById('eventDescription');
-            if (event.extendedProps.description) {
-                // Check if the description contains structured data
-                if (event.extendedProps.description.includes('New moving service request details:')) {
-                    // Format the structured content
-                    formatStructuredDescription(event.extendedProps.description, descriptionElement);
-                } else {
-                    // Set innerHTML to render HTML content for non-structured descriptions
-                    descriptionElement.innerHTML = event.extendedProps.description;
-                    
-                    // Add styling to links in description
-                    const links = descriptionElement.querySelectorAll('a');
-                    links.forEach(link => {
-                        link.classList.add('text-primary');
-                        link.style.textDecoration = 'none';
-                        link.style.fontWeight = '500';
-                        link.addEventListener('mouseover', function() {
-                            this.style.textDecoration = 'underline';
-                        });
-                        link.addEventListener('mouseout', function() {
-                            this.style.textDecoration = 'none';
-                        });
-                    });
-                    
-                    // Style paragraphs in description
-                    const paragraphs = descriptionElement.querySelectorAll('p');
-                    paragraphs.forEach(p => {
-                        p.style.marginBottom = '0.5rem';
-                    });
-                }
-            } else {
-                descriptionElement.textContent = 'No description provided';
-            }
-            
-            // Update Google Calendar link
-            if (event.extendedProps.googleEventId) {
-                document.getElementById('eventGoogleLink').href = `https://calendar.google.com/calendar/event?eid=${event.extendedProps.googleEventId}`;
-                document.getElementById('eventGoogleLink').style.display = 'inline-block';
-            } else {
-                document.getElementById('eventGoogleLink').style.display = 'none';
-            }
-            
-            // Clear and update attendees
-            const attendeesContainer = document.getElementById('eventAttendees');
-            attendeesContainer.innerHTML = '';
-            
-            if (event.extendedProps.attendees && event.extendedProps.attendees.length > 0) {
-                event.extendedProps.attendees.forEach(attendee => {
-                    const attendeeElement = document.createElement('div');
-                    attendeeElement.className = 'attendee me-2 mb-2';
-                    attendeeElement.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-sm rounded-circle bg-primary bg-opacity-10 text-center me-2">
-                                <i class="fas fa-user text-primary"></i>
-                            </div>
-                            <span>${attendee.email}</span>
-                        </div>
-                    `;
-                    attendeesContainer.appendChild(attendeeElement);
+            }).catch(error => {
+                console.error('Error refreshing calendar:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to refresh calendar data. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
                 });
-            } else {
-                attendeesContainer.innerHTML = '<p class="text-muted">No attendees</p>';
-            }
-            
-            // Show modal
-            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-            eventModal.show();
-        }
-        
-        // Function to format structured description
-        function formatStructuredDescription(description, element) {
-            // Create a container for the formatted content
-            const container = document.createElement('div');
-            container.className = 'structured-description';
-            
-            // Split the description into sections
-            const sections = description.split('\n\n');
-            
-            sections.forEach(section => {
-                if (section.trim() === '') return;
-                
-                // Check if this is a section header
-                if (section.includes(':')) {
-                    const lines = section.split('\n');
-                    const header = lines[0].trim();
-                    
-                    // Create section header
-                    const headerElement = document.createElement('h6');
-                    headerElement.className = 'section-header';
-                    headerElement.textContent = header;
-                    container.appendChild(headerElement);
-                    
-                    // Create section content
-                    const contentElement = document.createElement('div');
-                    contentElement.className = 'section-content';
-                    
-                    // Process the rest of the lines
-                    for (let i = 1; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (line === '') continue;
-                        
-                        // Check if this is a service item
-                        if (line.startsWith('- Service Name:')) {
-                            const serviceElement = document.createElement('div');
-                            serviceElement.className = 'service-item';
-                            
-                            // Extract service name
-                            const serviceName = line.split(':')[1].trim();
-                            const serviceNameElement = document.createElement('div');
-                            serviceNameElement.className = 'service-name';
-                            serviceNameElement.textContent = serviceName;
-                            serviceElement.appendChild(serviceNameElement);
-                            
-                            // Add service details
-                            const detailsElement = document.createElement('div');
-                            detailsElement.className = 'service-details';
-                            
-                            // Process service details
-                            let j = i + 1;
-                            while (j < lines.length && !lines[j].trim().startsWith('- Service Name:') && !lines[j].trim().startsWith('Cost Breakdown:')) {
-                                const detailLine = lines[j].trim();
-                                if (detailLine !== '') {
-                                    const detailElement = document.createElement('div');
-                                    detailElement.className = 'service-detail';
-                                    detailElement.textContent = detailLine;
-                                    detailsElement.appendChild(detailElement);
-                                }
-                                j++;
-                            }
-                            
-                            serviceElement.appendChild(detailsElement);
-                            contentElement.appendChild(serviceElement);
-                            i = j - 1;
-                        } 
-                        // Check if this is a number of items line
-                        else if (line.startsWith('Number of Items:')) {
-                            const itemsElement = document.createElement('div');
-                            itemsElement.className = 'items-count';
-                            itemsElement.textContent = line;
-                            contentElement.appendChild(itemsElement);
-                        }
-                        // Check if this is an image list
-                        else if (line.startsWith('Uploaded Images:')) {
-                            const imageUrls = line.split(':')[1].split(',').map(url => url.trim());
-                            const imageContainer = document.createElement('div');
-                            imageContainer.className = 'image-container';
-                            
-                            // Create a header for the image URLs
-                            const imageHeader = document.createElement('div');
-                            imageHeader.className = 'image-header';
-                            imageHeader.textContent = 'Uploaded Images:';
-                            imageContainer.appendChild(imageHeader);
-                            
-                            // Create a list of image URLs
-                            const imageList = document.createElement('ul');
-                            imageList.className = 'image-url-list';
-                            
-                            imageUrls.forEach(url => {
-                                if (url) {
-                                    const listItem = document.createElement('li');
-                                    listItem.className = 'image-url-item';
-                                    
-                                    // Create a clickable link
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.textContent = url;
-                                    link.target = '_blank';
-                                    link.className = 'image-url-link';
-                                    
-                                    listItem.appendChild(link);
-                                    imageList.appendChild(listItem);
-                                }
-                            });
-                            
-                            imageContainer.appendChild(imageList);
-                            contentElement.appendChild(imageContainer);
-                        }
-                        // Regular line
-                        else {
-                            const lineElement = document.createElement('div');
-                            lineElement.className = 'content-line';
-                            lineElement.textContent = line;
-                            contentElement.appendChild(lineElement);
-                        }
-                    }
-                    
-                    container.appendChild(contentElement);
-                }
             });
-            
-            // Clear the element and append the formatted content
-            element.innerHTML = '';
-            element.appendChild(container);
-        }
-        
-        // Function to start auto-sync
-        function startAutoSync() {
-            // Clear any existing interval
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-            }
-            
-            // Set up auto-sync every 5 minutes
-            autoSyncInterval = setInterval(async () => {
-                console.log('Auto-syncing calendar...');
-                try {
-                    // Check if we have a valid token
-                    if (gapi.client.getToken() === null) {
-                        console.log('No token available for auto-sync, attempting to refresh');
-                        // Try to refresh the token
-                        tokenClient.callback = async (resp) => {
-                            if (resp.error === undefined) {
-                                await syncCalendar();
-                            } else {
-                                console.error('Auto-sync token refresh failed:', resp.error);
-                            }
-                        };
-                        tokenClient.requestAccessToken({ prompt: '' });
-                    } else {
-                        // We have a valid token, proceed with sync
-                        await syncCalendar();
-                    }
-                } catch (error) {
-                    console.error('Auto-sync error:', error);
-                }
-            }, 5 * 60 * 1000); // 5 minutes
-            
-            console.log('Auto-sync started');
-        }
-        
-        // Function to sync calendar
-        async function syncCalendar() {
-            try {
-                // Clear existing events
-                calendar.removeAllEvents();
-                console.log('Fetching events from Google Calendar');
-                
-                // Fetch events from Google Calendar
-                const response = await gapi.client.calendar.events.list({
-                    'calendarId': CALENDAR_ID,
-                    'timeMin': new Date().toISOString(),
-                    'showDeleted': false,
-                    'singleEvents': true,
-                    'maxResults': 100,
-                    'orderBy': 'startTime',
-                });
-                
-                console.log('Events fetched:', response);
-                const events = response.result.items;
-                
-                // Add events to the calendar
-                events.forEach(event => {
-                    const start = event.start.dateTime || event.start.date;
-                    const end = event.end.dateTime || event.end.date;
-                    
-                    calendar.addEvent({
-                        id: event.id,
-                        title: event.summary,
-                        start: start,
-                        end: end,
-                        extendedProps: {
-                            description: event.description || '',
-                            location: event.location || '',
-                            attendees: event.attendees || [],
-                            organizer: event.organizer || {},
-                            googleEventId: event.id
-                        }
-                    });
-                });
-                
-                console.log('Calendar synced successfully');
-            } catch (error) {
-                console.error('Error syncing calendar:', error);
-            }
-        }
+        });
         
         // Calendar navigation buttons
         document.getElementById('calendar-prev').addEventListener('click', function() {
@@ -879,184 +834,106 @@
         document.getElementById('calendar-today').addEventListener('click', function() {
             calendar.today();
         });
-        
-        // Load Google API scripts
-        function loadGoogleAPIs() {
-            console.log('Loading Google APIs');
-            try {
-                const script1 = document.createElement('script');
-                script1.src = 'https://apis.google.com/js/api.js';
-                script1.onload = gapiLoaded;
-                script1.onerror = function() {
-                    console.error('Failed to load Google API script');
-                };
-                document.body.appendChild(script1);
-                
-                const script2 = document.createElement('script');
-                script2.src = 'https://accounts.google.com/gsi/client';
-                script2.onload = gisLoaded;
-                script2.onerror = function() {
-                    console.error('Failed to load Google Identity Services script');
-                };
-                document.body.appendChild(script2);
-            } catch (error) {
-                console.error('Error loading Google APIs:', error);
-            }
-        }
-        
-        // Initialize Google APIs
-        loadGoogleAPIs();
-        
-        // Start auto-sync when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM content loaded, checking API initialization status');
-            
-            // If APIs are already initialized, attempt to load calendar data
-            if (gapiInited && gisInited) {
-                console.log('APIs already initialized, attempting to load calendar data');
-                attemptAutoLoad();
-            } else {
-                // If APIs aren't initialized yet, wait for them
-                console.log('Waiting for APIs to initialize');
-                const checkInterval = setInterval(() => {
-                    if (gapiInited && gisInited) {
-                        clearInterval(checkInterval);
-                        console.log('APIs initialized, attempting to load calendar data');
-                        attemptAutoLoad();
-                    }
-                }, 500);
-            }
-        });
     });
 </script>
 
 <style>
+    /* Legend Dots */
+    .legend-dot {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
     /* Modern Calendar Styling */
     .fc {
         font-family: 'Poppins', sans-serif;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        padding: 15px;
+        background-color: #f8f9fc;
+        border-radius: 14px;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.07);
+        padding: 18px;
+        border: 1px solid #e3e6f0;
     }
-    
     .fc-toolbar-title {
+        font-weight: 700;
+        color: #2e59d9;
+        font-size: 1.6rem !important;
+        letter-spacing: 0.5px;
+    }
+    .fc-col-header-cell {
+        padding: 12px 0;
         font-weight: 600;
-        color: #333;
-        font-size: 1.5rem !important;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        color: #4e73df;
+        background: #f4f7fa;
+        border-bottom: 2px solid #e3e6f0;
     }
-    
-    .fc-button-primary {
-        background-color: #4e73df !important;
-        border-color: #4e73df !important;
-        box-shadow: 0 2px 5px rgba(78, 115, 223, 0.2);
-        transition: all 0.3s ease;
-    }
-    
-    .fc-button-primary:hover {
-        background-color: #2e59d9 !important;
-        border-color: #2e59d9 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(78, 115, 223, 0.3);
-    }
-    
-    .fc-button-primary:not(:disabled).fc-button-active, 
-    .fc-button-primary:not(:disabled):active {
-        background-color: #2e59d9 !important;
-        border-color: #2e59d9 !important;
-    }
-    
     .fc-daygrid-day {
         transition: background-color 0.3s ease;
+        background: #fff;
     }
-    
     .fc-daygrid-day:hover {
-        background-color: rgba(78, 115, 223, 0.05);
+        background-color: #f0f4ff;
     }
-    
     .fc-day-today {
-        background-color: rgba(78, 115, 223, 0.1) !important;
+        background-color: #eaf1ff !important;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(78, 115, 223, 0.08);
     }
-    
     .fc-day-today .fc-daygrid-day-number {
         background-color: #4e73df;
         color: white;
         border-radius: 50%;
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 5px;
+        margin: 6px auto 0 auto;
+        font-size: 1.1rem;
     }
-    
     .fc-event {
         cursor: pointer;
         transition: all 0.3s ease;
-        border-radius: 6px;
+        border-radius: 7px;
         border: none;
-        padding: 4px 8px;
-        margin: 2px 0;
-        font-size: 0.85rem;
+        padding: 5px 10px;
+        margin: 3px 0;
+        font-size: 0.97rem;
         font-weight: 500;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        letter-spacing: 0.01em;
     }
-    
     .fc-event:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.13);
+        z-index: 2;
     }
-    
-    .fc-event-modern {
-        background-color: #4e73df;
-        border-left: 4px solid #2e59d9;
-    }
-    
-    .fc-event-time {
-        font-weight: 600;
-    }
-    
-    .fc-event-title {
-        font-weight: 500;
-    }
-    
     .fc-daygrid-event {
         white-space: normal;
         align-items: center;
     }
-    
     .fc-daygrid-event-dot {
         display: none;
     }
-    
     .fc-daygrid-event-time {
         padding-left: 0;
     }
-    
     .fc-daygrid-event-title {
         padding-left: 0;
     }
-    
     .fc-daygrid-day-events {
-        margin-top: 5px;
+        margin-top: 6px;
     }
-    
     .fc-daygrid-day-number {
-        font-weight: 500;
-        color: #555;
-    }
-    
-    .fc-col-header-cell {
-        padding: 10px 0;
         font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        color: #555;
-    }
-    
-    .fc-theme-standard td, 
-    .fc-theme-standard th {
-        border-color: #e3e6f0;
+        color: #4e73df;
+        font-size: 1rem;
     }
     
     /* Modal Styling */
@@ -1101,41 +978,36 @@
         opacity: 0.9;
     }
     
-    .attendee {
-        display: inline-block;
-        margin-right: 10px;
-        margin-bottom: 10px;
+    /* Tab Styling */
+    .nav-tabs .nav-link {
+        color: #555;
+        font-weight: 500;
+        border: none;
+        border-bottom: 2px solid transparent;
     }
     
-    .avatar-sm {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background-color: rgba(78, 115, 223, 0.1);
+    .nav-tabs .nav-link.active {
         color: #4e73df;
-        font-size: 0.9rem;
+        background-color: transparent;
+        border-bottom: 2px solid #4e73df;
     }
     
-    /* Form Styling */
-    .form-control {
-        border-radius: 8px;
-        border: 1px solid #e3e6f0;
-        padding: 0.75rem 1rem;
+    .nav-tabs .nav-link:hover:not(.active) {
+        border-bottom: 2px solid #e3e6f0;
+    }
+    
+    /* Card Styling */
+    .card {
         transition: all 0.3s ease;
     }
     
-    .form-control:focus {
-        border-color: #4e73df;
-        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
     }
     
-    .form-label {
-        font-weight: 500;
-        color: #555;
-        margin-bottom: 0.5rem;
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     /* Button Styling */
@@ -1180,41 +1052,6 @@
         box-shadow: 0 4px 8px rgba(133, 135, 150, 0.3);
     }
     
-    /* Card Styling */
-    .card {
-        border-radius: 10px;
-        border: none;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-    }
-    
-    .card-header {
-        background-color: #fff;
-        border-bottom: 1px solid #e3e6f0;
-        padding: 1.25rem 1.5rem;
-    }
-    
-    .card-body {
-        padding: 1.5rem;
-    }
-    
-    .card-title {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0;
-    }
-    
-    /* Page Title Styling */
-    .page-title-box {
-        margin-bottom: 1.5rem;
-    }
-    
-    .page-title {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0;
-    }
-    
     /* Responsive Adjustments */
     @media (max-width: 768px) {
         .fc-toolbar {
@@ -1231,141 +1068,177 @@
         }
     }
     
-    /* Description Styling */
-    #eventDescription {
-        line-height: 1.6;
-        color: #555;
-    }
-    
-    #eventDescription p {
-        margin-bottom: 0.5rem;
-    }
-    
-    #eventDescription a {
-        color: #4e73df;
-        text-decoration: none;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-    
-    #eventDescription a:hover {
-        text-decoration: underline;
-    }
-    
-    #eventDescription u {
-        text-decoration: none;
-        border-bottom: 1px solid #4e73df;
-    }
-    
-    /* Structured Description Styling */
-    .structured-description {
-        font-family: 'Poppins', sans-serif;
-    }
-    
-    .section-header {
-        font-weight: 600;
-        color: #333;
-        margin-top: 1rem;
-        margin-bottom: 0.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e3e6f0;
-    }
-    
-    .section-content {
-        margin-bottom: 1rem;
-    }
-    
-    .content-line {
-        margin-bottom: 0.5rem;
-    }
-    
-    .service-item {
-        background-color: #f8f9fc;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #4e73df;
-    }
-    
-    .service-name {
-        font-weight: 600;
-        color: #4e73df;
-        margin-bottom: 0.5rem;
-    }
-    
-    .service-details {
-        padding-left: 1rem;
-    }
-    
-    .service-detail {
-        margin-bottom: 0.25rem;
-        color: #555;
-    }
-    
-    .image-container {
+    /* Professional Event List */
+    .fc-event-pro {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 1rem;
-    }
-    
-    .uploaded-image {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 8px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0px;
+        border-radius: 5px;
+        padding: 3px 8px 3px 7px;
+        margin-bottom: 2px;
+        min-width: 0;
+        position: relative;
+        background: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        transition: background 0.2s;
         cursor: pointer;
-        transition: transform 0.3s ease;
     }
-    
-    .uploaded-image:hover {
-        transform: scale(1.05);
+    .fc-event-pro:hover {
+        background: #f4f7fa !important;
+        color: #222 !important;
     }
-    
-    /* Image Error Styling */
-    .image-error {
-        opacity: 0.7;
-        border: 1px dashed #ccc;
-    }
-    
-    /* Image URL List Styling */
-    .image-header {
+    .fc-event-pro-title {
         font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #4e73df;
+        font-size: 0.93rem;
+        line-height: 1.2;
+        word-break: break-word;
+        margin-bottom: 1px;
     }
-    
-    .image-url-list {
-        list-style-type: none;
-        padding-left: 0;
+    .fc-event-pro-time {
+        font-size: 0.92rem;
+        color: #e3e6f0;
+        font-weight: 400;
+    }
+    .fc-event-pro-badge {
+        font-size: 0.65rem;
+        font-weight: 600;
+        border-radius: 5px;
+        padding: 1px 6px;
+        margin-top: 1px;
+        margin-left: 0;
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        letter-spacing: 0.03em;
+        text-transform: capitalize;
+        box-shadow: 0 1px 2px rgba(44,62,80,0.07);
+    }
+    .fc-event-pro-badge-completed {
+        background: #169a6c;
+    }
+    .fc-event-pro-badge-pending {
+        background: #dda20a;
+        color: #fff;
+    }
+    .fc-event-pro-badge-canceled {
+        background: #be2617;
+    }
+    .fc-event-pro-badge-other {
+        background: #6c757d;
+    }
+
+    /* Services Tab Professional Styling */
+    #financial-tab-pane {
+        padding: 1.5rem;
+    }
+    #financial-tab-pane .table {
         margin-bottom: 0;
     }
-    
-    .image-url-item {
-        margin-bottom: 0.5rem;
-        word-break: break-all;
-    }
-    
-    .image-url-link {
-        color: #4e73df;
-        text-decoration: none;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-    }
-    
-    .image-url-link:hover {
-        text-decoration: underline;
-        color: #2e59d9;
-    }
-    
-    /* Items Count Styling */
-    .items-count {
-        font-weight: 500;
-        margin-bottom: 1rem;
-        color: #4e73df;
+    #financial-tab-pane .table th {
+        font-weight: 600;
+        color: #555;
+        border-top: none;
+        border-bottom: 1px solid #e3e6f0;
         background-color: #f8f9fc;
-        padding: 0.5rem;
-        border-radius: 4px;
-        border-left: 3px solid #4e73df;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    #financial-tab-pane .table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+        color: #555;
+        font-size: 0.95rem;
+    }
+    #financial-tab-pane .table-light {
+        background-color: #f8f9fc;
+    }
+    #financial-tab-pane .table-light td {
+        border-top: 1px solid #e3e6f0;
+    }
+    #financial-tab-pane p.mb-2 {
+        font-size: 0.95rem;
+    }
+    #financial-tab-pane .card-header h6 {
+        font-size: 0.95rem;
+    }
+    #financial-tab-pane .border-top {
+        border-top: 1px solid #e3e6f0 !important;
+        background-color: #f8f9fc;
+    }
+    #financial-tab-pane .border-top td {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+    }
+
+    /* Add styles for uploaded images gallery */
+    .uploaded-images-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 10px 0;
+    }
+    .lightbox-image {
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 120px;
+        height: 120px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(44,62,80,0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .lightbox-image:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(44,62,80,0.15);
+    }
+    .lightbox-image::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.03);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .lightbox-image:hover::after {
+        opacity: 1;
+    }
+    .lightbox-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .lightbox-image:hover img {
+        transform: scale(1.05);
+    }
+
+    /* Lightbox overrides */
+    .lb-outerContainer {
+        border-radius: 8px;
+        background-color: #fff;
+    }
+    .lb-dataContainer {
+        border-radius: 0 0 8px 8px;
+    }
+    .lb-number {
+        color: #4e73df !important;
+    }
+    .lb-caption {
+        font-weight: 600 !important;
+        color: #2e59d9 !important;
+    }
+    .lb-data .lb-close {
+        opacity: 0.8;
+    }
+    .lb-data .lb-close:hover {
+        opacity: 1;
     }
 </style>

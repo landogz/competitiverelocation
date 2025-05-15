@@ -79,6 +79,6 @@ class Transaction extends Model
     
     public function agent()
     {
-        return $this->belongsTo(Agent::class, 'assigned_agent');
+        return $this->belongsTo(Agent::class, 'assigned_agent', 'id');
     }
 } 
