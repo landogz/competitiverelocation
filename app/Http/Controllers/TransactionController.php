@@ -1007,8 +1007,54 @@ class TransactionController extends Controller
 
     public function show($id)
     {
-        $transaction = \App\Models\Transaction::findOrFail($id);
-        return response()->json($transaction);
+        try {
+            $lead = \App\Models\Transaction::findOrFail($id);
+            
+            // Parse the services array to extract service names
+            $serviceNames = '';
+            if (!empty($lead->services)) {
+                // Check if services is already an array or a JSON string
+                if (is_array($lead->services)) {
+                    $services = $lead->services;
+                } else {
+                    $services = json_decode($lead->services, true);
+                }
+                
+                if (is_array($services)) {
+                    $names = array_map(function($service) {
+                        return $service['name'] ?? '';
+                    }, $services);
+                    $serviceNames = implode(', ', array_filter($names));
+                }
+            }
+            
+            // Convert lead to array and add parsed service name
+            $leadData = $lead->toArray();
+            $leadData['service_name'] = $serviceNames;
+            $leadData['service'] = $serviceNames; // Also update the service field itself
+            
+            // Combine firstname and lastname into name field
+            $leadData['name'] = trim(($leadData['firstname'] ?? '') . ' ' . ($leadData['lastname'] ?? ''));
+
+            if (isset($leadData['date']) && $leadData['date']) {
+                $leadData['date'] = date('F j, Y', strtotime($leadData['date']));
+            } else {
+                $leadData['date'] = '';
+            }
+
+            if (isset($leadData['created_at']) && $leadData['created_at']) {
+                $leadData['created_at'] = date('F j, Y', strtotime($leadData['created_at']));
+            } else {
+                $leadData['created_at'] = '';
+            }
+            
+            return response()->json($leadData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch lead data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function sendEmail(Request $request)

@@ -336,38 +336,8 @@ class CallCenterController extends Controller
                     // Check if lead already exists using transaction_id
                     $existingLead = Lead::where('transaction_id', $transactionData['id'])->first();
 
-                    if ($existingLead) {
-                        // Update existing lead while preserving notes and status
-                        $existingLead->update([
-                            'transaction_id' => $transactionData['id'],
-                            'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
-                            'phone' => $transactionData['phone'],
-                            'email' => $transactionData['email'],
-                            'company' => $transactionData['sales_location'] ?? null,
-                            'status' => $existingLead->status, // Preserve existing status
-                            'source' => 'website',
-                            'notes' => $existingLead->notes, // Preserve existing notes
-                            'sales_name' => $transactionData['sales_name'] ?? null,
-                            'sales_email' => $transactionData['sales_email'] ?? null,
-                            'pickup_location' => $transactionData['pickup_location'] ?? null,
-                            'delivery_location' => $transactionData['delivery_location'] ?? null,
-                            'miles' => $transactionData['miles'] ?? 0,
-                            'service' => isset($transactionData['services']) ? json_encode($transactionData['services']) : null,
-                            'service_rate' => $transactionData['service_rate'] ?? 0,
-                            'no_of_items' => $transactionData['no_of_items'] ?? 0,
-                            'no_of_crew' => $transactionData['no_of_crew'] ?? 0,
-                            'crew_rate' => $transactionData['crew_rate'] ?? 0,
-                            'subtotal' => $transactionData['subtotal'] ?? 0,
-                            'software_fee' => $transactionData['Software_Fee'] ?? 0,
-                            'truck_fee' => $transactionData['Truck_Fee'] ?? 0,
-                            'downpayment' => $transactionData['Downpayment'] ?? 0,
-                            'grand_total' => $transactionData['grand_total'] ?? 0,
-                            'uploaded_image' => $transactionData['uploaded_image'] ?? null,
-                            'date' => !empty($transactionData['date']) && $transactionData['date'] !== '1970-01-01 00:00:00' ? 
-                                    date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
-                        ]);
-                    } else {
-                        // Create new lead
+                    if (!$existingLead) {
+                        // Only create new leads, don't update existing ones
                         Lead::create([
                             'transaction_id' => $transactionData['id'],
                             'name' => $transactionData['firstname'] . ' ' . $transactionData['lastname'],
@@ -397,6 +367,7 @@ class CallCenterController extends Controller
                                     date('Y-m-d H:i:s', strtotime($transactionData['date'])) : null,
                         ]);
                     }
+                    // Skip updating existing leads
                 }
             }
         } catch (\Exception $e) {
@@ -404,14 +375,54 @@ class CallCenterController extends Controller
         }
 
         // 1. Get total records before any filters
-        $totalRecords = Lead::count();
+        $totalRecordsQuery = Lead::query();
+        
+        // Apply agent filtering to total records count too
+        if (auth()->user()->privilege === 'agent') {
+            $agentUser = auth()->user();
+            
+            if (!empty($agentUser->agent_id)) {
+                // Find the agent record to get external_id
+                $agent = \App\Models\Agent::where('id', $agentUser->agent_id)->first();
+                
+                if ($agent && !empty($agent->external_id)) {
+                    // Filter leads by the agent's external_id
+                    $totalRecordsQuery->where('agent_id', $agent->external_id);
+                } else {
+                    // No valid external_id found, show no results
+                    $totalRecordsQuery->where('id', 0);
+                }
+            } else {
+                // User has no agent_id, show no results
+                $totalRecordsQuery->where('id', 0);
+            }
+        }
+        
+        $totalRecords = $totalRecordsQuery->count();
 
         // 2. Apply filters to the query
         $query = Lead::query();
         
         // Apply privilege-based filtering for agents
-        if (auth()->user()->role === 'agent') {
-            $query->where('company_id', auth()->user()->company_id);
+        if (auth()->user()->privilege === 'agent') {
+            // Get the user's agent_id
+            $agentUser = auth()->user();
+            
+            if (!empty($agentUser->agent_id)) {
+                // Find the agent record to get external_id
+                $agent = \App\Models\Agent::where('id', $agentUser->agent_id)->first();
+                
+                if ($agent && !empty($agent->external_id)) {
+                    // Filter leads by the agent's external_id
+                    $query->where('agent_id', $agent->external_id);
+                } else {
+                    // No valid external_id found, show no results
+                    $query->where('id', 0);
+                }
+            } else {
+                // User has no agent_id, show no results
+                $query->where('id', 0);
+            }
         }
 
         // Apply search filters
@@ -518,8 +529,36 @@ class CallCenterController extends Controller
     {
         try {
             $lead = Lead::findOrFail($id);
-            return response()->json($lead);
+            
+            // Parse the service array to extract service names
+            $serviceNames = '';
+            if (!empty($lead->service) && is_array($lead->service)) {
+                $names = array_map(function($service) {
+                    return $service['name'] ?? '';
+                }, $lead->service);
+                $serviceNames = implode(', ', array_filter($names));
+            }
+            
+            // Convert lead to array and add parsed service name
+            $leadData = $lead->toArray();
+            $leadData['service_name'] = $serviceNames;
+            $leadData['service'] = $serviceNames; // Also update the service field itself
+
+            if (isset($leadData['date']) && $leadData['date']) {
+                $leadData['date'] = date('F j, Y', strtotime($leadData['date']));
+            } else {
+                $leadData['date'] = '';
+            }
+
+            if (isset($leadData['created_at']) && $leadData['created_at']) {
+                $leadData['created_at'] = date('F j, Y', strtotime($leadData['created_at']));
+            } else {
+                $leadData['created_at'] = '';
+            }
+            
+            return response()->json($leadData);
         } catch (\Exception $e) {
+            \Log::error('Lead data error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch lead data: ' . $e->getMessage()
