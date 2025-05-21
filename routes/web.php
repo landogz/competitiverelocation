@@ -20,6 +20,9 @@ use App\Http\Controllers\ServiceRateController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\BestAgentsController;
 use App\Http\Controllers\CalendarController;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\CreditCardAuthorizationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +37,24 @@ use App\Http\Controllers\CalendarController;
 
 Route::get('/', function () {
     if (Auth::check()) {
+        $user = Auth::user();
+        
+        // Check if user is an agent
+        if ($user->privilege === 'agent') {
+            // Get sales_rep data
+            $salesRep = DB::table('sales_reps')
+                ->where('user_id', $user->id)
+                ->first();
+            
+            // Redirect based on position
+            if ($salesRep && $salesRep->position === 'Driver') {
+                return redirect('/driver');
+            } else if ($salesRep && $salesRep->position === 'Sales Representative') {
+                return redirect('/dashboard');
+            }
+        }
+        
+        // Default redirect for other users
         return redirect('/dashboard');
     }
     return redirect('/auth/login');
@@ -53,6 +74,11 @@ Route::get('/password/reset', [AuthController::class, 'showForgotForm'])->name('
 Route::post('/password/email', [AuthController::class, 'sendResetLink'])->name('password.email');
 Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.reset.submit');
+
+// Credit Card Authorization Routes - These should be outside the auth middleware
+Route::post('/credit-card-authorization', [CreditCardAuthorizationController::class, 'store'])->name('credit-card-authorization.store');
+Route::get('/credit-card-authorization/{transaction_id}', [\App\Http\Controllers\CreditCardAuthorizationController::class, 'show'])->name('credit-card-authorization.show');
+Route::put('/credit-card-authorization/{id}', [\App\Http\Controllers\CreditCardAuthorizationController::class, 'update'])->name('credit-card-authorization.update');
 
 // All other routes should be protected with auth middleware
 Route::middleware(['auth'])->group(function () {
@@ -179,6 +205,12 @@ Route::middleware(['auth'])->group(function () {
         return view('customer.customer');
     });
 
+    Route::get('/driver', function () {
+        return view('customer.driver');
+    });
+
+    Route::get('/driver/inventory/{transactionId}', [DriverController::class, 'getInventory'])->name('driver.inventory');
+
     Route::get('/leadsource', [LeadSourceController::class, 'index'])->name('leadsource.index');
     Route::post('/leadsource_save', [LeadSourceController::class, 'store'])->name('leadsource.store');
     Route::put('/leadsource/{leadSource}', [LeadSourceController::class, 'update'])->name('leadsource.update');
@@ -255,6 +287,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transactions/{id}', [TransactionController::class, 'show'])->name('transactions.show');
 
     Route::post('/loadboard/send-email', [TransactionController::class, 'sendEmail'])->name('loadboard.sendEmail');
+
+    // Driver Routes
+    Route::get('/driver', [DriverController::class, 'index'])->name('driver.dashboard');
+    Route::get('/driver/transaction/{id}', [DriverController::class, 'getTransactionDetails'])->name('driver.transaction.details');
+    Route::patch('/driver/transaction/{id}/status', [DriverController::class, 'updateStatus'])->name('driver.transaction.status');
+    Route::get('/driver/transactions', [DriverController::class, 'getAssignedTransactions'])->name('driver.transactions');
+
+    // Job Time Tracking Routes
+    Route::post('/driver/job-time/{id}/start', [DriverController::class, 'startJobTime'])->name('driver.job-time.start');
+    Route::get('/driver/job-time/{id}', [DriverController::class, 'getJobTime'])->name('driver.job-time.get');
+    Route::post('/driver/job-time/{id}/end', [DriverController::class, 'endJobTime'])->name('driver.job-time.end');
+
+    // Inventory Routes
+    Route::get('/driver/inventory/{id}', [DriverController::class, 'getInventory'])->name('driver.inventory');
 });
 
 // Add this route at the end of the file

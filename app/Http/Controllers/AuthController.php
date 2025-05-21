@@ -39,11 +39,24 @@ class AuthController extends Controller
 
             if (Auth::attempt($credentials)) {
                 $request->session()->regenerate();
+                $user = Auth::user();
+
+                // Get sales_rep data if user is an agent
+                $salesRep = null;
+                if ($user->privilege === 'agent') {
+                    $salesRep = DB::table('sales_reps')
+                        ->where('user_id', $user->id)
+                        ->first();
+                }
 
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
                         'message' => 'Login successful',
+                        'user' => [
+                            'privilege' => $user->privilege,
+                            'sales_rep' => $salesRep
+                        ],
                         'redirect' => $request->session()->get('url.intended', '/dashboard')
                     ]);
                 }

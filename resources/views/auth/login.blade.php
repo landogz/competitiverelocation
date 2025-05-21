@@ -266,18 +266,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded');
-            
             const loginForm = document.getElementById('loginForm');
             const loginButton = document.getElementById('loginButton');
             const originalButtonText = loginButton.innerHTML;
 
             if (!loginForm) {
-                console.error('Login form not found!');
                 return;
             }
-
-            console.log('Form and button found');
 
             // Remove any existing event listeners
             const newForm = loginForm.cloneNode(true);
@@ -286,7 +281,6 @@
             const newLoginButton = document.getElementById('loginButton');
 
             newLoginForm.addEventListener('submit', async function(e) {
-                console.log('Form submitted');
                 e.preventDefault();
                 
                 try {
@@ -298,12 +292,7 @@
                     const formData = new FormData(newLoginForm);
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     
-                    console.log('CSRF Token:', csrfToken);
-                    console.log('Form data:', Object.fromEntries(formData));
-
                     // Send AJAX request
-                    console.log('Sending login request to:', newLoginForm.action);
-                    
                     const response = await fetch(newLoginForm.action, {
                         method: 'POST',
                         body: formData,
@@ -314,12 +303,42 @@
                         }
                     });
 
-                    console.log('Response status:', response.status);
                     const data = await response.json();
-                    console.log('Response data:', data);
 
                     if (data.success) {
-                        console.log('Login successful, showing success alert');
+                        // Check if user is an agent and handle driver redirection
+                        if (data.user && data.user.privilege === 'agent') {
+                            // Check if user is a driver from sales_reps table
+                            if (data.user.sales_rep && data.user.sales_rep.position === 'Driver') {
+                                await Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: 'You have been logged in successfully',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Continue',
+                                    timer: 3000,
+                                    timerProgressBar: true,
+                                    allowOutsideClick: false
+                                });
+                                window.location.href = '/driver';
+                                return;
+                            } else if (data.user.sales_rep && data.user.sales_rep.position === 'Sales Representative') {
+                                await Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: 'You have been logged in successfully',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Continue',
+                                    timer: 3000,
+                                    timerProgressBar: true,
+                                    allowOutsideClick: false
+                                });
+                                window.location.href = '/dashboard';
+                                return;
+                            }
+                        }
+
+                        // Default success behavior for non-driver users
                         await Swal.fire({
                             icon: 'success',
                             title: 'Success!',
@@ -332,8 +351,6 @@
                         });
                         window.location.href = data.redirect || '/dashboard';
                     } else {
-                        console.log('Login failed, showing error alert');
-                        console.log('Error message:', data.message);
                         await Swal.fire({
                             icon: 'error',
                             title: 'Login Failed',
@@ -341,13 +358,9 @@
                             showConfirmButton: true,
                             confirmButtonText: 'Try Again',
                             allowOutsideClick: false
-                        }).then((result) => {
-                            console.log('SweetAlert closed with result:', result);
                         });
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    console.log('Showing error alert for caught error');
                     await Swal.fire({
                         icon: 'error',
                         title: 'Error!',
@@ -355,8 +368,6 @@
                         showConfirmButton: true,
                         confirmButtonText: 'OK',
                         allowOutsideClick: false
-                    }).then((result) => {
-                        console.log('SweetAlert closed with result:', result);
                     });
                 } finally {
                     // Re-enable submit button and restore original text
@@ -367,7 +378,6 @@
 
             // Add click event listener to the button as well
             newLoginButton.addEventListener('click', function(e) {
-                console.log('Button clicked');
                 e.preventDefault();
                 newLoginForm.dispatchEvent(new Event('submit'));
             });

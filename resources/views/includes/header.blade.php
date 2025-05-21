@@ -293,12 +293,14 @@
                             </a>
                         </li> --}}
 
+                        @if(!(Auth::user()->privilege === 'agent' && App\Models\SalesRep::where('user_id', Auth::user()->id)->whereIn('position', ['Driver', 'Sales Representative'])->exists()))
                         <li class="nav-item">
                             <a class="nav-link" href="{{ Auth::user()->privilege === 'agent' ? url('/loadboard-agent') : url('/loadboard') }}">
                                 <i class="fas fa-car menu-icon"></i>
                                 <span>Load Board</span>
                             </a>
                         </li><!--end nav-item-->
+                        @endif
 
                         @if(Auth::user()->privilege !== 'agent')
                         <li class="nav-item">
@@ -309,12 +311,14 @@
                         </li><!--end nav-item-->
                         @endif
 
+                        @if(!(Auth::user()->privilege === 'agent' && App\Models\SalesRep::where('user_id', Auth::user()->id)->whereIn('position', ['Driver', 'Sales Representative'])->exists()))
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/salesreps') }}">
                                 <i class="fas fa-users menu-icon"></i>
                                 <span>Sales Representatives</span>
                             </a>
                         </li><!--end nav-item-->
+                        @endif
 
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/callcenter') }}">
@@ -324,7 +328,7 @@
                         </li><!--end nav-item-->
 
 
-                        @if(Auth::user()->privilege === 'agent')
+                        @if(Auth::user()->privilege === 'agent' && !App\Models\SalesRep::where('user_id', Auth::user()->id)->whereIn('position', ['Driver', 'Sales Representative'])->exists())
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('/salesreports') }}">
                                 <i class="fas fa-dollar-sign menu-icon"></i>                                    
