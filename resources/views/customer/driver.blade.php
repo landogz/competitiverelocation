@@ -420,12 +420,12 @@
                 <div class="bg-surface-variant rounded-lg px-4 py-2 flex-1 sm:flex-none min-w-[140px] flex flex-col items-start">
                   <span class="text-sm text-surface-onVariant">Total Items:</span>
                   <span class="ml-0 mt-1 font-medium text-lg" id="total-items-count">0</span>
-                </div>
+            </div>
                 <div class="bg-surface-variant rounded-lg px-4 py-2 flex-1 sm:flex-none min-w-[140px] flex flex-col items-start">
                   <span class="text-sm text-surface-onVariant">Total Cubic Ft:</span>
                   <span class="ml-0 mt-1 font-medium text-lg" id="total-cubic-ft">0.00</span>
-                </div>
-              </div>
+          </div>
+            </div>
             </div>
             <div id="inventory-items-container">
               <!-- Inventory items will be loaded here -->
@@ -745,7 +745,7 @@
             <h3 class="font-bold mb-2">SHIPPER SIGNATURE ON PICK UP</h3>
             <p class="text-sm text-surface-onVariant mb-4">This is to certify that the above named materials are properly classified, packaged, marked, and labeled, and are in proper condition for transportation according to the applicable regulations of the DOT. This contract is non negotiable and all monies are due COD are described in your contract.</p>
             <label class="block text-sm font-medium text-surface-onVariant mb-2">Additional Comments</label>
-            <textarea class="w-full p-2 border border-surface-variant rounded-lg min-h-[100px] mb-6"></textarea>
+            <textarea id="shipper-comments" class="w-full p-2 border border-surface-variant rounded-lg min-h-[100px] mb-6"></textarea>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="text-center">
               <div class="border-b border-gray-400 pb-2 mb-2" id="shipper-name"></div>
@@ -761,7 +761,7 @@
             </div>
           </div>
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-              <button class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Complete</button>
+              <button id="complete-btn" onclick="handleComplete()" class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Complete</button>
               <button class="flex items-center gap-2 bg-surface-variant text-surface-onVariant py-2 px-6 rounded-lg hover:bg-surface-variant/80 transition-colors">
                 <span class="material-icons">print</span> Print
             </button>
@@ -1152,6 +1152,8 @@
               }).then(() => {
                 // Reload the authorization data
                 loadCreditCardAuthorization();
+                // Navigate to services page
+                navigate('services');
               });
             } else {
               throw new Error(result.message || 'Failed to save Credit Card Authorization');
@@ -1849,6 +1851,8 @@
       const nameDiv = document.getElementById('shipper-name');
       const sigDiv = document.getElementById('shipper-signature');
       const dateDiv = document.getElementById('shipper-date');
+      const commentsTextarea = document.getElementById('shipper-comments');
+      
       if (nameDiv) nameDiv.textContent = auth.cardholder_name || auth.full_name || '';
       if (sigDiv) {
         if (auth.signature) {
@@ -1858,6 +1862,7 @@
         }
       }
       if (dateDiv) dateDiv.textContent = auth.date || '';
+      if (commentsTextarea) commentsTextarea.value = auth.comments || '';
     }
 
     // Function to render uploaded images gallery below inventory (Lightbox2, no manual init)
@@ -1891,6 +1896,101 @@
       });
       const activeItem = document.getElementById(menuId);
       if (activeItem) activeItem.classList.add('active');
+    }
+
+    // Add this function for the Complete button
+    function handleComplete() {
+      const completeBtn = document.getElementById('complete-btn');
+      const comment = document.getElementById('shipper-comments').value;
+      const transactionId = window.currentTransaction?.id;
+      
+      if (!transactionId) {
+        Swal.fire('Error', 'No transaction selected.', 'error');
+        return;
+      }
+      
+      // Show loading state
+      completeBtn.disabled = true;
+      completeBtn.innerHTML = '<span class="animate-spin mr-2">⟳</span> Saving...';
+
+      console.log('Starting comment update process...');
+      console.log('Comment:', comment);
+      console.log('Transaction ID:', transactionId);
+
+      // Fetch the credit card authorization for this transaction
+      fetch(`/credit-card-authorization/${transactionId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to fetch credit card authorization');
+          }
+          return res.json();
+        })
+        .then(result => {
+          if (result.success && result.data) {
+            // Update the comment field
+            const formData = {
+              comments: comment,
+              transaction_id: transactionId,
+              // Include all existing fields to prevent data loss
+              full_name: result.data.full_name,
+              name: result.data.name,
+              title: result.data.title,
+              card_type: result.data.card_type,
+              last_8_digits: result.data.last_8_digits,
+              cvc: result.data.cvc,
+              expiration_date: result.data.expiration_date,
+              cardholder_name: result.data.cardholder_name,
+              phone: result.data.phone,
+              email: result.data.email,
+              street_address: result.data.street_address,
+              city: result.data.city,
+              state: result.data.state,
+              zip_code: result.data.zip_code,
+              signature: result.data.signature,
+              date: result.data.date
+            };
+
+            return fetch(`/credit-card-authorization/${result.data.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+              },
+              body: JSON.stringify(formData)
+            });
+          } else {
+            throw new Error('No credit card authorization found for this transaction.');
+          }
+        })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to update comment');
+          }
+          return res.json();
+        })
+        .then(updateResult => {
+          if (updateResult.success) {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Comment saved successfully',
+              icon: 'success'
+            }).then(() => {
+              // Navigate to services page
+              navigate('services');
+            });
+          } else {
+            throw new Error(updateResult.message || 'Failed to update comment');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error', error.message || 'An error occurred while saving the comment.', 'error');
+        })
+        .finally(() => {
+          // Reset button state
+          completeBtn.disabled = false;
+          completeBtn.innerHTML = 'Complete';
+        });
     }
   </script>
 </body>

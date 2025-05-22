@@ -60,6 +60,8 @@ class CreditCardAuthorizationController extends Controller
             'zip_code' => 'nullable|string',
             'signature' => 'nullable|string',
             'date' => 'nullable|date',
+            'comments' => 'nullable|string',
+            'transaction_id' => 'nullable|exists:transactions,id'
         ]);
         $auth->update($validated);
         return response()->json(['success' => true, 'data' => $auth]);
