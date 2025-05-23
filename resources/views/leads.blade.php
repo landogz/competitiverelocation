@@ -77,7 +77,7 @@
     }
 </style>
 @section('content')
-<meta name="transaction-id" content="{{ $transaction->id }}">
+<meta name="transaction-id" content="{{ $transaction->id ?? '' }}">
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm-12">
@@ -97,51 +97,51 @@
                     </div>  <!--end row-->                                  
                 </div><!--end card-header-->
                 <div class="card-body pt-0">
-                <form id="leadForm" action="{{ isset($transaction) ? route('leads.update', $transaction->id) : route('leads.store') }}" method="POST">
+                <form id="leadForm" action="{{ isset($transaction) ? route('leads.update', $transaction->id) : route('leads.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @if(isset($transaction))
                             @method('PUT')
                         @endif
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">First Name</label>
-                            <input class="form-control form-control-sm" type="text" name="firstname" value="{{ $transaction->firstname ?? '' }}">                               
+                        <label class="mb-1">First Name <span class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm" type="text" name="firstname" value="{{ $transaction->firstname ?? '' }}" required>                               
                     </div>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Last Name</label>
-                            <input class="form-control form-control-sm" type="text" name="lastname" value="{{ $transaction->lastname ?? '' }}">                               
+                        <label class="mb-1">Last Name <span class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm" type="text" name="lastname" value="{{ $transaction->lastname ?? '' }}" required>                               
                     </div>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Email</label>
-                            <input class="form-control form-control-sm" type="email" name="email" value="{{ $transaction->email ?? '' }}">                               
+                        <label class="mb-1">Email <span class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm" type="email" name="email" value="{{ $transaction->email ?? '' }}" required>                               
                     </div>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Phone Number</label>
-                            <input class="form-control form-control-sm" type="text" name="phone" value="{{ $transaction->phone ?? '' }}" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="By providing a telephone number and submitting the form, you are consenting to be contacted by SMS text message (our message frequency may vary). Message & data rates may apply. Reply STOP to opt-out of further messaging. Reply HELP for more information. See our Privacy Policy.">                               
+                        <label class="mb-1">Phone Number <span class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm" type="text" name="phone" value="{{ $transaction->phone ?? '' }}" required data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="By providing a telephone number and submitting the form, you are consenting to be contacted by SMS text message (our message frequency may vary). Message & data rates may apply. Reply STOP to opt-out of further messaging. Reply HELP for more information. See our Privacy Policy.">                               
                     </div>
                     <hr>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Lead Source</label>
-                            <select id="lead_source" name="lead_source" class="form-select">
+                        <label class="mb-1">Lead Source <span class="text-danger">*</span></label>
+                            <select id="lead_source" name="lead_source" class="form-select" required>
                                 <option value="">Select Source</option>
                                 @foreach($leadSources as $id => $name)
-                                    <option value="{{ $id }}" {{ ($transaction->lead_source ?? '') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                    <option value="{{ $id }}" {{ (isset($transaction) && $transaction->lead_source == $id) ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
                         </select>                                    
                         </div>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Lead Type</label>
-                            <select id="lead_type" name="lead_type" class="form-select">
+                        <label class="mb-1">Lead Type <span class="text-danger">*</span></label>
+                            <select id="lead_type" name="lead_type" class="form-select" required>
                                 <option value="">Select Type</option>
-                                <option value="local" {{ ($transaction->lead_type ?? '') == 'local' ? 'selected' : '' }}>Local</option>
-                                <option value="long_distance" {{ ($transaction->lead_type ?? '') == 'long_distance' ? 'selected' : '' }}>Long Distance</option>
+                                <option value="local" {{ (isset($transaction) && $transaction->lead_type == 'local') ? 'selected' : '' }}>Local</option>
+                                <option value="long_distance" {{ (isset($transaction) && $transaction->lead_type == 'long_distance') ? 'selected' : '' }}>Long Distance</option>
                         </select>                                    
                         </div>
                     <div class="col-md-12 mb-2">
-                        <label class="mb-1">Assigned Agent</label>
-                            <select id="assigned" name="assigned_agent" class="form-select">
+                        <label class="mb-1">Assigned Agent <span class="text-danger">*</span></label>
+                            <select id="assigned" name="assigned_agent" class="form-select" required>
                                 <option value="">Select Agent</option>
                                 @foreach($agents as $id => $companyName)
-                                    <option value="{{ $id }}" {{ ($transaction->assigned_agent ?? '') == $id ? 'selected' : '' }}>{{ $companyName }}</option>
+                                    <option value="{{ $id }}" {{ (isset($transaction) && $transaction->assigned_agent == $id) ? 'selected' : '' }}>{{ $companyName }}</option>
                                 @endforeach
                         </select>                                    
                         </div>
@@ -152,7 +152,9 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0"></h4>
-                        <!-- <button type="submit" class="btn btn-success btn-xl">Save Data</button> -->
+                    @if(!isset($transaction))
+                        <button type="submit" class="btn btn-success btn-xl">Save Data</button>
+                    @endif
                 </div>
                 <div class="card-body pt-0">
                     <!-- Nav tabs -->
@@ -181,20 +183,27 @@
                                         <div class="col-lg-3">
                                             <div class="mb-3">
                                                 <label class="form-label">Service</label>
-                                                @php
-                                                    $serviceName = 'N/A';
-                                                    if (isset($transaction->services) && is_array($transaction->services) && count($transaction->services) > 0) {
-                                                        $serviceName = $transaction->services[0]['name'] ?? 'N/A';
-                                                    } elseif (isset($transaction->services) && is_string($transaction->services)) {
-                                                        $decoded = json_decode($transaction->services, true);
-                                                        if (is_array($decoded) && count($decoded) > 0) {
-                                                            $serviceName = $decoded[0]['name'] ?? 'N/A';
+                                                @if(!isset($transaction))
+                                                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#serviceModal">
+                                                        Select Service
+                                                    </button>
+                                                    <input type="hidden" name="service" value="">
+                                                @else
+                                                    @php
+                                                        $serviceName = 'N/A';
+                                                        if (isset($transaction->services) && is_array($transaction->services) && count($transaction->services) > 0) {
+                                                            $serviceName = $transaction->services[0]['name'] ?? 'N/A';
+                                                        } elseif (isset($transaction->services) && is_string($transaction->services)) {
+                                                            $decoded = json_decode($transaction->services, true);
+                                                            if (is_array($decoded) && count($decoded) > 0) {
+                                                                $serviceName = $decoded[0]['name'] ?? 'N/A';
+                                                            }
                                                         }
-                                                    }
-                                                @endphp
-                                                <input type="text" class="form-control" name="service" value="{{ $serviceName ?? '' }}" placeholder="Enter Service">
+                                                    @endphp
+                                                    <input type="text" class="form-control" name="service" value="{{ $serviceName ?? '' }}" placeholder="Enter Service">
+                                                @endif
                                             </div>                  
-                                            </div>                     
+                                        </div>                     
                                         <div class="col-lg-3">   
                                             <div class="mb-3">
                                                 <label class="form-label">Move Date</label>
@@ -211,8 +220,8 @@
                                             <div class="mb-3">
                                                 <label class="form-label">Pictures of Removal Items / Receipt</label>
                                                 @if(!isset($transaction))
-                                                <button type="button" class="btn rounded-pill btn-success btn-xl mb-2" id="sendMailBtn" data-transaction-id="{{ $transaction->id ?? '' }}">Send Mail</button>
-                                                <input type="file" id="image_upload" name="uploaded_image" style="display: none;" multiple>
+                                                <!-- <button type="button" class="btn rounded-pill btn-success btn-xl mb-2" id="sendMailBtn" data-transaction-id="{{ $transaction->id ?? '' }}">Send Mail</button>
+                                                <input type="file" id="image_upload" name="uploaded_image" style="display: none;" multiple> -->
                                                 @endif
                                                 @if(isset($transaction) && $transaction->uploaded_image)
                                                 <div class="d-flex gap-2 flex-wrap mt-2">
@@ -785,7 +794,8 @@ function calculateRoute() {
                     const route = response.routes[0];
                     if (route && route.legs[0]) {
                         const distance = route.legs[0].distance.value / 1609.34; // Convert meters to miles
-                        document.querySelector('input[name="miles"]').value = Math.round(distance);
+                        const roundTripDistance = distance * 2; // Multiply by 2 for round trip
+                        document.querySelector('input[name="miles"]').value = roundTripDistance.toFixed(2); // Show 2 decimal places
                         
                         // Update distance info
                         const distanceText = route.legs[0].distance.text;
@@ -802,6 +812,17 @@ function calculateRoute() {
                         bounds.extend(route.legs[0].start_location);
                         bounds.extend(route.legs[0].end_location);
                         map.fitBounds(bounds);
+
+                        // Calculate Added Miles and Added Mile Rate
+                        const addedMiles = roundTripDistance;
+                        const addedMileRate = addedMiles * 0.89; // $0.89 per mile charge
+
+                        // Update the fields
+                        document.getElementById('added-miles').value = addedMiles.toFixed(2);
+                        document.getElementById('added-mile-rate').value = addedMileRate.toFixed(2);
+
+                        // Update grand total with new mile rate
+                        updateGrandTotal();
                     }
                 }
             }
@@ -814,102 +835,6 @@ window.onload = function () {
     initMap();
 };
 
-function calculateFees() {
-    // Get the service value
-    const serviceInput = document.querySelector('[name="service"]');
-    const service = serviceInput ? serviceInput.value.toUpperCase() : '';
-    const isMovingService = service.includes('MOVING') || service === 'MOVING SERVICES';
-    
-    // Get the subtotal from the service rate or rate input
-    const serviceRateInput = document.querySelector('[name="service_rate"]');
-    let subtotal = serviceRateInput ? parseFloat(serviceRateInput.value) || 0 : 0;
-    
-    // If no service rate, try to get from crew rate and no_of_crew
-    if (subtotal === 0) {
-        const crewRateInput = document.querySelector('[name="crew_rate"]');
-        const noOfCrewInput = document.querySelector('[name="no_of_items"]');
-        const crewRate = crewRateInput ? parseFloat(crewRateInput.value) || 0 : 0;
-        const noOfCrew = noOfCrewInput ? parseFloat(noOfCrewInput.value) || 0 : 0;
-        subtotal = crewRate * noOfCrew;
-    }
-
-    // If still no subtotal, try to get from the subtotal input directly
-    if (subtotal === 0) {
-        const subtotalInput = document.querySelector('[name="subtotal"]');
-        if (subtotalInput) {
-            const subtotalValue = subtotalInput.value.replace(/[^0-9.-]+/g, '');
-            subtotal = parseFloat(subtotalValue) || 0;
-        }
-    }
-
-    // Get miles for added mile rate calculation
-    const milesInput = document.querySelector('[name="miles"]');
-    const distanceInMiles = milesInput ? parseFloat(milesInput.value) || 0 : 0;
-    let addedMileRate = 0;
-
-    // Calculate added mile rate for distances over 12.5 miles
-    if (distanceInMiles > 12.5) {
-        addedMileRate = distanceInMiles * 0.89; // $0.89 per mile charge
-    }
-
-    // Calculate fees based on service type
-    let truckFee = 0;
-    let softwareFee = 0;
-    let grandTotal = subtotal + addedMileRate;
-    let downPayment = 0;
-    let remainingBalance = 0;
-
-    if (isMovingService) {
-        truckFee = 198.80;
-        softwareFee = (subtotal + truckFee) * 0.12;
-        grandTotal = subtotal + softwareFee + truckFee + addedMileRate;
-        downPayment = grandTotal * 0.315;
-        remainingBalance = grandTotal - downPayment;
-    }
-
-    // Show/hide fields based on service type
-    const addedMileRateField = document.querySelector('[name="added_mile_rate"]').closest('.mb-3');
-    const truckFeeField = document.querySelector('[name="truck_fee"]').closest('.mb-3');
-    const softwareFeeField = document.querySelector('[name="software_fee"]').closest('.mb-3');
-    const downPaymentField = document.querySelector('[name="downpayment"]').closest('.mb-3');
-    const remainingBalanceField = document.querySelector('[name="remaining_balance"]').closest('.mb-3');
-
-    // Always show Added Mile Rate
-    addedMileRateField.style.display = 'block';
-
-    if (isMovingService) {
-        truckFeeField.style.display = 'block';
-        softwareFeeField.style.display = 'block';
-        downPaymentField.style.display = 'block';
-        remainingBalanceField.style.display = 'block';
-    } else {
-        truckFeeField.style.display = 'none';
-        softwareFeeField.style.display = 'none';
-        downPaymentField.style.display = 'none';
-        remainingBalanceField.style.display = 'none';
-    }
-
-    // Update the fields with formatted values
-    document.querySelector('[name="subtotal"]').value = subtotal.toFixed(2);
-    document.querySelector('[name="added_mile_rate"]').value = addedMileRate.toFixed(2);
-    document.querySelector('[name="software_fee"]').value = softwareFee.toFixed(2);
-    document.querySelector('[name="truck_fee"]').value = truckFee.toFixed(2);
-    document.querySelector('[name="grand_total"]').value = grandTotal.toFixed(2);
-    document.querySelector('[name="downpayment"]').value = downPayment.toFixed(2);
-    document.querySelector('[name="remaining_balance"]').value = remainingBalance.toFixed(2);
-}
-
-// Add event listeners to recalculate when service-related fields change
-document.addEventListener('DOMContentLoaded', function() {
-    const serviceInputs = document.querySelectorAll('[name="service"], [name="service_rate"], [name="crew_rate"], [name="no_of_items"], [name="miles"]');
-    serviceInputs.forEach(input => {
-        input.addEventListener('change', calculateFees);
-        input.addEventListener('input', calculateFees);
-    });
-
-    // Initial calculation
-    calculateFees();
-});
 </script>
 <style>
 #toast-container {
@@ -1129,8 +1054,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update a single transaction field
     function updateTransactionField(field, value) {
+        const transactionId = document.querySelector('meta[name="transaction-id"]')?.content;
+        
+        // If no transaction ID exists, just return without error
         if (!transactionId) {
-            console.error('No transaction ID found');
             return;
         }
         
@@ -1313,38 +1240,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize DataTable for sent emails
-    sentEmailsTable = $('#sentEmailsTable').DataTable({
-        processing: true,
-        serverSide: false,
-        ajax: {
-            url: `/leads/${currentTransaction.id}/sent-emails`,
-            dataSrc: 'data'
-        },
-        columns: [
-            { 
-                data: 'created_at',
-                render: function(data) {
-                    return moment(data).format('MM/DD/YYYY hh:mm A');
-                }
+    if (transactionId) {
+        sentEmailsTable = $('#sentEmailsTable').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: `/leads/${transactionId}/sent-emails`,
+                dataSrc: 'data'
             },
-            { data: 'subject' },
-            // { data: 'recipient' },
-            { data: 'template.name' },
-            { 
-                data: 'status',
-                render: function(data) {
-                    const statusClass = data === 'sent' ? 'success' : 
-                                     data === 'failed' ? 'danger' : 'warning';
-                    return `<span class="badge bg-${statusClass}">${data}</span>`;
+            columns: [
+                { 
+                    data: 'created_at',
+                    render: function(data) {
+                        return moment(data).format('MM/DD/YYYY hh:mm A');
+                    }
+                },
+                { data: 'subject' },
+                { data: 'template.name' },
+                { 
+                    data: 'status',
+                    render: function(data) {
+                        const statusClass = data === 'sent' ? 'success' : 
+                                         data === 'failed' ? 'danger' : 'warning';
+                        return `<span class="badge bg-${statusClass}">${data}</span>`;
+                    }
                 }
+            ],
+            order: [[0, 'desc']], // Sort by date column in descending order
+            pageLength: 10,
+            language: {
+                emptyTable: "No emails sent yet"
             }
-        ],
-        order: [[0, 'desc']], // Sort by date column in descending order
-        pageLength: 10,
-        language: {
-            emptyTable: "No emails sent yet"
-        }
-    });
+        });
+    } else {
+        // For new customers, show a message instead of initializing DataTable
+        $('#sentEmailsTable').html('<div class="alert alert-info m-3">No emails sent yet for this customer.</div>');
+    }
 
     // Initialize CKEditor
     ckeditorEmailEditor = CKEDITOR.replace('quillEmailEditor', {
@@ -1531,6 +1462,84 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Handle form submission
+    const leadForm = document.getElementById('leadForm');
+    if (leadForm) {
+        leadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            Swal.fire({
+                title: 'Saving...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // Get form data
+            const formData = new FormData(this);
+            
+            // Convert FormData to JSON
+            const jsonData = {};
+            formData.forEach((value, key) => {
+                // Handle arrays (like services)
+                if (key.endsWith('[]')) {
+                    const baseKey = key.slice(0, -2);
+                    if (!jsonData[baseKey]) {
+                        jsonData[baseKey] = [];
+                    }
+                    jsonData[baseKey].push(value);
+                } else {
+                    jsonData[key] = value;
+                }
+            });
+
+            // Send AJAX request
+            fetch(this.action, {
+                method: this.method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to save transaction');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message || 'Transaction saved successfully',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Redirect to the edit page if this was a new transaction
+                        if (!transactionId && data.transaction_id) {
+                            window.location.href = `/leads/${data.transaction_id}/edit`;
+                        }
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to save transaction');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Something went wrong. Please try again.'
+                });
+            });
+        });
+    }
 });
 </script>
 
@@ -1591,5 +1600,1044 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<!-- Add Service Modal -->
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="serviceModalLabel">
+                    <i class="fas fa-cogs me-2"></i>Select Service
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Distance Information -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">Distance Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <label class="form-label">Added Miles</label>
+                                        <input id="added-miles" name="added-miles" class="form-control" type="text" placeholder="0" disabled/>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Added Mile Rate</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input id="added-mile-rate" name="added-mile-rate" class="form-control" type="text" placeholder="0.00" disabled/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                   <!-- Service Actions -->
+                <div class="row mb-4 mt-4">
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-primary btn-services" id="add-college-room-move">
+                                <i class="fas fa-graduation-cap me-2"></i>COLLEGE ROOM MOVE
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-removal">
+                                <i class="fas fa-trash me-2"></i>REMOVAL
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-delivery">
+                                <i class="fas fa-truck me-2"></i>DELIVERY
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-hoisting">
+                                <i class="fas fa-crane me-2"></i>HOISTING
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-mattress-removal">
+                                <i class="fas fa-bed me-2"></i>MATTRESS REMOVAL
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-re-arranging-service">
+                                <i class="fas fa-sort me-2"></i>RE ARRANGING SERVICE
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-cleaning-services">
+                                <i class="fas fa-broom me-2"></i>CLEANING SERVICES
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-exterminator-washing-replacing-moving-blankets">
+                                <i class="fas fa-bug me-2"></i>Exterminator, Washing and Replacing Moving Blankets
+                            </button>
+                            <button class="btn btn-primary btn-services" id="add-moving-services">
+                                <i class="fas fa-boxes me-2"></i>MOVING SERVICES
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6" style="display:none;">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">Service Details</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Service Type</label>
+                                        <select id="service-select" class="form-control">
+                                            <option value="">Select Here</option>
+                                            <option value="college-room-move" data-rate="325">COLLEGE ROOM MOVE</option>
+                                            <option value="removal" data-rate="125">REMOVAL</option>
+                                            <option value="delivery" data-rate="0">DELIVERY</option>
+                                            <option value="hoisting" data-rate="350">HOISTING</option>
+                                            <option value="mattress-removal" data-rate="125">MATTRESS REMOVAL</option>
+                                            <option value="re-arranging-service" data-rate="150">RE ARRANGING SERVICE</option>
+                                            <option value="cleaning-services" data-rate="135">CLEANING SERVICES</option>
+                                            <option value="exterminator-washing-replacing-moving-blankets" data-rate="650">Exterminator, Washing and Replacing Moving Blankets</option>
+                                            <option value="moving-services" data-rate="0">MOVING SERVICES</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Service Rate</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input id="service-rate" class="form-control" type="text" placeholder="0.00" disabled/>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Crew Rate</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input id="crew-rate" class="form-control" type="text" value="50.00" disabled/>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Number of Crew</label>
+                                        <input id="no-of-crew" class="form-control" type="number" placeholder="Enter number of crew" min="1"/>
+                                    </div>
+
+						<button class="btn btn-primary mt-3" id="add-service"  style="display:block;">Add Service</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+             
+
+                <!-- Services Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted mb-3">Selected Services</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="services-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Rate</th>
+                                        <th>Crew</th>
+                                        <th>Crew Rate</th>
+                                        <th class="text-danger">Purchased Amount</th>
+                                        <th>Delivery Cost</th>
+                                        <th>Subtotal</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows will be dynamically added here -->
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="6" class="text-end"><strong>Grand Total:</strong></td>
+                                        <td colspan="2" id="total-amount" class="fw-bold">$0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="row mt-4" style="display:none;">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3">Payment Summary</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Grand Total</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input id="grand-total-service" name="grand-total-service" class="form-control" type="text" placeholder="0.00" disabled/>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Down Payment</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input id="downpayment-service" name="downpayment-service" class="form-control" type="text" placeholder="0.00" disabled/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="add-service">Add Service</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="customModal_moving_services" tabindex="-1" aria-labelledby="movingServicesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="movingServicesModalLabel">
+                    <i class="fas fa-truck-moving me-2"></i>Moving Services
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> 3 hours minimum (2 hours labor, 1 hour travel)
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Crew Selection -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Select Crew Size</h6>
+							 </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary btn-moving" id="add-2men">
+                                        <i class="fas fa-users me-2"></i>2 MEN CREW
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-moving" id="add-3men">
+                                        <i class="fas fa-users me-2"></i>3 MEN CREW
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-moving" id="add-4men">
+                                        <i class="fas fa-users me-2"></i>4 MEN CREW
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-moving" id="add-5men">
+                                        <i class="fas fa-users me-2"></i>5 MEN CREW
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-moving" id="add-3menspecial">
+                                        <i class="fas fa-star me-2"></i>3 MEN SPECIAL
+                                    </button>
+						 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Details -->
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Service Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Additional Hours</label>
+        									<div class="input-group">
+                                        <button type="button" class="btn btn-outline-secondary" id="decrease-hours">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                                <input id="added-hours" name="added-hours" 
+                                            class="form-control text-center" 
+                                                    type="number" 
+                                                    placeholder="Additional Hours" 
+                                                    min="2" step="1" value="2">
+                                        <button type="button" class="btn btn-outline-secondary" id="increase-hours">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                            </div>
+        							</div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Number of Crew</label>
+                                    <input id="numbercrew" name="numbercrew" 
+                                        class="form-control" 
+                                        type="number" 
+                                        placeholder="Number of Crew" 
+                                        readonly>
+							  </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Total Cost</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input id="total-hours-added" name="total-hours-added" 
+                                            class="form-control" 
+                                            type="text" 
+                                            placeholder="Total Cost" 
+                                            disabled>
+							  </div>
+                                </div>
+
+                                <input id="men-selected" name="men-selected" 
+                                    class="form-control" 
+                                    type="text" 
+                                    placeholder="men-selected" 
+                                    disabled 
+                                    style="display:none;">
+
+                                <button class="btn btn-primary w-100 mt-3" id="add-sevice-moving">
+                                    <i class="fas fa-plus-circle me-2"></i>Add Service
+                                </button>
+                            </div>
+                        </div>
+							  </div>
+						  </div>
+						 </div>
+					</div>
+  </div>
+</div>
+
+<style>
+/* Modern Modal Styles */
+#customModal_moving_services .modal-content {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+#customModal_moving_services .modal-header {
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+#customModal_moving_services .modal-body {
+    padding: 1.5rem;
+}
+
+#customModal_moving_services .card {
+    border-radius: 0.75rem;
+    transition: transform 0.2s ease-in-out;
+}
+
+#customModal_moving_services .card:hover {
+    transform: translateY(-2px);
+}
+
+#customModal_moving_services .btn-moving {
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+#customModal_moving_services .btn-moving:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#customModal_moving_services .form-control {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e0e0e0;
+}
+
+#customModal_moving_services .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+}
+
+#customModal_moving_services .input-group-text {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+}
+
+#customModal_moving_services .alert {
+    border-radius: 0.75rem;
+    border: none;
+    background-color: rgba(13,110,253,0.1);
+    color: var(--bs-primary);
+}
+
+#customModal_moving_services .btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    background: linear-gradient(45deg, var(--bs-primary), #0d6efd);
+    border: none;
+    transition: all 0.2s ease-in-out;
+}
+
+#customModal_moving_services .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13,110,253,0.2);
+}
+</style>
+
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+
+
+document.getElementById("increase-hours").addEventListener("click", function() {
+    let input = document.getElementById("added-hours");
+    input.stepUp();  // Increases by 1
+    input.dispatchEvent(new Event('change')); // Manually trigger onchange
+});
+
+document.getElementById("decrease-hours").addEventListener("click", function() {
+    let input = document.getElementById("added-hours");
+    if (input.value > input.min) {
+        input.stepDown();  // Decreases by 1
+        input.dispatchEvent(new Event('change')); // Manually trigger onchange
+    }
+});
+
+// Ensure minimum value enforcement on manual input
+document.getElementById('added-hours').addEventListener('change', function() {
+    let value = parseInt(this.value);
+    if (isNaN(value) || value < 2) {
+        this.value = 2;  // Reset to min value if invalid
+    }
+});
+
+
+    const serviceSelect = document.getElementById("service-select");
+	const addServiceButton = document.getElementById("add-service");
+
+	// Attach a single click event listener for all buttons with the class 'btn-services'
+	// document.querySelectorAll(".btn-services").forEach((button) => {
+	//   button.addEventListener("click", (event) => {
+	// 	  event.preventDefault();
+	// 		const serviceSelect = document.getElementById("service-select");
+	// 		const addServiceButton = document.getElementById("add-service");
+			
+	// 		// Check if required elements exist
+	// 		if (!serviceSelect || !addServiceButton) {
+	// 			console.warn('Required elements not found');
+	// 			return;
+	// 		}
+
+	// 	// Check if the button is NOT the "add-moving-services" button
+	// 	if (button.id !== "add-moving-services") {
+	// 	  // Extract the service value from the button's id
+	// 	  const serviceValue = button.id.replace("add-", ""); // Remove "add-" prefix to match the option value
+
+	// 	  // Set the dropdown value to match the service
+	// 	  serviceSelect.value = serviceValue;
+
+	// 	  // Dispatch the change event to trigger any related listeners
+	// 	  const event = new Event("change");
+	// 	  serviceSelect.dispatchEvent(event);
+
+	// 	  // Simulate clicking the "Add Service" button
+	// 	  addServiceButton.click();
+	// 		} else if (button.id === "add-sevice-moving") {
+	// 			// Handle moving services case
+	// 	} else {
+	// 	  // Handle the specific case for "add-moving-services" button
+	// 			const customModal = document.getElementById("customModal_moving_services");
+	// 			if (customModal) {
+	// 				customModal.style.display = "flex";
+	// 			}
+	// 	}
+	//   });
+	// });
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const serviceSelect = document.getElementById("service-select");
+    const serviceRate = document.getElementById("service-rate");
+    const noOfCrew = document.getElementById("no-of-crew");
+    const noOfItems = document.getElementById("no_of_items");
+    const crewRate = document.getElementById("crew-rate");
+    const addServiceBtn = document.getElementById("add-service");
+    const servicesTableBody = document.querySelector("#services-table tbody");
+    const totalAmountCell = document.getElementById("total-amount");
+
+    let totalAmount = 0;
+
+     if (serviceSelect && serviceRate) {
+    serviceSelect.addEventListener("change", () => {
+        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+        
+        // Check if the selected option exists and has the "data-rate" attribute
+        const rate = selectedOption && selectedOption.hasAttribute("data-rate") 
+            ? selectedOption.getAttribute("data-rate") 
+            : 0;
+
+        serviceRate.value = rate;
+    });
+}
+
+    // Function to calculate equivalent delivery cost
+    function calculateDeliveryCost(subTotal) {
+        if (subTotal < 750) return 79.99;
+        if (subTotal >= 750 && subTotal < 1500) return 159.99;
+        if (subTotal >= 1500 && subTotal < 2000) return 179.99;
+        if (subTotal >= 2000 && subTotal < 2750) return 194.99;
+        if (subTotal >= 2750 && subTotal < 4000) return 224.99;
+        if (subTotal >= 4000 && subTotal < 6000) return 284.99;
+        if (subTotal >= 6000 && subTotal < 8000) return 314.99;
+        if (subTotal >= 8000 && subTotal < 10000) return 334.99;
+        if (subTotal >= 10000) return 384.99;
+        return 0;
+    }
+
+ // Function to recalculate total from all subtotals in the table
+    function recalculateTotal() {		
+		
+		let containsMovingServices = false; 
+		
+    const addedMileRate = parseFloat(document.getElementById("added-mile-rate").value) || 0;
+        let total = 0;
+        servicesTableBody.querySelectorAll("tr").forEach((row) => {
+            const subtotalCell = row.cells[6]; // Subtotal is in the 6th column (index 5)
+            const subtotal = parseFloat(subtotalCell.textContent.replace("$", "")) || 0;
+            total += subtotal;
+			
+		 // Check if the row contains "MOVING SERVICES"
+        const serviceName = row.cells[0].textContent.trim(); // Assuming service name is in the first column
+        if (serviceName === "MOVING SERVICES") {
+            containsMovingServices = true;
+        }
+        
+		});
+		
+		
+		 // If "MOVING SERVICES" is found, apply transaction fee and truck fee
+			if (containsMovingServices) {
+				const truckFee = 198.80 + addedMileRate; // Fixed Truck Fee
+				const transactionFee = (total + 198.80) * 0.12; // 12% of Grand Total
+				total += transactionFee + truckFee; // Add both fees to Grand Total
+			}
+		else{
+			total += addedMileRate;
+		}
+		
+        totalAmountCell.textContent = `$${total.toFixed(2)}`;
+    }
+	 
+    // Add a new service row to the table
+    addServiceBtn.addEventListener("click", (event) => {
+		
+    event.preventDefault(); // Prevent page refresh
+		
+		const serviceSelect = document.getElementById("service-select");
+        const serviceName = serviceSelect.options[serviceSelect.selectedIndex].text;
+        const serviceValue = serviceSelect.value;
+        const rate = parseFloat(serviceRate.value) || 0;
+        const noOfItems = document.getElementById("no_of_items");
+        const noofitems = noOfItems ? parseFloat(noOfItems.value) || 0 : 0;
+        const crewCount = parseInt(noOfCrew.value) || 0;
+        const ratePerCrew = parseFloat(crewRate.value) || 0;
+
+        let removaladd = 0;
+        let subtotal = 0;
+		
+// Validation: Check if required fields are filled
+    if (serviceSelect.selectedIndex === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Service Required',
+            text: 'Please select a service',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3085d6',
+        });
+        return; // Stop execution if validation fails
+    }
+
+
+        const isEditable =
+            serviceValue === "delivery" || serviceValue === "removal-and-delivery";
+        const purchasedAmountInput = isEditable
+            ? `<input style="color:red;" type="number" class="form-control purchased-amount" placeholder="Enter Amount" />`
+            : `<input style="color:red;" type="number" class="form-control purchased-amount" placeholder="Not Applicable" disabled />`;
+		
+        const deliveryCost = calculateDeliveryCost(purchasedAmountInput.value);
+//         const subtotal = rate +  ratePerCrew + deliveryCost + removaladd;
+
+		if(serviceValue === "removal"){
+			if(noofitems < 4){
+				removaladd = (noofitems - 1 ) * 75;
+        		subtotal =  rate +  ratePerCrew + deliveryCost + removaladd;
+			}
+			else{
+				removaladd = (noofitems ) * 75;
+        		subtotal = ratePerCrew + deliveryCost + removaladd;
+			}
+		}
+		else{
+        		subtotal =  rate +  ratePerCrew + deliveryCost;
+		}
+
+
+        totalAmount += subtotal;
+
+        // Add row to table
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td style="vertical-align: middle;">${serviceName}</td>
+            <td style="vertical-align: middle;">$${rate.toFixed(2)}</td>
+            <td style="vertical-align: middle;">${crewCount}</td>
+            <td style="vertical-align: middle;">$${ratePerCrew.toFixed(2)}</td>
+            <td style="vertical-align: middle;">${purchasedAmountInput}</td>
+            <td style="vertical-align: middle;">$${deliveryCost.toFixed(2)}</td>
+            <td style="vertical-align: middle;">$${subtotal.toFixed(2)}</td>
+            <td style="vertical-align: middle;"><button class="btn btn-danger btn-sm delete-row" style="padding: 5px 16px !important;font-size: 14px !important;">Delete</button></td>
+        `;
+        servicesTableBody.appendChild(row);
+
+       recalculateTotal();
+		updateDeliveryRate();
+
+        // Reset form fields
+        serviceSelect.value = "";
+        serviceRate.value = "";
+        noOfCrew.value = "";
+		
+    });
+
+    // Delete a row from the table
+    servicesTableBody.addEventListener("click", (e) => {
+        if (e.target.classList.contains("delete-row")) {
+            const row = e.target.closest("tr");
+            row.remove();
+            recalculateTotal();
+			updateDeliveryRate();
+        }
+    });
+
+    // Update total and equivalent delivery cost when "Purchased Amount" is edited
+    servicesTableBody.addEventListener("input", (e) => {
+        if (e.target.classList.contains("purchased-amount")) {
+            const row = e.target.closest("tr");
+            const purchasedAmount = parseFloat(e.target.value) || 0;
+            const rate = parseFloat(row.cells[1].textContent.replace("$", "")) || 0;
+            const crewCount = parseInt(row.cells[2].textContent) || 0;
+            const crewRate = parseFloat(row.cells[3].textContent.replace("$", "")) || 0;
+
+            const newDeliveryCost = calculateDeliveryCost(purchasedAmount);
+            const newSubtotal = rate +  crewRate + newDeliveryCost;
+
+            // Update subtotal and delivery cost
+            row.cells[6].textContent = `$${newSubtotal.toFixed(2)}`;
+            row.cells[5].textContent = `$${newDeliveryCost.toFixed(2)}`;
+
+            // Recalculate total
+            recalculateTotal();
+			updateDeliveryRate();
+        }
+    });
+});
+    </script>
+<script>
+  
+
+
+// // Create a mapping of services to their corresponding rates
+const serviceRates = {
+    "removal-and-delivery": 75.00,
+    "college-room-move": 325.00,
+    "removal": 125.00,
+    "delivery": 0.00,
+    "hoisting": 350.00,
+    "mattress-removal": 125.00,
+    "re-arranging-service": 150.00,
+    "cleaning-services": 135.00,
+    "exterminator-washing-replacing-moving-blankets": 650.00,
+    "moving-services": 650.00
+};
+
+const serviceCrewCount = {
+    "removal-and-delivery": 2,
+    "college-room-move": 2,
+    "removal": 2,
+    "delivery": 2,
+    "hoisting": 4,
+    "mattress-removal": 2,
+    "re-arranging-service": 2,
+    "cleaning-services": 2,
+    "exterminator-washing-replacing-moving-blankets": 2,
+    "moving-services": 2
+};
+
+
+// // Function to update Delivery Rate based on Sub Total
+function updateDeliveryRate() {
+    const addedMileRate = parseFloat(document.getElementById("added-mile-rate")?.value) || 0;
+    const servicesTableBody = document.querySelector("#services-table tbody");
+    let tableSubTotal = 0;
+    let hasDeliveryService = false;
+
+    // Check if services table exists
+    if (!servicesTableBody) {
+        console.warn('Services table body not found');
+        return;
+    }
+
+    // Loop through all rows in the table
+    servicesTableBody.querySelectorAll("tr").forEach((row) => {
+        const serviceCell = row.cells[0]; // Service column (1st column, index 0)
+        const subtotalCell = row.cells[6]; // Subtotal column (7th column, index 6)
+        const subtotal = parseFloat(subtotalCell.textContent.replace("$", "")) || 0;
+
+        // Check if the service matches "delivery" or "removal-and-delivery"
+        if (serviceCell.textContent.trim() === "DELIVERY" || serviceCell.textContent.trim() === "REMOVAL AND DELIVERY") {
+            hasDeliveryService = true;
+        }
+
+        // Add subtotal to the total
+        tableSubTotal += subtotal;
+    });
+
+    // Add the added-mile-rate to the subtotal
+    const subTotal = tableSubTotal + addedMileRate;
+
+    // Update delivery rate if element exists
+    const deliveryRateElement = document.getElementById("delivery-rate");
+    if (deliveryRateElement) {
+        deliveryRateElement.value = hasDeliveryService ? "0.00" : "0.00";
+    }
+    
+    updateGrandTotal();
+}
+
+function updateGrandTotal() {
+    const addedMileRate = parseFloat(document.getElementById("added-mile-rate")?.value) || 0;
+    const servicesTableBody = document.querySelector("#services-table tbody");
+    let tableSubTotal = 0;
+    let containsMovingServices = false; 
+
+    // Loop through all rows in the table to calculate the subtotal
+    servicesTableBody.querySelectorAll("tr").forEach((row) => {
+        const subtotalCell = row.cells[6]; // Subtotal column (7th column, index 6)
+        const subtotal = parseFloat(subtotalCell.textContent.replace("$", "")) || 0;
+        tableSubTotal += subtotal;
+        
+        // Check if the row contains "MOVING SERVICES"
+        const serviceName = row.cells[0].textContent.trim(); // Assuming service name is in the first column
+        if (serviceName === "MOVING SERVICES") {
+            containsMovingServices = true;
+        }
+    });
+
+    // If "MOVING SERVICES" is found, apply transaction fee and truck fee
+    if (containsMovingServices) {
+        const truckFee = 198.800 + addedMileRate; // Fixed Truck Fee
+        const transactionFee = (tableSubTotal + truckFee) * 0.12; // 12% of Grand Total
+        tableSubTotal += transactionFee + truckFee; // Add both fees to Grand Total
+    } else {
+        tableSubTotal += addedMileRate;
+    }
+
+    
+    document.getElementById("grand-total-service").value = tableSubTotal.toFixed(2);
+    updatePaymentSummary(tableSubTotal);
+}
+
+function updatePaymentSummary(total) {
+    // Update grand total
+    const grandTotalElement = document.getElementById("grand-total-service");
+    if (grandTotalElement) {
+        grandTotalElement.value = total.toFixed(2);
+    }
+
+    // Check if moving services are present
+    const servicesTableBody = document.querySelector("#services-table tbody");
+    let containsMovingServices = false;
+    
+        servicesTableBody.querySelectorAll("tr").forEach((row) => {
+            const serviceName = row.cells[0].textContent.trim();
+            if (serviceName === "MOVING SERVICES") {
+                containsMovingServices = true;
+            }
+        });
+
+    // Update downpayment (30% of total) only if moving services are present
+    const downpaymentElement = document.getElementById("downpayment-service");
+    if (downpaymentElement) {
+        if (containsMovingServices) {
+            downpaymentElement.value = (total * 0.3).toFixed(2);
+        } else {
+            downpaymentElement.value = "0.00";
+        }
+    }
+}
+
+// Add event listener for changes in the Service selection
+document.getElementById("service-select").addEventListener("change", function() {
+
+    const selectedService = this.value;
+    const serviceRateInput = document.getElementById("service-rate");
+    const crewCountInput = document.getElementById("no-of-crew");
+    const crewRateInput = document.getElementById("crew-rate");
+    const items = document.getElementById("no_of_items");
+    const itemsValue = items ? parseInt(items.value) || 0 : 0;
+
+    // If a valid service is selected, update the rate and number of crew
+    if (serviceRates[selectedService]) {
+        crewCountInput.value = serviceCrewCount[selectedService];
+		
+ 		 if (selectedService !== "college-room-move" && selectedService !== "removal" && selectedService !== "removal-and-delivery" && selectedService !== "mattress-removal"  && selectedService !== "cleaning-services"  && selectedService !== "exterminator-washing-replacing-moving-blankets") {
+       		 crewRateInput.value = (serviceCrewCount[selectedService] * 48.75).toFixed(2); // Crew rate based on number of crew
+        	 serviceRateInput.value = serviceRates[selectedService].toFixed(2); 
+		 }		
+		else{
+			if(itemsValue > 1){
+				const servicetotal = serviceRates[selectedService] + (itemsValue * 75) 
+				serviceRateInput.value = servicetotal.toFixed(2);
+			}
+			else{
+				serviceRateInput.value = serviceRates[selectedService].toFixed(2) ; 
+			}
+			crewRateInput.value = 0;
+            }
+        } else {
+        serviceRateInput.value = "";
+        crewCountInput.value = "";
+        crewRateInput.value = "";
+    }
+
+    // Recalculate Sub Total, Delivery Rate, and Grand Total
+//     updateSubTotal();
+     updateDeliveryRate();
+     updateGrandTotal();
+});
+
+// Add event listener for changes in the Number of Crew input
+document.getElementById("no-of-crew").addEventListener("input", function() {
+    const selectedService = document.getElementById("service-select").value;
+    const crewCount = parseInt(this.value) || 0;
+    const crewRateInput = document.getElementById("crew-rate");
+
+    // Calculate the crew rate (number of crew * 48.75)
+    if (serviceCrewCount[selectedService]) {
+        const crewRate = crewCount * 48.75;
+        crewRateInput.value = crewRate.toFixed(2);
+    }
+
+    // Recalculate Sub Total, Delivery Rate, and Grand Total
+//     updateSubTotal();
+    updateDeliveryRate();
+    updateGrandTotal();
+});
+	
+	
+ // Define base costs for each crew size
+  const crewCosts = {
+    '2men': 175,
+    '3men': 201.50,
+    '4men': 253.50,
+    '5men': 316.88,
+    '3menspecial': 125
+  };
+	
+	  const crewNumber = {
+    '2men': 2,
+    '3men': 3,
+    '4men': 4,
+    '5men': 5,
+    '3menspecial': 3
+  };
+
+  // Reference to the total hours added field
+  const totalHoursField = document.getElementById('total-hours-added');
+  const numbercrew = document.getElementById('numbercrew');
+
+  // Track selected base cost
+  let baseCost = 0;
+
+  // Attach event listeners to crew buttons
+  document.querySelectorAll('.btn-moving').forEach(buttons => {
+    buttons.addEventListener('click', () => {
+      // Get the crew size from the button ID (e.g., '2men', '3men', etc.)
+      const crewSize = buttons.id.replace('add-', '');
+	  totalHoursField.value=0;
+	  
+	  
+	   document.getElementById('added-hours').value = '2';
+	   
+	   document.getElementById('men-selected').value = crewSize;
+	   
+		if(crewSize == "3menspecial")
+		{
+		    numbercrew.value=crewNumber[crewSize];
+            baseCost = crewCosts[crewSize];
+            // Update total cost display
+            totalHoursField.value = (baseCost * document.getElementById('added-hours').value).toFixed(2); // Show the base cost in the total cost field
+		}
+		else{
+		    
+      // Update the base cost based on selected crew size
+      if (crewCosts[crewSize]) {		  
+		numbercrew.value=crewNumber[crewSize];
+        baseCost = crewCosts[crewSize];
+        // Update total cost display
+        totalHoursField.value = (baseCost * crewNumber[crewSize]).toFixed(2); // Show the base cost in the total cost field
+      }
+		}
+    });
+  });
+
+  // Attach event listener to added hours input
+  document.getElementById('added-hours').addEventListener('change', (e) => {
+    // Get the number of additional hours
+		let addedHours = parseInt(e.target.value, 10);
+
+	  // If addedHours is NaN, less than 1, or negative, reset to 0
+	  if (isNaN(addedHours) || addedHours < 2) {
+		addedHours = 2;
+		e.target.value = '2';  // Clear input if it's invalid, negative, or less than 1
+	  }
+
+	  // If a valid number of hours (whole number >= 1) is entered, calculate total cost
+	  if (addedHours >= 2) {
+  	    const totalCost = (baseCost * addedHours).toFixed(2);
+		totalHoursField.value = totalCost; // Update the total cost field
+	  } else {
+		totalHoursField.value = baseCost.toFixed(2); // Show only the base cost if no valid hours are entered
+	  }
+  });
+	
+	
+	
+//   document.getElementById('add-sevice-moving').addEventListener('click', function (e) {
+		
+// 	const serviceSelect = document.getElementById("service-select");
+	  
+// 	  if (document.getElementById('numbercrew').value === '' || document.getElementById('numbercrew').value === '0') {
+// 		Swal.fire({
+// 			title: 'No Crew Selected',
+// 			text: 'Please select the number of crew before proceeding.',
+// 			icon: 'warning',
+// 			confirmButtonText: 'OK',
+// 		});
+
+// 		return;
+// 	}
+
+// 		  // Set the dropdown value to match the service
+// 		  serviceSelect.value = 'moving-services';
+
+// 		  // Dispatch the change event to trigger any related listeners
+// 		  const event = new Event("change");
+// 		  serviceSelect.dispatchEvent(event);
+	  
+// 	  		document.getElementById('no-of-crew').value = document.getElementById('numbercrew').value;
+// 	  		document.getElementById('crew-rate').value = document.getElementById('total-hours-added').value;
+	  
+// 		  // Simulate clicking the "Add Service" button
+//  		  addServiceButton.click();	  
+//   		  document.getElementById('customModal_moving_services').style.display = 'none';
+// });
+
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modals
+    const serviceModal = new bootstrap.Modal(document.getElementById('serviceModal'));
+    const movingServicesModal = new bootstrap.Modal(document.getElementById('customModal_moving_services'));
+
+    // Function to reset moving services modal state
+    function resetMovingServicesModal() {
+        document.getElementById('added-hours').value = '2';
+        document.getElementById('numbercrew').value = '';
+        document.getElementById('total-hours-added').value = '';
+        document.getElementById('men-selected').value = '';
+        baseCost = 0;
+    }
+
+    // Handle modal cleanup when hidden
+    document.getElementById('serviceModal').addEventListener('hidden.bs.modal', function () {
+        // Remove any remaining backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Remove modal-open class from body
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    });
+
+    // Handle moving services modal cleanup
+    document.getElementById('customModal_moving_services').addEventListener('hidden.bs.modal', function () {
+        // Remove any remaining backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Remove modal-open class from body
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        // Reset modal state
+        resetMovingServicesModal();
+    });
+
+    // Handle service button clicks
+    document.querySelectorAll('.btn-services').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const serviceSelect = document.getElementById("service-select");
+            const addServiceButton = document.getElementById("add-service");
+            
+            if (!serviceSelect || !addServiceButton) {
+                console.warn('Required elements not found');
+                return;
+            }
+
+            if (this.id === 'add-moving-services') {
+                // Reset modal state before showing
+                resetMovingServicesModal();
+                // Show the modal
+                movingServicesModal.show();
+            } else {
+                const serviceValue = this.id.replace("add-", "");
+                serviceSelect.value = serviceValue;
+                serviceSelect.dispatchEvent(new Event("change"));
+                addServiceButton.click();
+            }
+        });
+    });
+
+    // Close moving services modal when clicking the close button
+    document.querySelector('#customModal_moving_services .btn-close').addEventListener('click', function() {
+        movingServicesModal.hide();
+    });
+
+    // Handle add service moving button
+    document.getElementById('add-sevice-moving').addEventListener('click', function (e) {
+        const serviceSelect = document.getElementById("service-select");
+        
+        if (document.getElementById('numbercrew').value === '' || document.getElementById('numbercrew').value === '0') {
+            Swal.fire({
+                title: 'No Crew Selected',
+                text: 'Please select the number of crew before proceeding.',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+            });
+            return;
+        }
+
+        // Set the dropdown value to match the service
+        serviceSelect.value = 'moving-services';
+        serviceSelect.dispatchEvent(new Event("change"));
+        
+        document.getElementById('no-of-crew').value = document.getElementById('numbercrew').value;
+        document.getElementById('crew-rate').value = document.getElementById('total-hours-added').value;
+        
+        // Add the service
+        addServiceButton.click();
+        
+        // Hide the modal
+        movingServicesModal.hide();
+    });
+});
+</script>
 
 @endsection

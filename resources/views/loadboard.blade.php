@@ -13,6 +13,9 @@
             <div class="page-title-box d-flex align-items-center justify-content-between">
                 <h4 class="mb-0">Load Board</h4>
                 <div class="page-title-right">
+                    <a href="{{ route('leads.create') }}" class="btn btn-success me-2">
+                        <i class="fas fa-user-plus me-1"></i> Add Customer
+                    </a>
                     <button class="btn btn-primary" id="syncTransactions">
                         <i class="fas fa-sync-alt me-1"></i> Sync Transactions
                     </button>
