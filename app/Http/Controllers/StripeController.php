@@ -309,6 +309,7 @@ class StripeController extends Controller
             return response()->json([
                 'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
+                'stripeKey' => $settings->public_key,
                 'amount' => $amount
             ]);
 

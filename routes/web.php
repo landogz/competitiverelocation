@@ -23,6 +23,7 @@ use App\Http\Controllers\CalendarController;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\CreditCardAuthorizationController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +86,17 @@ Route::get('/payment/{id}', [StripeController::class, 'showPaymentPage'])->name(
 Route::post('/payment/process', [StripeController::class, 'processPayment'])->name('payment.process');
 Route::post('/payment/confirm', [StripeController::class, 'confirmPayment'])->name('payment.confirm');
 Route::get('/payment/success', [StripeController::class, 'paymentSuccess'])->name('payment.success');
+
+Route::get('/customer', function () {
+    return view('customer.customer');
+});
+
+Route::get('/customer/{id}', [CustomerController::class, 'show'])->name('customer.show');
+    // Customer inventory route
+Route::get('/customer/inventory/{transactionId}', [CustomerController::class, 'getInventory']);
+
+// Add payment activity route
+Route::get('/customer/payments/{transactionId}', [CustomerController::class, 'getPaymentActivity']);
 
 // All other routes should be protected with auth middleware
 Route::middleware(['auth'])->group(function () {
@@ -207,10 +219,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transaction-calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/calendar/events', [CalendarController::class, 'getEvents'])->name('calendar.events');
 
-    Route::get('/customer', function () {
-        return view('customer.customer');
-    });
-
     Route::get('/driver', function () {
         return view('customer.driver');
     });
@@ -310,6 +318,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Inventory Routes
     Route::get('/driver/inventory/{id}', [DriverController::class, 'getInventory'])->name('driver.inventory');
+
 
     // Transaction routes
     Route::post('/transaction/save', [TransactionController::class, 'saveTransaction'])->name('transaction.save');
