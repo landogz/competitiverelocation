@@ -132,6 +132,16 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      header, footer {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -207,6 +217,7 @@
       // Store transaction data globally
       window.transaction = transaction;
       window.inventory = inventory;
+      window.salesReps = @json($salesReps);
       
       // Update header information
       document.querySelector('#moving-top p:first-child span').textContent = `#${transaction.transaction_id} | ${transaction.lead_type === 'local' ? 'Local' : 'Long Distance'} - ${transaction.service || 'Residential'}`;
@@ -514,7 +525,46 @@
             <h3 class="font-medium mb-4">VALUATION COVERAGE:</h3>
             <div class="bg-surface-variant p-4 rounded-lg elevation-1">
               <p class="text-sm mb-4">CUSTOMERS DECLARED VALUE AND LIMIT OF COMPANY'S LIABILITY</p>
-              <p class="text-sm text-surface-onVariant">The customer agrees on the declared value of the property, and the customer (shipper) is required to declare in writing the released value of the property. Unless the customer specifically stated to be not exceeding $0.60 cents per pound per article with a limit of $2,000.00 while being handled by the carrier.</p>
+              <p class="text-sm text-surface-onVariant mb-4">The following is a description of the options for protecting your belongings during the moving process.</p>
+              
+              <div class="mb-4">
+                <p class="font-medium mb-2">Option 1: Released Value-</p>
+                <p class="text-sm text-surface-onVariant">$0.60 per pound per article up to a maximum of $2,000.00 Service Provider has a maximum liability under State Law for loss or damage to your property while being handled at the time of the job. Any damages not documented while the movers are present will not be the responsibility of the mover or Service Provider.</p>
+              </div>
+
+              <div class="mb-4">
+                <p class="font-medium mb-2">Option 2: Full Replacement Value-</p>
+                <p class="text-sm text-surface-onVariant mb-2">Additional Charges Apply for This Option</p>
+                <ol class="list-decimal list-inside text-sm text-surface-onVariant mb-4">
+                  <li>Repair the article to the extent necessary to restore it to the same condition as when it was received by Service Provider or pay you the cost of such repairs.</li>
+                  <li>Replace the article with an article of like kind and quality, or pay you the cost of such a replacement.</li>
+                </ol>
+              </div>
+
+              <p class="text-sm text-surface-onVariant mb-4">Any and all claims must be submitted in writing within 15 days of completed move. See Terms & Condition Services for more information.</p>
+
+              <div class="mb-4">
+                <p class="font-medium mb-2">Exclusions-</p>
+                <ul class="list-disc list-inside text-sm text-surface-onVariant space-y-1">
+                  <li>Items of extraordinary value not listed or claimed on the High Value Inventory Form</li>
+                  <li>Lamps, lamp shades, artwork, pictures, mirrors, artificial plants and statues not packed by Service Provider</li>
+                  <li>Any marble or glass not crated or boxed by Service Provider</li>
+                  <li>Items found in boxes not crated, packed or unpacked by Service Provider</li>
+                  <li>Any items packed and/or unpacked by Service Provider where they (Service Provider) were not the sole transporter</li>
+                  <li>Any items not put in appropriate boxes or crates, when Service Provider recommended (plasma televisions, grandfather clocks, etc.)</li>
+                  <li>Mechanical condition of audio/visual or electronic equipment</li>
+                  <li>Computers and battery operated items in transit or in storage</li>
+                  <li>Missing hardware not disassembled by Service Provider</li>
+                  <li>Gold leaf or plaster frames and chandeliers not crated by Service Provider</li>
+                  <li>Pressboard or particle board furniture</li>
+                  <li>Previously damaged or repaired items</li>
+                  <li>Previously damaged or loose veneer</li>
+                  <li>Furniture where glue has dried out</li>
+                  <li>Any small, loose items which are not boxed (keys, remote controls, etc.)</li>
+                  <li>If one item in a set is damaged, only that one item is covered by the insurance, not the whole set</li>
+                  <li>Plants</li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -696,9 +746,9 @@
           </div>
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
               <button id="complete-btn" onclick="handleComplete()" class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Complete</button>
-              <button class="flex items-center gap-2 bg-surface-variant text-surface-onVariant py-2 px-6 rounded-lg hover:bg-surface-variant/80 transition-colors">
+              <button onclick="printEstimates()" class="flex items-center gap-2 bg-surface-variant text-surface-onVariant py-2 px-6 rounded-lg hover:bg-surface-variant/80 transition-colors">
                 <span class="material-icons">print</span> Print
-            </button>
+              </button>
             </div>
           </div>
         </div>
@@ -1435,7 +1485,7 @@
           if (result.success && result.data) {
             // Update the comment field
             const formData = {
-              comments: comment,
+              comments: comment,  // Use the comment from textarea
               transaction_id: transactionId,
               // Include all existing fields to prevent data loss
               full_name: result.data.full_name,
@@ -1520,6 +1570,12 @@
       if (shipperDate) {
         shipperDate.textContent = auth.date ? new Date(auth.date).toLocaleDateString('en-US') : '';
       }
+
+      // Populate comments field
+      const shipperComments = document.getElementById('shipper-comments');
+      if (shipperComments) {
+        shipperComments.value = auth.comments || '';
+      }
     }
 
     // Add Stripe.js if not already present
@@ -1549,10 +1605,26 @@
       const data = await response.json();
       if (data.success) {
         const payments = data.payments || [];
+        const grandTotal = parseFloat(window.transaction.grand_total || 0);
+        const totalPaid = payments
+          .filter(payment => payment.status === 'Succeeded')
+          .reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+        const remaining = Math.max(grandTotal - totalPaid, 0);
         const hasPaidInitialDeposit = payments.some(payment => 
           payment.status === 'Succeeded' && 
           parseFloat(payment.amount) === parseFloat(window.transaction.downpayment)
         );
+
+        if (remaining === 0) {
+          document.getElementById('stripe-payment-form').innerHTML = `
+            <div class="p-8 text-center">
+              <div class="text-3xl mb-4">🎉</div>
+              <div class="text-xl font-bold mb-2">Thank you!</div>
+              <div class="text-surface-onVariant">Your balance is paid in full.</div>
+            </div>
+          `;
+          return;
+        }
 
         if (hasPaidInitialDeposit) {
           Swal.fire({
@@ -1729,6 +1801,383 @@
           <span class="font-medium ${remaining > 0 ? 'text-error' : 'text-green-600'}">$${remaining.toFixed(2)}</span>
         </div>
       `;
+    }
+
+    // Add print function for estimates
+    async function getJobTimeForPrint(transactionId) {
+      const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      const response = await fetch(`/driver/job-time/${transactionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': token
+        }
+      });
+      const data = await response.json();
+      return data.job_time || null;
+    }
+
+    async function printEstimates() {
+      const printWindow = window.open('', '_blank');
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US');
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      let signatureImgSrc = '';
+      const sigImgElem = document.querySelector('#shipper-signature img');
+      if (sigImgElem) {
+        signatureImgSrc = sigImgElem.src;
+      }
+      // Fetch job time for this transaction
+      const jobTime = await getJobTimeForPrint(window.transaction.transaction_id);
+      // Format job time
+      const startTime = jobTime && jobTime.start_time
+        ? new Date(jobTime.start_time).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })
+        : '';
+      const finishTime = jobTime && jobTime.end_time
+        ? new Date(jobTime.end_time).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })
+        : '';
+      let totalHours = '';
+      if (jobTime && jobTime.start_time && jobTime.end_time) {
+        const start = new Date(jobTime.start_time);
+        const end = new Date(jobTime.end_time);
+        const diffMs = end - start;
+        if (diffMs > 0) {
+          const hours = Math.floor(diffMs / 3600000);
+          const minutes = Math.floor((diffMs % 3600000) / 60000);
+          totalHours = `${hours} Hour${hours !== 1 ? 's' : ''} ${minutes} Minute${minutes !== 1 ? 's' : ''}`;
+        } else {
+          totalHours = '0 Hours 0 Minutes';
+        }
+      }
+      // Define signature and driver info for valuation coverage
+      const signatureImg = jobTime && jobTime.start_signature
+        ? `<img src="${jobTime.start_signature}" alt="Signature" style="max-height:32px;max-width:160px;object-fit:contain;background:#fff;display:inline-block;" />`
+        : `<span style=\"display:inline-block; border-bottom:1px solid #000; width:220px; height:18px; vertical-align:middle;\"></span>`;
+      let driverName = 'Driver Name';
+      let driverPhone = 'Driver Phone';
+      if (window.salesReps && window.transaction?.assigned_agent) {
+        const driver = window.salesReps.find(rep => rep.agent_id == window.transaction.assigned_agent);
+        if (driver) {
+          driverName = `${driver.first_name || ''} ${driver.last_name || ''}`.trim();
+          driverPhone = driver.phone || '';
+        }
+      }
+      // Company info
+      const companyName = window.transaction?.company_name || 'COMPETITIVE RELOCATION SERVICES';
+      const companyAddress = window.transaction?.company_address || '13 Galaxy Ct<br>Sewell, NJ 08080';
+      const companyPhone = window.transaction?.company_phone || '(877) 385-2919';
+      const usdot = window.transaction?.usdot || '1877921';
+      const mc = window.transaction?.mc || '677599';
+      // Customer info
+      const customerName = `${window.transaction?.firstname || ''} ${window.transaction?.lastname || ''}`.trim();
+      const pickup = window.transaction?.pickup_location || '';
+      const delivery = window.transaction?.delivery_location || '';
+      const cityStateZip = window.transaction?.pickup_citystatezip || '';
+      const deliveryCityStateZip = window.transaction?.delivery_citystatezip || '';
+      const phone = window.transaction?.phone || '';
+      // Rates
+      const subtotal = formatCurrency(window.transaction?.subtotal || 0);
+      const downpayment = formatCurrency(window.transaction?.downpayment || 0);
+      const grandTotal = formatCurrency(window.transaction?.grand_total || 0);
+      const discount = formatCurrency(window.transaction?.discount || 0);
+      // Trip details
+      const miles = window.transaction?.miles || '';
+      const totalCubicFt = window.inventory ? window.inventory.reduce((sum, item) => sum + ((parseFloat(item.cubic_ft) || 0) * (parseInt(item.quantity) || 1)), 0).toFixed(2) : '';
+      // Get the value from the shipper-comments textarea for printing
+      const shipperCommentsValue = document.getElementById('shipper-comments')?.value || '';
+      // Print content
+      const printContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bill of Lading - ${window.transaction?.transaction_id || ''}</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #222; }
+    .bol-header { text-align: center; margin-bottom: 8px; }
+    .bol-logo { max-width: 120px; margin-bottom: 2px; }
+    .bol-title { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    .bol-company { font-size: 13px; font-weight: bold; margin-top: 2px; }
+    .bol-contact { font-size: 12px; margin-bottom: 2px; }
+    .bol-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    .bol-table th, .bol-table td { border: 1px solid #888; padding: 5px 7px; vertical-align: top; }
+    .bol-table th { background: #e9e9e9; font-weight: bold; font-size: 12px; }
+    .bol-section-title { background: #e9e9e9; font-weight: bold; font-size: 13px; padding: 4px 7px; border: 1px solid #888; }
+    .bol-highlight { background: #fff700; font-weight: bold; }
+    .bol-red { color: #c00; font-weight: bold; }
+    .bol-yellow { background: #fff700; }
+    .bol-signature-label { font-size: 11px; color: #333; margin-top: 2px; }
+    .bol-signature-line { border-bottom: 1px solid #000; width: 90%; margin: 0 auto 2px auto; min-height: 32px; text-align: center; }
+    .bol-signature-img { max-height: 40px; max-width: 160px; object-fit: contain; background: #fff; display: inline-block; }
+    .bol-no-border { border: none !important; }
+    .bol-small { font-size: 11px; }
+    .bol-table td.bol-no-border { background: none; }
+    .bol-table th.bol-no-border { background: none; }
+    .bol-table th.bol-yellow, .bol-table td.bol-yellow { background: #fff700; }
+    .bol-table th.bol-red { color: #c00; background: #fff; }
+    .bol-table th.bol-section { background: #e9e9e9; font-size: 13px; }
+    .bol-table th, .bol-table td { word-break: break-word; }
+    .bol-table td.bol-center { text-align: center; }
+    .bol-table td.bol-bold { font-weight: bold; }
+    .bol-table td.bol-red { color: #c00; font-weight: bold; }
+    .bol-table td.bol-yellow { background: #fff700; }
+    .bol-table td.bol-small { font-size: 11px; }
+    .bol-table td.bol-signature { min-width: 120px; }
+    .bol-table td.bol-signature img { display: block; margin: 0 auto; }
+    .bol-table td.bol-signature-label { font-size: 10px; color: #666; text-align: center; }
+    .bol-table td.bol-no-border { border: none; }
+    .bol-table th.bol-no-border { border: none; }
+    .bol-table th.bol-section { border: 1px solid #888; }
+    .bol-table td.bol-section { border: 1px solid #888; }
+    .bol-table th, .bol-table td { vertical-align: top; }
+    .bol-table td.bol-initial { background: #fff700; font-weight: bold; text-align: left; }
+    .bol-table td.bol-initial-box { background: #fff700; font-weight: bold; text-align: left; border: 1px solid #888; }
+    .bol-table td.bol-payment { font-size: 11px; }
+    .bol-table td.bol-comment { font-size: 11px; }
+    .bol-table td.bol-hv { min-width: 60px; }
+    .bol-table td.bol-hv-comment { min-width: 120px; }
+    .bol-table td.bol-hv-center { text-align: center; }
+    .bol-table td.bol-hv-bold { font-weight: bold; }
+    .bol-table td.bol-hv-small { font-size: 11px; }
+    .bol-table td.bol-hv-yellow { background: #fff700; }
+    .bol-table td.bol-hv-red { color: #c00; font-weight: bold; }
+    .bol-table td.bol-hv-signature { min-width: 120px; }
+    .bol-table td.bol-hv-signature img { display: block; margin: 0 auto; }
+    .bol-table td.bol-hv-signature-label { font-size: 10px; color: #666; text-align: center; }
+    .bol-table td.bol-hv-no-border { border: none; }
+    .bol-table th.bol-hv-no-border { border: none; }
+    .bol-table th.bol-hv-section { border: 1px solid #888; }
+    .bol-table td.bol-hv-section { border: 1px solid #888; }
+    @media print { header, footer { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="bol-header">
+    <table style="width:100%; border:none; margin-bottom:8px;">
+  <tr>
+    <td style="width:33%; text-align:left; font-size:13px; vertical-align:top; line-height:1.4;">
+      <b>Date:</b> ${window.transaction?.date ? new Date(window.transaction.date).toLocaleDateString('en-US') : dateStr}<br>
+      <b>Time:</b> ${window.transaction?.time || timeStr}
+    </td>
+    <td style="width:34%; text-align:center; vertical-align:top;">
+      <div style="margin-bottom:2px;">
+        <img src="../assets/images/competitive.png" alt="Logo" style="max-width:120px; max-height:60px; display:block; margin:0 auto 2px auto;" />
+      </div>
+      <div style="font-size:16px; font-weight:bold; letter-spacing:1px;">BILL OF LADING</div>
+      <div style="font-size:13px; font-weight:bold;">COMPETITIVE RELOCATION SERVICES</div>
+      <div style="font-size:12px;">13 Galaxy Ct<br>Sewell, NJ 08080<br>(877) 385-2919</div>
+    </td>
+    <td style="width:33%; text-align:right; font-size:13px; vertical-align:top; line-height:1.4;">
+      <b>USDOT #1877921</b><br>
+      <b>MC #677599</b>
+    </td>
+  </tr>
+</table>
+  </div>
+
+  <table class="bol-table">
+    <tr>
+      <th colspan="2" class="bol-section-title">SHIP FROM:</th>
+      <th colspan="2" class="bol-section-title">SHIP TO:</th>
+    </tr>
+    <tr>
+      <td class="bol-small"><b>CUSTOMER NAME:</b></td>
+      <td class="bol-small">${customerName}</td>
+      <td class="bol-small"><b>CUSTOMER NAME:</b></td>
+      <td class="bol-small">${customerName}</td>
+    </tr>
+    <tr>
+      <td class="bol-small"><b>PICK UP ADDRESS:</b></td>
+      <td class="bol-small">${pickup}</td>
+      <td class="bol-small"><b>DELIVERY ADDRESS:</b></td>
+      <td class="bol-small">${delivery}</td>
+    </tr>
+    <tr>
+      <td class="bol-small"><b>Phone:</b></td>
+      <td class="bol-small">${phone}</td>
+      <td class="bol-small"><b>Phone:</b></td>
+      <td class="bol-small">${phone}</td>
+    </tr>
+    <tr>
+      <td class="bol-small"><b>ADDITIONAL INFORMATION:</b></td>
+      <td colspan="3" class="bol-small"></td>
+    </tr>
+  </table>
+
+  <table class="bol-table">
+    <tr>
+      <th colspan="2" class="bol-section-title">RATES:</th>
+      <th colspan="2" class="bol-section-title">VALUATION COVERAGE:</th>
+    </tr>
+    <tr>
+      <td colspan="2" class="bol-small" style="width:50%;vertical-align:top;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #888;">Description</th>
+            <th style="text-align:right; border-bottom:1px solid #888;">Price</th>
+          </tr>
+          <tr>
+            <td>MOVING SERVICES - ${window.transaction?.services?.[0]?.rate || '$0.00'} / ${window.transaction?.services?.[0]?.crew_rate || ''} / ${window.transaction?.services?.[0]?.no_of_crew || ''} Men</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.subtotal || 0)}</td>
+          </tr>
+          <tr>
+            <td>Moving Supplies</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.supplies_total || 0)}</td>
+          </tr>
+          <tr>
+            <td>Additional Services</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.additional_services_total || 0)}</td>
+          </tr>
+          <tr>
+            <td>Additional Charges</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.additional_charges_total || 0)}</td>
+          </tr>
+          <tr>
+            <td>Truck Fee Charges</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.truck_fee || 0)}</td>
+          </tr>
+          <tr>
+            <td>Transaction Fee</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.software_fee || 0)}</td>
+          </tr>
+          <tr>
+            <td>Discount</td>
+            <td style="text-align:right;">${formatCurrency(window.transaction?.discount || 0)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Initial Deposit</td>
+            <td style="text-align:right; font-weight:bold;">${formatCurrency(window.transaction?.downpayment || 0)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Total</td>
+            <td style="text-align:right; font-weight:bold;">${formatCurrency(window.transaction?.grand_total || 0)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Remaining Balance</td>
+            <td style="text-align:right; font-weight:bold;">${formatCurrency((parseFloat(window.transaction?.grand_total || 0) - parseFloat(window.transaction?.downpayment || 0)) || 0)}</td>
+          </tr>
+        </table>
+      </td>
+      <td colspan="2" class="bol-small" style="width:50%;vertical-align:top;">
+        <span class="bol-red">CUSTOMERS DECLARED VALUE AND LIMIT OF COMPANY'S LIABILITY</span><br>
+        <span style="font-size:11px;">Since rates are based on the declared value of the property, and the customer (shipper) is required to declare in writing the released value of the property, the agreed or declared value of the property is hereby specifically stated to be not exceeding $0.60 cents per pound per article with a limit of $2,000.00 while being handled by the carrier.</span><br><br>
+        <span class="bol-yellow" style="padding:2px 6px;">Signature:</span> ${signatureImg}<br>
+        Driver: ${driverName}<br>
+        Phone: ${driverPhone}
+      </td>
+    </tr>
+  </table>
+
+  <table class="bol-table">
+    <tr>
+      <th class="bol-section-title">TRIP DETAILS:</th>
+      <th class="bol-section-title">TOTAL HOURS:</th>
+    </tr>
+    <tr>
+      <td class="bol-small" style="width:50%;vertical-align:top;">
+        <b>MILEAGE BETWEEN:</b> ${miles}<br>
+        <b>ESTIMATED WEIGHT:</b> ${totalCubicFt}
+      </td>
+      <td class="bol-small" style="width:50%;vertical-align:top;">
+        <b>START TIME:</b> ${startTime}<br>
+        <b>FINISH TIME:</b> ${finishTime}<br>
+        <b>TOTAL HOURS:</b> ${totalHours}
+      </td>
+    </tr>
+  </table>
+
+  <table class="bol-table">
+    <tr>
+      <th class="bol-section-title">ADDITIONAL COMMENTS:</th>
+      <th class="bol-section-title">PAYMENT TERMS:</th>
+    </tr>
+    <tr>
+      <td class="bol-comment" style="width:50%;vertical-align:top;">
+        ${shipperCommentsValue}
+      </td>
+      <td class="bol-payment" style="width:50%;vertical-align:top;">
+        DEPOSITS ARE NON-REFUNDABLE AND REMAINING BALANCES IS DUE CASH ONLY. PLEASE HAVE YOUR PAYMENT READY WHEN CREW DELIVERY.
+      </td>
+    </tr>
+  </table>
+
+  <table class="bol-table">
+    <tr>
+      <th class="bol-section-title">Shipper Signature on Pick Up</th>
+      <th class="bol-section-title">Driver Signature on Pick Up</th>
+    </tr>
+    <tr>
+      <td class="bol-signature" style="width:50%;vertical-align:top;">
+        Shipper Signature/Date:<br>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div>
+            ${signatureImgSrc
+              ? `<img src="${signatureImgSrc}" alt="Shipper Signature" style="max-height:32px;max-width:160px;object-fit:contain;background:#fff;display:inline-block;" />`
+              : `<span style=\"display:inline-block; border-bottom:1px solid #000; width:220px; height:18px; vertical-align:middle;\"></span>`
+            }
+          </div>
+          <div>
+            <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${new Date().toLocaleDateString('en-US')}</span>
+          </div>
+        </div>
+        <br><span class="bol-small">This is to certify that the above-named materials are properly classified, packaged, marked, and labeled, and are in proper condition for transportation according to the applicable regulations of the DOT. This contract is non-negotiable, and all monies are due COD are described in your contract.</span>
+      </td>
+      <td class="bol-signature" style="width:50%;vertical-align:top;">
+        Driver Signature/Date:<br>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div>
+            ${jobTime && jobTime.start_signature
+              ? `<img src="${jobTime.start_signature}" alt="Driver Signature" style="max-height:32px;max-width:160px;object-fit:contain;background:#fff;display:inline-block;" />`
+              : `<span style=\"display:inline-block; border-bottom:1px solid #000; width:220px; height:18px; vertical-align:middle;\"></span>`
+            }
+          </div>
+          <div>
+            <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${jobTime && jobTime.start_time ? new Date(jobTime.start_time).toLocaleDateString('en-US') : ''}</span>
+          </div>
+        </div>
+        Time: <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${jobTime && jobTime.start_time ? new Date(jobTime.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}</span><br><br>
+        Drivers Signature on Delivery<br>
+        Driver Signature/Date:<br>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <div>
+            ${jobTime && jobTime.end_signature
+              ? `<img src="${jobTime.end_signature}" alt="Driver Signature" style="max-height:32px;max-width:160px;object-fit:contain;background:#fff;display:inline-block;" />`
+              : `<span style=\"display:inline-block; border-bottom:1px solid #000; width:220px; height:18px; vertical-align:middle;\"></span>`
+            }
+          </div>
+          <div>
+            <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${jobTime && jobTime.end_time ? new Date(jobTime.end_time).toLocaleDateString('en-US') : ''}</span>
+          </div>
+        </div>
+        Time: <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${jobTime && jobTime.end_time ? new Date(jobTime.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `;
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.onload = function() {
+        printWindow.print();
+        printWindow.onafterprint = function() {
+          printWindow.close();
+        };
+      };
     }
   </script>
 </body>

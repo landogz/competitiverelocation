@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+  <!-- Add Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Material Design 3 Color System -->
@@ -580,7 +582,46 @@
             <h3 class="font-medium mb-4">VALUATION COVERAGE:</h3>
             <div class="bg-surface-variant p-4 rounded-lg elevation-1">
               <p class="text-sm mb-4">CUSTOMERS DECLARED VALUE AND LIMIT OF COMPANY'S LIABILITY</p>
-              <p class="text-sm text-surface-onVariant">The customer agrees on the declared value of the property, and the customer (shipper) is required to declare in writing the released value of the property. Unless the customer specifically stated to be not exceeding $0.60 cents per pound per article with a limit of $2,000.00 while being handled by the carrier.</p>
+              <p class="text-sm text-surface-onVariant mb-4">The following is a description of the options for protecting your belongings during the moving process.</p>
+              
+              <div class="mb-4">
+                <p class="font-medium mb-2">Option 1: Released Value-</p>
+                <p class="text-sm text-surface-onVariant">$0.60 per pound per article up to a maximum of $2,000.00 Service Provider has a maximum liability under State Law for loss or damage to your property while being handled at the time of the job. Any damages not documented while the movers are present will not be the responsibility of the mover or Service Provider.</p>
+              </div>
+
+              <div class="mb-4">
+                <p class="font-medium mb-2">Option 2: Full Replacement Value-</p>
+                <p class="text-sm text-surface-onVariant mb-2">Additional Charges Apply for This Option</p>
+                <ol class="list-decimal list-inside text-sm text-surface-onVariant mb-4">
+                  <li>Repair the article to the extent necessary to restore it to the same condition as when it was received by Service Provider or pay you the cost of such repairs.</li>
+                  <li>Replace the article with an article of like kind and quality, or pay you the cost of such a replacement.</li>
+                </ol>
+              </div>
+
+              <p class="text-sm text-surface-onVariant mb-4">Any and all claims must be submitted in writing within 15 days of completed move. See Terms & Condition Services for more information.</p>
+
+              <div class="mb-4">
+                <p class="font-medium mb-2">Exclusions-</p>
+                <ul class="list-disc list-inside text-sm text-surface-onVariant space-y-1">
+                  <li>Items of extraordinary value not listed or claimed on the High Value Inventory Form</li>
+                  <li>Lamps, lamp shades, artwork, pictures, mirrors, artificial plants and statues not packed by Service Provider</li>
+                  <li>Any marble or glass not crated or boxed by Service Provider</li>
+                  <li>Items found in boxes not crated, packed or unpacked by Service Provider</li>
+                  <li>Any items packed and/or unpacked by Service Provider where they (Service Provider) were not the sole transporter</li>
+                  <li>Any items not put in appropriate boxes or crates, when Service Provider recommended (plasma televisions, grandfather clocks, etc.)</li>
+                  <li>Mechanical condition of audio/visual or electronic equipment</li>
+                  <li>Computers and battery operated items in transit or in storage</li>
+                  <li>Missing hardware not disassembled by Service Provider</li>
+                  <li>Gold leaf or plaster frames and chandeliers not crated by Service Provider</li>
+                  <li>Pressboard or particle board furniture</li>
+                  <li>Previously damaged or repaired items</li>
+                  <li>Previously damaged or loose veneer</li>
+                  <li>Furniture where glue has dried out</li>
+                  <li>Any small, loose items which are not boxed (keys, remote controls, etc.)</li>
+                  <li>If one item in a set is damaged, only that one item is covered by the insurance, not the whole set</li>
+                  <li>Plants</li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -808,74 +849,74 @@
         </div>
       `,
       'payments': `
-        <div class="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md mb-20">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Payment Information</h2>
+        <div class="max-w-7xl mx-auto">
+          <h2 class="text-2xl font-medium mb-6">Payments</h2>
           
-          <!-- Payment Summary -->
-          <div class="bg-gray-50 p-4 rounded-lg mb-6">
-            <h3 class="font-semibold mb-3">Payment Summary</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p class="text-sm text-gray-600">Initial Deposit</p>
-                <p class="text-lg font-bold">$625.00</p>
+          <!-- Payment Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Payment Form Card -->
+            <div class="bg-surface rounded-lg elevation-1 overflow-hidden">
+              <div class="bg-surface-variant px-6 py-4">
+                <h3 class="text-lg font-medium">Make a Payment</h3>
               </div>
-              <div>
-                <p class="text-sm text-gray-600">Remaining Balance</p>
-                <p class="text-lg font-bold">$625.00</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-600">Total Amount</p>
-                <p class="text-lg font-bold">$1,250.00</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-600">Payment Status</p>
-                <p class="text-lg font-bold text-green-600">Partially Paid</p>
+              <div class="p-6">
+                <form id="stripe-payment-form">
+                  <div id="stripe-payment-element" class="mb-6"></div>
+                  <button id="stripe-submit-button" class="w-full px-6 py-3 bg-primary text-primary-on rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2" type="submit">
+                    <span id="stripe-button-text">Pay Now</span>
+                    <div class="spinner hidden" id="stripe-spinner"></div>
+                  </button>
+                </form>
               </div>
             </div>
-          </div>
-          
-          <!-- Payment History -->
-          <div class="mb-6">
-            <h3 class="font-semibold mb-3">Payment History</h3>
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-[600px]">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="text-left p-2">Date</th>
-                    <th class="text-left p-2">Description</th>
-                    <th class="text-left p-2">Amount</th>
-                    <th class="text-left p-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr>
-                    <td class="p-2">July 21, 2021</td>
-                    <td class="p-2">Initial Deposit</td>
-                    <td class="p-2">$625.00</td>
-                    <td class="p-2 text-green-600">Paid</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2">-</td>
-                    <td class="p-2">Remaining Balance</td>
-                    <td class="p-2">$625.00</td>
-                    <td class="p-2 text-yellow-600">Pending</td>
-                  </tr>
-                </tbody>
-              </table>
+
+            <!-- Thank You Card (Hidden by default) -->
+            <div id="thank-you-card" class="bg-surface rounded-lg elevation-1 overflow-hidden hidden">
+              <div class="bg-surface-variant px-6 py-4">
+                <h3 class="text-lg font-medium">Payment Complete</h3>
+              </div>
+              <div class="p-6 text-center">
+                <div class="mb-6">
+                  <span class="material-icons text-6xl text-primary mb-4">check_circle</span>
+                  <h4 class="text-xl font-medium mb-2">Thank You!</h4>
+                  <p class="text-surface-onVariant mb-4">We appreciate your business and trust in our services.</p>
+                </div>
+                <div class="bg-surface-variant/50 rounded-lg p-4 mb-6">
+                  <p class="text-sm text-surface-onVariant mb-2">Transaction Details:</p>
+                  <p class="font-medium" id="thank-you-transaction-id"></p>
+                </div>
+                <p class="text-sm text-surface-onVariant">If you have any questions, please don't hesitate to contact us.</p>
+              </div>
             </div>
-          </div>
-          
-          <!-- Payment Instructions -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="font-semibold mb-3">Payment Instructions</h3>
-            <p class="text-sm mb-2">The remaining balance of $625.00 is due upon delivery.</p>
-            <p class="text-sm mb-2">Payment methods accepted:</p>
-            <ul class="list-disc pl-5 text-sm mb-4">
-              <li>Cash</li>
-              <li>Credit Card</li>
-              <li>Debit Card</li>
-            </ul>
-            <p class="text-sm font-medium">Please have your payment ready when the crew delivers your items.</p>
+
+            <!-- Payment Activity Card -->
+            <div class="bg-surface rounded-lg elevation-1 overflow-hidden">
+              <div class="bg-surface-variant px-6 py-4">
+                <h3 class="text-lg font-medium">Payment Activity</h3>
+              </div>
+              <div class="p-6">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="border-b border-surface-variant">
+                        <th class="text-left py-3 px-4 font-medium text-surface-onVariant">Status</th>
+                        <th class="text-left py-3 px-4 font-medium text-surface-onVariant">Date</th>
+                        <th class="text-left py-3 px-4 font-medium text-surface-onVariant">Method</th>
+                        <th class="text-right py-3 px-4 font-medium text-surface-onVariant">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody id="payments-activity-table" class="divide-y divide-surface-variant">
+                      <!-- Payment rows will be inserted here -->
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- Payment Summary -->
+                <div class="mt-6 space-y-2 text-right text-sm" id="payments-totals">
+                  <!-- Totals will be inserted here -->
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       `,
@@ -1992,6 +2033,376 @@
           completeBtn.innerHTML = 'Complete';
         });
     }
+
+    // Add this after the existing script code
+    let stripe, elements, paymentElement;
+
+    async function initializeStripePayment() {
+      try {
+        // Calculate remaining balance
+        const response = await fetch(`/customer/payments/${window.currentTransaction.id}`);
+        const data = await response.json();
+        
+        let remainingBalance = 0;
+        let totalPaid = 0;
+        let grandTotal = 0;
+
+        if (data.success) {
+          const payments = data.payments || [];
+          totalPaid = payments.reduce((sum, payment) => {
+            if (payment.status === 'Succeeded') {
+              return sum + parseFloat(payment.amount);
+            }
+            return sum;
+          }, 0);
+          
+          grandTotal = parseFloat(window.currentTransaction.grand_total || 0);
+          remainingBalance = Math.max(grandTotal - totalPaid, 0);
+
+          // Update payment activity display
+          const tbody = document.querySelector('#payments-activity-table');
+          if (tbody) {
+            tbody.innerHTML = '';
+            data.payments.forEach(payment => {
+              let statusClass = '';
+              let statusText = payment.status;
+              if (payment.status === 'Succeeded') {
+                statusClass = 'bg-green-600 text-white';
+                statusText = 'PAID';
+              } else {
+                statusClass = 'bg-yellow-100 text-yellow-800';
+              }
+              const paymentDate = new Date(payment.created_at);
+              const formattedDate = paymentDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+              });
+              tbody.innerHTML += `
+                <tr class="hover:bg-surface-variant/50 transition-colors">
+                  <td class="py-3 px-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                      ${statusText}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
+                  <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
+                  <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
+                </tr>
+              `;
+            });
+          }
+
+          // Update totals display
+          const totalsDiv = document.getElementById('payments-totals');
+          if (totalsDiv) {
+            totalsDiv.innerHTML = `
+              <div class="flex justify-between items-center py-2">
+                <span class="text-surface-onVariant">Total Paid:</span>
+                <span class="font-medium">$${totalPaid.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between items-center py-2">
+                <span class="text-surface-onVariant">Grand Total:</span>
+                <span class="font-medium">$${grandTotal.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-t border-surface-variant mt-2 pt-2">
+                <span class="text-surface-onVariant">Remaining Balance:</span>
+                <span class="font-medium ${remainingBalance > 0 ? 'text-error' : 'text-green-600'}">$${remainingBalance.toFixed(2)}</span>
+              </div>
+            `;
+          }
+        }
+
+        // Show/hide payment form or thank you card based on remaining balance
+        const paymentForm = document.getElementById('stripe-payment-form').closest('.bg-surface');
+        const thankYouCard = document.getElementById('thank-you-card');
+        
+        if (remainingBalance === 0) {
+          paymentForm.classList.add('hidden');
+          thankYouCard.classList.remove('hidden');
+          document.getElementById('thank-you-transaction-id').textContent = `Transaction #${window.currentTransaction.transaction_id}`;
+          return;
+        } else {
+          paymentForm.classList.remove('hidden');
+          thankYouCard.classList.add('hidden');
+        }
+
+        // Validate remaining balance
+        if (remainingBalance <= 0) {
+          showStripeMessage('No remaining balance to pay.', 'error');
+          return;
+        }
+
+        // Fetch client secret and publishable key from backend
+        const paymentResponse = await fetch('/payment/process', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({
+            transaction_id: window.currentTransaction.id,
+            amount: remainingBalance.toFixed(2),
+            payment_type: 'remaining_balance',
+            is_remaining_balance: true, // Add this flag to explicitly indicate this is a remaining balance payment
+            payment_method_id: 'pm_card_visa' // Remove for live, keep for test
+          })
+        });
+
+        const paymentData = await paymentResponse.json();
+        
+        if (!paymentData.success) {
+          // Show error message and navigate to services page
+          await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: paymentData.message || 'Failed to process payment',
+            confirmButtonColor: '#dc3545'
+          });
+          navigate('services');
+          return;
+        }
+
+        // Log the payment data for debugging
+        console.log('Payment Process Response:', {
+          amount: remainingBalance.toFixed(2),
+          payment_type: 'remaining_balance',
+          is_remaining_balance: true,
+          transaction_id: window.currentTransaction.id
+        });
+
+        // Use the publishable key from backend response
+        const publishableKey = paymentData.stripeKey;
+        if (!publishableKey) {
+          showStripeMessage('Stripe publishable key not found.', 'error');
+          return;
+        }
+
+        // Initialize Stripe
+        stripe = Stripe(publishableKey);
+        
+        // Create Elements instance
+        elements = stripe.elements({
+          clientSecret: paymentData.clientSecret,
+          appearance: {
+            theme: 'stripe',
+            variables: {
+              colorPrimary: '#1061B1',
+              colorBackground: '#ffffff',
+              colorText: '#1C1B1F',
+              colorDanger: '#B3261E',
+              fontFamily: 'Roboto, system-ui, sans-serif',
+              spacingUnit: '4px',
+              borderRadius: '8px'
+            }
+          }
+        });
+
+        // Create and mount the Payment Element
+        paymentElement = elements.create('payment');
+        paymentElement.mount('#stripe-payment-element');
+
+        // Update button text to show remaining balance
+        const submitButton = document.getElementById('stripe-submit-button');
+        const buttonText = document.getElementById('stripe-button-text');
+        if (submitButton && buttonText) {
+          submitButton.disabled = false;
+          buttonText.textContent = `Pay Remaining Balance ($${remainingBalance.toFixed(2)})`;
+        }
+
+      } catch (error) {
+        console.error('Error initializing Stripe:', error);
+        showStripeMessage('Failed to initialize payment system. Please try again.', 'error');
+      }
+    }
+
+    function showStripeMessage(message, type = 'error') {
+      Swal.fire({
+        icon: type === 'error' ? 'error' : 'success',
+        title: type === 'error' ? 'Error' : 'Success',
+        text: message,
+        confirmButtonColor: type === 'error' ? '#dc3545' : '#28a745',
+        confirmButtonText: 'OK'
+      });
+    }
+
+    async function handleStripeSubmit(e) {
+      e.preventDefault();
+      
+      const submitButton = document.getElementById('stripe-submit-button');
+      const buttonText = document.getElementById('stripe-button-text');
+      const spinner = document.getElementById('stripe-spinner');
+      const paymentForm = document.getElementById('stripe-payment-form');
+      
+      // Prevent double submission
+      if (submitButton.disabled) {
+        return;
+      }
+      
+      try {
+        // Disable the button and show loading state
+        submitButton.disabled = true;
+        buttonText.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        paymentForm.style.pointerEvents = 'none';
+
+        // Confirm the payment
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/payment/success`,
+          },
+          redirect: 'if_required'
+        });
+
+        if (error) {
+          showStripeMessage(error.message, 'error');
+          return;
+        }
+
+        if (paymentIntent) {
+          // Confirm on server
+          const res = await fetch('/payment/confirm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+              transaction_id: window.currentTransaction.id,
+              payment_intent_id: paymentIntent.id,
+              payment_type: 'remaining_balance' // Add payment type to distinguish from downpayment
+            })
+          });
+
+          const result = await res.json();
+          
+          if (result.success) {
+            showStripeMessage('Payment successful!', 'success');
+            // Reload payment activity
+            await loadPaymentsActivity(window.currentTransaction.id);
+            // Short delay before refreshing
+            setTimeout(() => navigate('payments'), 500);
+          } else {
+            showStripeMessage(result.message, 'error');
+          }
+        }
+      } catch (err) {
+        console.error('Payment error:', err);
+        showStripeMessage(err.message || 'An error occurred during payment. Please try again.', 'error');
+      } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        buttonText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        paymentForm.style.pointerEvents = 'auto';
+      }
+    }
+
+    // Add spinner styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Add JS to fetch and render payment activity
+    async function loadPaymentsActivity(transactionId) {
+      const res = await fetch(`/customer/payments/${transactionId}`);
+      const data = await res.json();
+      if (!data.success) return;
+
+      const tbody = document.querySelector('#payments-activity-table');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      let totalPaid = 0;
+
+      data.payments.forEach(payment => {
+        totalPaid += parseFloat(payment.amount);
+        let statusClass = '';
+        let statusText = payment.status;
+        if (payment.status === 'Succeeded') {
+          statusClass = 'bg-green-600 text-white';
+          statusText = 'PAID';
+        } else {
+          statusClass = 'bg-yellow-100 text-yellow-800';
+        }
+        // Format date to be more readable
+        const paymentDate = new Date(payment.created_at);
+        const formattedDate = paymentDate.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true
+        });
+        tbody.innerHTML += `
+          <tr class="hover:bg-surface-variant/50 transition-colors">
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                ${statusText}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
+            <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
+            <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
+          </tr>
+        `;
+      });
+
+      // Totals
+      const t = window.currentTransaction || {};
+      const grandTotal = parseFloat(t.grand_total || 0);
+      const remaining = Math.max(grandTotal - totalPaid, 0);
+      
+      document.getElementById('payments-totals').innerHTML = `
+        <div class="flex justify-between items-center py-2">
+          <span class="text-surface-onVariant">Total Paid:</span>
+          <span class="font-medium">$${totalPaid.toFixed(2)}</span>
+        </div>
+        <div class="flex justify-between items-center py-2">
+          <span class="text-surface-onVariant">Grand Total:</span>
+          <span class="font-medium">$${grandTotal.toFixed(2)}</span>
+        </div>
+        <div class="flex justify-between items-center py-2 border-t border-surface-variant mt-2 pt-2">
+          <span class="text-surface-onVariant">Remaining Balance:</span>
+          <span class="font-medium ${remaining > 0 ? 'text-error' : 'text-green-600'}">$${remaining.toFixed(2)}</span>
+        </div>
+      `;
+    }
+
+    // Extend navigate to initialize Stripe on payments tab
+    const originalNavigate = navigate;
+    navigate = function(page) {
+      originalNavigate(page);
+      if (page === 'payments') {
+        setTimeout(() => {
+          initializeStripePayment();
+          document.getElementById('stripe-payment-form').addEventListener('submit', handleStripeSubmit);
+          if (window.currentTransaction && window.currentTransaction.id) {
+            loadPaymentsActivity(window.currentTransaction.id);
+          }
+        }, 200);
+      }
+    };
   </script>
 </body>
 </html>

@@ -248,27 +248,28 @@ class StripeController extends Controller
                 throw new \Exception('Payment system is currently unavailable.');
             }
 
-            // Get the services from the transaction
-            $services = is_string($transaction->services) ? json_decode($transaction->services, true) : $transaction->services;
-            
-            // Determine the amount based on service type
-            $amount = 0;
-            $hasMovingServices = false;
-            
-            if (is_array($services)) {
-                foreach ($services as $service) {
-                    if (isset($service['name']) && $service['name'] === 'MOVING SERVICES') {
-                        $hasMovingServices = true;
-                        // Use downpayment for moving services
-                        $amount = floatval(str_replace(['$', ','], '', $transaction->downpayment));
-                        break;
-                    }
-                }
+            // Check if job times are completed
+            $jobTime = \App\Models\JobTime::where('transaction_id', $transaction->transaction_id)->first();
+            if (!$jobTime || !$jobTime->end_time || !$jobTime->end_signature) {
+                throw new \Exception('Cannot process payment. Job must be completed with end time and signature first.');
             }
+
+            // Calculate the amount based on payment type
+            $amount = 0;
             
-            // If no moving services, use grand total
-            if (!$hasMovingServices) {
-                $amount = floatval(str_replace(['$', ','], '', $transaction->grand_total));
+            // If this is a remaining balance payment
+            if ($request->is_remaining_balance) {
+                // Get all successful payments for this transaction
+                $totalPaid = \App\Models\TransactionPayment::where('transaction_id', $transaction->id)
+                    ->where('status', 'succeeded')
+                    ->sum('amount');
+                
+                // Calculate remaining balance
+                $grandTotal = floatval(str_replace(['$', ','], '', $transaction->grand_total));
+                $amount = max($grandTotal - $totalPaid, 0);
+            } else {
+                // For initial deposit, use the downpayment amount
+                $amount = floatval(str_replace(['$', ','], '', $transaction->downpayment));
             }
 
             // Set Stripe API key from settings
@@ -296,12 +297,12 @@ class StripeController extends Controller
                 'currency' => 'usd',
                 'customer' => $customer->id,
                 'payment_method' => $request->payment_method_id,
-                'description' => 'Payment for Services',
+                'description' => $request->is_remaining_balance ? 'Remaining Balance Payment' : 'Initial Deposit Payment',
                 'payment_method_types' => ['card'],
                 'metadata' => [
                     'transaction_id' => $transaction->id,
                     'customer_name' => $transaction->firstname . ' ' . $transaction->lastname,
-                    'service_type' => $hasMovingServices ? 'MOVING SERVICES' : 'OTHER'
+                    'payment_type' => $request->is_remaining_balance ? 'remaining_balance' : 'initial_deposit'
                 ],
                 'setup_future_usage' => 'off_session'
             ]);
@@ -358,20 +359,28 @@ class StripeController extends Controller
                         'raw_response' => json_encode($paymentIntent)
                     ]);
 
-                    // Update transaction with payment information
+                    // Update transaction with payment information and status
                     $transaction->payment_id = $paymentIntent->id;
+                    
+                    // Check if this is the final payment (remaining balance)
+                    if ($request->payment_type === 'remaining_balance') {
+                        $transaction->status = 'completed';
+                    }
+                    
                     $transaction->save();
 
                     Log::info('Payment processed successfully', [
                         'transaction_id' => $transaction->id,
                         'payment_intent_id' => $paymentIntent->id,
-                        'amount' => $paymentIntent->amount / 100
+                        'amount' => $paymentIntent->amount / 100,
+                        'status' => $transaction->status
                     ]);
                 }
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Payment successful!'
+                    'message' => 'Payment successful!',
+                    'status' => $transaction->status
                 ]);
             } else {
                 return response()->json([
