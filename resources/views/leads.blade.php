@@ -4,20 +4,27 @@
 
 <!-- Required Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables CSS and JS -->
+<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
 <!-- Select2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<!-- DataTables CSS and JS -->
-<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<!-- CKEditor -->
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 <!-- Moment.js for date formatting -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<!-- jQuery Easing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
-<link href="https://unpkg.com/lightbox2@2.11.3/dist/css/lightbox.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/lightbox2@2.11.3/dist/js/lightbox-plus-jquery.min.js"></script>
 
 
 
@@ -80,6 +87,10 @@
     
     .cke_editable table tr:nth-child(even) {
         background-color: #fafafa;
+    }
+
+    #paymentsTable, #sentEmailsTable {
+        width: 100% !important;
     }
 </style>
 @section('content')
@@ -458,7 +469,7 @@
                                 </button>
 
                             <div class="table-responsive">
-                                <table class="table table-bordered mb-0 table-centered" id="sentEmailsTable">
+                                <table class="table table-bordered mb-0 table-centered w-100" id="sentEmailsTable">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Date</th>
@@ -475,31 +486,24 @@
                             </div>
                         </div>
                         <div class="tab-pane p-0 pt-3" id="payments" role="tabpanel">
-                                    <button type="button" class="btn rounded-pill btn-success btn-xl mb-2">Add Payment</button>
-                                    <button type="button" class="btn rounded-pill btn-success btn-xl mb-2">Send Deposit Needed</button>
-                            <p class="mb-0 text-muted">
-                                <div class="table-responsive">
-                                    <table class="table table-bordered mb-0 table-centered">
-                                        <thead class="table-light">
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0 table-centered w-100" id="paymentsTable">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th>Trans #</th>
-                                            <th>Message</th>
-                                            <th class="text-center">Date</th>
-                                            <th class="text-center" style="width:50px;">Status</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Payment Method</th>
+                                            <th>Currency</th>
+                                            <th>Payment ID</th>
                                         </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr>
-                                            <td>#124781</td>   
-                                            <td>test</td>                                
-                                            <td>25/11/2018</td>
-                                            <td><span class="badge bg-success">Approved</span></td>
-                                        </tr>
-                                        </tbody>
-                                    </table><!--end /table-->
-                                </div>
-                            </p>
-                        </div>    
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>              
                 </div>
             </div><!--end card-->                             
@@ -955,10 +959,17 @@ window.onload = function () {
 let currentTransaction = {};
 let ckeditorEmailEditor;
 let sentEmailsTable;
+let paymentsTable;
 
 function reloadSentEmailsTable() {
     if (sentEmailsTable) {
         sentEmailsTable.ajax.reload();
+    }
+}
+
+function reloadPaymentsTable() {
+    if (paymentsTable) {
+        paymentsTable.ajax.reload();
     }
 }
 
@@ -1284,7 +1295,17 @@ document.addEventListener('DOMContentLoaded', function() {
             serverSide: false,
             ajax: {
                 url: `/leads/${transactionId}/sent-emails`,
-                dataSrc: 'data'
+                dataSrc: function(json) {
+                    if (!json.success) {
+                        showToast(json.message || 'Error loading sent emails', 'error');
+                        return [];
+                    }
+                    return json.data || [];
+                },
+                error: function(xhr, error, thrown) {
+                    showToast('Error loading sent emails: ' + (thrown || error), 'error');
+                    return [];
+                }
             },
             columns: [
                 { 
@@ -1307,7 +1328,11 @@ document.addEventListener('DOMContentLoaded', function() {
             order: [[0, 'desc']], // Sort by date column in descending order
             pageLength: 10,
             language: {
-                emptyTable: "No emails sent yet"
+                emptyTable: "No emails sent yet",
+                processing: '<i class="fas fa-spinner fa-spin"></i> Loading...'
+            },
+            drawCallback: function() {
+                // Add any post-draw processing here if needed
             }
         });
     } else {
@@ -1575,6 +1600,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
+    }
+
+    // Initialize payments table
+    if (transactionId) {
+        paymentsTable = $('#paymentsTable').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: `/leads/${transactionId}/payments`,
+                dataSrc: function(json) {
+                    if (!json.success) {
+                        showToast(json.message || 'Error loading payments', 'error');
+                        return [];
+                    }
+                    return json.data || [];
+                },
+                error: function(xhr, error, thrown) {
+                    showToast('Error loading payments: ' + (thrown || error), 'error');
+                    return [];
+                }
+            },
+            columns: [
+                { 
+                    data: 'created_at',
+                    render: function(data) {
+                        return moment(data).format('MM/DD/YYYY hh:mm A');
+                    }
+                },
+                { 
+                    data: 'amount',
+                    render: function(data, type, row) {
+                        return `${row.currency} ${data}`;
+                    }
+                },
+                { 
+                    data: 'status',
+                    render: function(data) {
+                        const statusClass = data === 'succeeded' ? 'success' : 
+                                         data === 'failed' ? 'danger' : 'warning';
+                        return `<span class="badge bg-${statusClass}">${data}</span>`;
+                    }
+                },
+                { data: 'payment_method' },
+                { data: 'currency' },
+                { data: 'payment_intent_id' }
+            ],
+            order: [[0, 'desc']], // Sort by date column in descending order
+            pageLength: 10,
+            language: {
+                emptyTable: "No payments found",
+                processing: '<i class="fas fa-spinner fa-spin"></i> Loading...'
+            }
+        });
+    } else {
+        // For new customers, show a message instead of initializing DataTable
+        $('#paymentsTable').html('<div class="alert alert-info m-3">No payments found for this customer.</div>');
     }
 });
 </script>
@@ -2045,7 +2126,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> -->
+
+
+<!-- <link href="https://unpkg.com/lightbox2@2.11.3/dist/css/lightbox.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lightbox2@2.11.3/dist/js/lightbox-plus-jquery.min.js"></script> -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const noOfItemsInput = document.getElementById('no_of_items');

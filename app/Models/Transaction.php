@@ -81,4 +81,9 @@ class Transaction extends Model
     {
         return $this->belongsTo(Agent::class, 'assigned_agent', 'id');
     }
+
+    public function payments()
+    {
+        return $this->hasMany(TransactionPayment::class);
+    }
 } 

@@ -269,6 +269,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/leads/{id}/send-email', [LeadController::class, 'sendEmail'])->name('leads.send-email');
     Route::get('/leads/{id}/sent-emails', [LeadController::class, 'getSentEmails'])->name('leads.sent-emails');
     Route::get('/leads/{id}', [LeadController::class, 'show'])->name('leads.show');
+    Route::get('/leads/{id}/payments', [LeadController::class, 'getPayments'])->name('leads.payments');
 
     Route::post('/transactions/sync', [TransactionController::class, 'syncFromApi'])->name('transactions.sync');
     Route::post('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.status');

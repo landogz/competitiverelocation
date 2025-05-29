@@ -153,17 +153,73 @@ class LeadController extends Controller
             $sentEmails = $transaction->sentEmails()
                 ->with('template')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($email) {
+                    return [
+                        'id' => $email->id,
+                        'created_at' => $email->created_at,
+                        'subject' => $email->subject,
+                        'status' => $email->status,
+                        'template' => $email->template ? [
+                            'id' => $email->template->id,
+                            'name' => $email->template->name
+                        ] : null
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
                 'data' => $sentEmails
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Transaction not found: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found'
+            ], 404);
         } catch (\Exception $e) {
             \Log::error('Error fetching sent emails: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch sent emails: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPayments($id)
+    {
+        try {
+            $transaction = Transaction::findOrFail($id);
+            $payments = $transaction->payments()
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($payment) {
+                    return [
+                        'id' => $payment->id,
+                        'created_at' => $payment->created_at,
+                        'amount' => number_format($payment->amount, 2),
+                        'status' => $payment->status,
+                        'payment_method' => $payment->payment_method,
+                        'currency' => strtoupper($payment->currency),
+                        'payment_intent_id' => $payment->payment_intent_id
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $payments
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Transaction not found: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching payments: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch payments: ' . $e->getMessage()
             ], 500);
         }
     }
