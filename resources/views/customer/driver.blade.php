@@ -802,10 +802,8 @@
             </div>
           </div>
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-              <button id="complete-btn" onclick="handleComplete()" class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Complete</button>
-              <button class="flex items-center gap-2 bg-surface-variant text-surface-onVariant py-2 px-6 rounded-lg hover:bg-surface-variant/80 transition-colors">
-                <span class="material-icons">print</span> Print
-            </button>
+              <button id="complete-btn" onclick="handleComplete()" class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Save</button>
+             
             </div>
           </div>
         </div>
@@ -2063,38 +2061,50 @@
           const tbody = document.querySelector('#payments-activity-table');
           if (tbody) {
             tbody.innerHTML = '';
-            data.payments.forEach(payment => {
-              let statusClass = '';
-              let statusText = payment.status;
-              if (payment.status === 'Succeeded') {
-                statusClass = 'bg-green-600 text-white';
-                statusText = 'PAID';
-              } else {
-                statusClass = 'bg-yellow-100 text-yellow-800';
-              }
-              const paymentDate = new Date(payment.created_at);
-              const formattedDate = paymentDate.toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                hour12: true
-              });
-              tbody.innerHTML += `
+            if (!data.payments || data.payments.length === 0) {
+              tbody.innerHTML = `
                 <tr class="hover:bg-surface-variant/50 transition-colors">
-                  <td class="py-3 px-4">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                      ${statusText}
-                    </span>
+                  <td colspan="4" class="py-8 px-4 text-center text-surface-onVariant">
+                    <div class="text-3xl mb-2">📝</div>
+                    <div class="font-medium">No Payment History</div>
+                    <div class="text-sm mt-1">No payments have been made yet.</div>
                   </td>
-                  <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
-                  <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
-                  <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
                 </tr>
               `;
-            });
+            } else {
+              data.payments.forEach(payment => {
+                let statusClass = '';
+                let statusText = payment.status;
+                if (payment.status === 'Succeeded') {
+                  statusClass = 'bg-green-600 text-white';
+                  statusText = 'PAID';
+                } else {
+                  statusClass = 'bg-yellow-100 text-yellow-800';
+                }
+                const paymentDate = new Date(payment.created_at);
+                const formattedDate = paymentDate.toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  hour12: true
+                });
+                tbody.innerHTML += `
+                  <tr class="hover:bg-surface-variant/50 transition-colors">
+                    <td class="py-3 px-4">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                        ${statusText}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
+                    <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
+                    <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
+                  </tr>
+                `;
+              });
+            }
           }
 
           // Update totals display

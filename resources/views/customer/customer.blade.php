@@ -871,6 +871,66 @@
     function navigate(page) {
       const mainContent = document.getElementById("main-content");
       const pageContent = pages[page];
+      
+      // Check for credit card authorization before allowing access to payments
+      if (page === 'payments') {
+        const transactionId = window.transaction?.id;
+        if (!transactionId) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No transaction selected.',
+            icon: 'error'
+          });
+          return;
+        }
+
+        // Check for credit card authorization
+        fetch(`/credit-card-authorization/${transactionId}`)
+          .then(res => res.json())
+          .then(result => {
+            if (!result.success || !result.data) {
+              Swal.fire({
+                title: 'Credit Card Authorization Required',
+                html: `
+                  <div class="text-left">
+                    <p class="mb-4">You need to complete the Credit Card Authorization form before making a payment.</p>
+                    <p class="text-sm text-surface-onVariant">Please go to the Estimates page and fill out the Credit Card Authorization form first.</p>
+                  </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: 'Go to Estimates',
+                showCancelButton: true,
+                cancelButtonText: 'Cancel'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  navigate('estimates');
+                }
+              });
+              return;
+            }
+            
+            // If authorization exists, proceed with payment page
+            mainContent.innerHTML = typeof pageContent === 'function' ? pageContent() : (pageContent || "<p>Page not found.</p>");
+            setTimeout(() => {
+              initializeStripePayment();
+              document.getElementById('stripe-payment-form').addEventListener('submit', handleStripeSubmit);
+              if (window.transaction && window.transaction.id) {
+                loadPaymentsActivity(window.transaction.id);
+              }
+            }, 200);
+          })
+          .catch(error => {
+            console.error('Error checking credit card authorization:', error);
+            Swal.fire({
+              title: 'Error',
+              text: 'Failed to verify credit card authorization. Please try again.',
+              icon: 'error'
+            });
+          });
+        return;
+      }
+
+      // For other pages, proceed normally
       mainContent.innerHTML = typeof pageContent === 'function' ? pageContent() : (pageContent || "<p>Page not found.</p>");
       
       // If navigating to customer-info, populate transaction details
@@ -1586,6 +1646,7 @@
     }
 
     let stripe, elements, paymentElement;
+    let paymentData;
 
     async function initializeStripePayment() {
       // Wait for Stripe.js to load
@@ -1618,22 +1679,53 @@
         if (remaining === 0) {
           document.getElementById('stripe-payment-form').innerHTML = `
             <div class="p-8 text-center">
-              <div class="text-3xl mb-4">🎉</div>
-              <div class="text-xl font-bold mb-2">Thank you!</div>
-              <div class="text-surface-onVariant">Your balance is paid in full.</div>
+              <div class="mb-6">
+                  <span class="material-icons text-6xl text-primary mb-4">check_circle</span>
+                  <h4 class="text-xl font-medium mb-2">Thank You!</h4>
+                  <p class="text-surface-onVariant mb-4">We appreciate your business and trust in our services.</p>
+                </div>
+                <div class="bg-surface-variant/50 rounded-lg p-4 mb-6">
+                  <p class="text-sm text-surface-onVariant mb-2">Transaction Details:</p>
+                  <p class="font-medium" id="thank-you-transaction-id"></p>
+                </div>
+                <p class="text-sm text-surface-onVariant">If you have any questions, please don't hesitate to contact us.</p>
             </div>
           `;
           return;
         }
 
+        // Update button text with payment amount
+        const buttonText = document.getElementById('stripe-button-text');
+        if (buttonText) {
+          if (hasPaidInitialDeposit) {
+            buttonText.textContent = `Pay Remaining Balance (${formatCurrency(remaining)})`;
+          } else {
+            // Check if transaction has MOVING SERVICES and downpayment
+            const hasMovingServices = window.transaction.services && 
+              window.transaction.services.some(service => service.name === 'MOVING SERVICES');
+            const hasDownpayment = parseFloat(window.transaction.downpayment) > 0;
+            
+            if (hasMovingServices && hasDownpayment) {
+              buttonText.textContent = `Pay Initial Deposit (${formatCurrency(window.transaction.downpayment)})`;
+            } else {
+              buttonText.textContent = `Pay Full Amount (${formatCurrency(window.transaction.grand_total)})`;
+            }
+          }
+        }
+
         if (hasPaidInitialDeposit) {
-          Swal.fire({
-            title: 'Initial Deposit Paid',
-            text: 'You have already paid the initial deposit. You can pay the remaining balance after the service is completed.',
-            icon: 'info',
-            confirmButtonColor: '#1061B1'
-          });
-          document.getElementById('stripe-submit-button').style.display = 'none';
+          document.getElementById('stripe-payment-form').innerHTML = `
+            <div class="p-8 text-center">
+              <div class="text-3xl mb-4">💰</div>
+              <div class="text-xl font-bold mb-2">Initial Deposit Paid</div>
+              <div class="text-surface-onVariant mb-4">You have already paid the initial deposit of ${formatCurrency(window.transaction.downpayment)}</div>
+              <div class="bg-surface-variant rounded-lg p-4 mb-4">
+                <div class="text-lg font-medium mb-2">Remaining Balance</div>
+                <div class="text-2xl font-bold text-primary">${formatCurrency(remaining)}</div>
+              </div>
+              <div class="text-sm text-surface-onVariant">You can pay the remaining balance after the service is completed.</div>
+            </div>
+          `;
           return;
         }
       }
@@ -1650,7 +1742,7 @@
           payment_method_id: 'pm_card_visa' // Remove for live, keep for test
         })
       });
-      const paymentData = await paymentResponse.json();
+      paymentData = await paymentResponse.json();
       if (!paymentData.success) {
         showStripeMessage(paymentData.message, 'error');
         return;
@@ -1702,7 +1794,8 @@
             },
             body: JSON.stringify({
               transaction_id: window.transaction.id,
-              payment_intent_id: paymentIntent.id
+              payment_intent_id: paymentIntent.id,
+              payment_type: paymentData.payment_type
             })
           });
           const result = await res.json();
@@ -1721,20 +1814,6 @@
       document.getElementById('stripe-button-text').classList.remove('hidden');
     }
 
-    // Extend navigate to initialize Stripe on payments tab
-    const originalNavigate = navigate;
-    navigate = function(page) {
-      originalNavigate(page);
-      if (page === 'payments') {
-        setTimeout(() => {
-          initializeStripePayment();
-          document.getElementById('stripe-payment-form').addEventListener('submit', handleStripeSubmit);
-          if (window.transaction && window.transaction.id) {
-            loadPaymentsActivity(window.transaction.id);
-          }
-        }, 200);
-      }
-    };
 
     // Add JS to fetch and render payment activity
     async function loadPaymentsActivity(transactionId) {
@@ -1747,40 +1826,52 @@
       tbody.innerHTML = '';
       let totalPaid = 0;
 
-      data.payments.forEach(payment => {
-        totalPaid += parseFloat(payment.amount);
-        let statusClass = '';
-        let statusText = payment.status;
-        if (payment.status === 'Succeeded') {
-          statusClass = 'bg-green-600 text-white';
-          statusText = 'PAID';
-        } else {
-          statusClass = 'bg-yellow-100 text-yellow-800';
-        }
-        // Format date to be more readable
-        const paymentDate = new Date(payment.created_at);
-        const formattedDate = paymentDate.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          hour12: true
-        });
-        tbody.innerHTML += `
+      if (!data.payments || data.payments.length === 0) {
+        tbody.innerHTML = `
           <tr class="hover:bg-surface-variant/50 transition-colors">
-            <td class="py-3 px-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                ${statusText}
-              </span>
+            <td colspan="4" class="py-8 px-4 text-center text-surface-onVariant">
+              <div class="text-3xl mb-2">📝</div>
+              <div class="font-medium">No Payment History</div>
+              <div class="text-sm mt-1">No payments have been made yet.</div>
             </td>
-            <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
-            <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
-            <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
           </tr>
         `;
-      });
+      } else {
+        data.payments.forEach(payment => {
+          totalPaid += parseFloat(payment.amount);
+          let statusClass = '';
+          let statusText = payment.status;
+          if (payment.status === 'Succeeded') {
+            statusClass = 'bg-green-600 text-white';
+            statusText = 'PAID';
+          } else {
+            statusClass = 'bg-yellow-100 text-yellow-800';
+          }
+          // Format date to be more readable
+          const paymentDate = new Date(payment.created_at);
+          const formattedDate = paymentDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+          });
+          tbody.innerHTML += `
+            <tr class="hover:bg-surface-variant/50 transition-colors">
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                  ${statusText}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-surface-onVariant whitespace-nowrap">${formattedDate}</td>
+              <td class="py-3 px-4 text-surface-onVariant">${payment.payment_method || '-'}</td>
+              <td class="py-3 px-4 text-right font-medium">$${parseFloat(payment.amount).toFixed(2)}</td>
+            </tr>
+          `;
+        });
+      }
 
       // Totals
       const t = window.transaction || {};

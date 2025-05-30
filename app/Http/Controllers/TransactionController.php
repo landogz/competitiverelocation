@@ -24,7 +24,7 @@ class TransactionController extends Controller
                 'lead_sources.title as lead_source_title',
                 'agents.company_name as assigned_agent_company_name'
             )
-            ->orderByDesc('transactions.created_at')
+            ->orderByDesc('transactions.id')
             ->get();
 
         // Get email templates
@@ -84,14 +84,14 @@ class TransactionController extends Controller
             // If we can't get coordinates, return only the agent's assigned jobs
             $transactions = Transaction::query()
                 ->where('assigned_agent', $agent->id)
-            ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
-            ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
-            ->select(
-                'transactions.*',
-                'lead_sources.title as lead_source_title',
-                'agents.company_name as assigned_agent_company_name'
+                ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+                ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                ->select(
+                    'transactions.*',
+                    'lead_sources.title as lead_source_title',
+                    'agents.company_name as assigned_agent_company_name'
                 )
-                ->orderByDesc('transactions.created_at')
+                ->orderByDesc('transactions.id')
                 ->get();
         } else {
             // Get all transactions
@@ -103,7 +103,7 @@ class TransactionController extends Controller
                     'lead_sources.title as lead_source_title',
                     'agents.company_name as assigned_agent_company_name'
                 )
-                ->orderByDesc('transactions.created_at')
+                ->orderByDesc('transactions.id')
                 ->get();
 
             // Filter transactions by distance
@@ -156,7 +156,17 @@ class TransactionController extends Controller
             ]
         ];
 
-        return view('loadboard-agent', compact('transactions', 'templates', 'placeholders'));
+        $totalTransactions = $transactions->count();
+        $pendingTransactions = $transactions->where('status', 'pending')->count();
+        $inProgressTransactions = $transactions->where('status', 'in_progress')->count();
+        $completedTransactions = $transactions->where('status', 'completed')->count();
+        $leadStatusTransactions = $transactions->where('status', 'lead')->count();
+
+        return view('loadboard-agent', compact(
+            'transactions', 'templates', 'placeholders',
+            'totalTransactions', 'pendingTransactions', 'inProgressTransactions', 'completedTransactions',
+            'leadStatusTransactions'
+        ));
     }
 
     /**
@@ -751,7 +761,8 @@ class TransactionController extends Controller
                         'transactions.*',
                         'lead_sources.title as lead_source_title',
                         'agents.company_name as assigned_agent_company_name'
-                    );
+                    )
+                    ->orderByDesc('transactions.id');
                 $transactions = $query->get();
             } else {
                 $query = Transaction::query()
@@ -761,7 +772,8 @@ class TransactionController extends Controller
                         'transactions.*',
                         'lead_sources.title as lead_source_title',
                         'agents.company_name as assigned_agent_company_name'
-                    );
+                    )
+                    ->orderByDesc('transactions.id');
                 $transactions = $query->get();
                 // Filter transactions by distance OR assigned to agent
                 $transactions = $transactions->filter(function ($transaction) use ($agentCoordinates, $agent) {
@@ -1123,6 +1135,7 @@ class TransactionController extends Controller
             // Generate unique transaction ID
             $lastTransaction = Transaction::orderBy('id', 'desc')->first();
             $newTransactionId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+            $transactionId = str_pad($newTransactionId, 6, '0', STR_PAD_LEFT);
 
             // Format services array
             $services = [];
@@ -1163,7 +1176,7 @@ class TransactionController extends Controller
             
             // Prepare the data
             $transactionData = [
-                'transaction_id' => $newTransactionId,
+                'transaction_id' => $transactionId,
                 'firstname' => $request->firstname,
                 'lastname' => $request->lastname,
                 'email' => $request->email,

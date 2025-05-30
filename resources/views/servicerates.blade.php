@@ -81,6 +81,42 @@
                             </div>
                         </div>
 
+                        <!-- Delivery Mileage Rate Card -->
+                        @if($serviceRates->where('service_type', 'delivery_mileage')->first())
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-road me-2"></i>Delivery Mileage Rate</h5>
+                                </div>
+                                <div class="card-body">
+                                    @php $mileageRate = $serviceRates->where('service_type', 'delivery_mileage')->first(); @endphp
+                                    <div class="d-flex align-items-center" data-id="{{ $mileageRate->id }}">
+                                        <div class="flex-shrink-0">
+                                            <div class="avatar-sm rounded-circle bg-secondary bg-opacity-10 text-center">
+                                                <i class="fas fa-road fa-2x text-secondary"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h4 class="mb-1">
+                                                <span class="rate-display">${{ number_format($mileageRate->rate, 2) }}/mile</span>
+                                                <div class="input-group rate-edit d-none">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" class="form-control" name="rate" 
+                                                        value="{{ $mileageRate->rate }}" step="0.01" min="0">
+                                                </div>
+                                            </h4>
+                                            <p class="text-muted mb-0">
+                                                <span class="rate-display">{{ $mileageRate->description }}</span>
+                                                <input type="text" class="form-control rate-edit d-none" 
+                                                    name="description" value="{{ $mileageRate->description }}">
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Furniture Removal Card -->
                         <div class="col-lg-6 col-xl-4 mb-4">
                             <div class="card h-100 border-0 shadow-sm">
@@ -184,7 +220,7 @@
                         </div>
 
                         <!-- Other Services Cards -->
-                        @foreach($serviceRates->whereIn('service_type', ['cleaning', 'rearranging', 'mattress_removal', 'hoisting', 'exterminator']) as $rate)
+                        @foreach($serviceRates->whereIn('service_type', ['cleaning', 'rearranging', 'mattress_removal', 'hoisting', 'exterminator', 'college_room_move', 'removal']) as $rate)
                         <div class="col-lg-6 col-xl-4 mb-4">
                             <div class="card h-100 border-0 shadow-sm">
                                 <div class="card-header bg-{{ $rate->badge_color }} @if($rate->badge_color != 'warning') text-white @else text-dark @endif">
@@ -199,7 +235,7 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <h4 class="mb-1">
-                                                <span class="rate-display">${{ number_format($rate->rate, 2) }}/H</span>
+                                                <span class="rate-display">${{ number_format($rate->rate, 2) }}{{ $rate->unit === 'hourly' ? '/H' : '' }}</span>
                                                 <div class="input-group rate-edit d-none">
                                                     <span class="input-group-text">$</span>
                                                     <input type="number" class="form-control" name="rate" 

@@ -18,9 +18,6 @@
                     <button type="button" class="btn btn-primary" id="syncLeads">
                         <i class="fas fa-sync-alt me-1"></i> Sync Leads
                     </button>
-                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLeadModal">
-                        <i class="fas fa-plus me-2"></i>Add New Lead
-                    </button> --}}
                 </div>
             </div>
         </div>

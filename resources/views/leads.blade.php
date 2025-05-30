@@ -156,12 +156,22 @@
                     </div>
                     <div class="col-md-12 mb-2">
                         <label class="mb-1">Assigned Agent <span class="text-danger">*</span></label>
-                        <select id="assigned_agent" name="assigned_agent" class="form-select" required>
+                        <select id="assigned_agent" name="assigned_agent" class="form-select" required @if(Auth::user()->privilege === 'agent') disabled @endif>
                             <option value="">Select Agent</option>
                             @foreach($agents as $id => $companyName)
-                                <option value="{{ $id }}" {{ (isset($transaction) && $transaction->assigned_agent == $id) ? 'selected' : '' }}>{{ $companyName }}</option>
+                                <option value="{{ $id }}"
+                                    @if(
+                                        (isset($transaction) && $transaction->assigned_agent == $id) ||
+                                        (Auth::user()->privilege === 'agent' && Auth::user()->agent_id == $id && !isset($transaction))
+                                    )
+                                        selected
+                                    @endif
+                                >{{ $companyName }}</option>
                             @endforeach
-                        </select>                                    
+                        </select>
+                        @if(Auth::user()->privilege === 'agent')
+                            <input type="hidden" name="assigned_agent" value="{{ Auth::user()->id }}">
+                        @endif
                     </div>
                 </div><!--end card-body--> 
             </div><!--end card-->                             
@@ -2363,15 +2373,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to calculate equivalent delivery cost
     function calculateDeliveryCost(subTotal) {
-        if (subTotal < 750) return 79.99;
-        if (subTotal >= 750 && subTotal < 1500) return 159.99;
-        if (subTotal >= 1500 && subTotal < 2000) return 179.99;
-        if (subTotal >= 2000 && subTotal < 2750) return 194.99;
-        if (subTotal >= 2750 && subTotal < 4000) return 224.99;
-        if (subTotal >= 4000 && subTotal < 6000) return 284.99;
-        if (subTotal >= 6000 && subTotal < 8000) return 314.99;
-        if (subTotal >= 8000 && subTotal < 10000) return 334.99;
-        if (subTotal >= 10000) return 384.99;
+        if (subTotal < 750) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->first()->rate ?? 79.99 }};
+        if (subTotal >= 750 && subTotal < 1500) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(1)->first()->rate ?? 159.99 }};
+        if (subTotal >= 1500 && subTotal < 2000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(2)->first()->rate ?? 179.99 }};
+        if (subTotal >= 2000 && subTotal < 2750) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(3)->first()->rate ?? 194.99 }};
+        if (subTotal >= 2750 && subTotal < 4000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(4)->first()->rate ?? 224.99 }};
+        if (subTotal >= 4000 && subTotal < 6000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(5)->first()->rate ?? 284.99 }};
+        if (subTotal >= 6000 && subTotal < 8000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(6)->first()->rate ?? 314.99 }};
+        if (subTotal >= 8000 && subTotal < 10000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(7)->first()->rate ?? 334.99 }};
+        if (subTotal >= 10000) return {{ \App\Models\ServiceRate::where('service_type', 'delivery')->skip(8)->first()->rate ?? 384.99 }};
         return 0;
     }
 
@@ -2451,12 +2461,15 @@ document.addEventListener("DOMContentLoaded", () => {
 //         const subtotal = rate +  ratePerCrew + deliveryCost + removaladd;
 
 		if(serviceValue === "removal"){
+			// Get the furniture removal additional rate from service_rates table
+			const removalRate = {{ \App\Models\ServiceRate::where('service_type', 'furniture_removal_additional')->value('rate') ?? 75 }};
+			
 			if(noofitems < 4){
-				removaladd = (noofitems - 1 ) * 75;
+				removaladd = (noofitems - 1 ) * removalRate;
         		subtotal =  rate +  ratePerCrew + deliveryCost + removaladd;
 			}
 			else{
-				removaladd = (noofitems ) * 75;
+				removaladd = (noofitems ) * removalRate;
         		subtotal = ratePerCrew + deliveryCost + removaladd;
 			}
 		}
@@ -2529,20 +2542,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const addedMileRate = parseFloat(document.getElementById("added-mile-rate").value) || 0;
         
         // Check if we have moving services
-        let containsMovingServices = false;
+        let containsMovingServices = true;
         servicesTableBody.querySelectorAll("tr").forEach((row) => {
             const serviceName = row.cells[0].textContent.trim();
             if (serviceName === "MOVING SERVICES") {
-                containsMovingServices = true;
+                containsMovingServices = false;
             }
         });
         
         // Calculate fees
-        const softwareFee = totalAmount * 0.05; // 5% software management fee
-        const truckFee = containsMovingServices ? 198.80 : 0;
-        const grandTotal = totalAmount + softwareFee + truckFee;
-        const downPayment = containsMovingServices ? grandTotal * 0.3 : 0; // 30% down payment for moving services
-        const remainingBalance = grandTotal;
+        const softwareFee = containsMovingServices ? 0 : totalAmount * 0.05; // 5% software management fee
+        const truckFee = containsMovingServices ? 0 : 198.80;
+        const grandTotal = totalAmount + softwareFee + truckFee + addedMileRate;
+        const downPayment = containsMovingServices ? 0 : grandTotal * 0.3; // 30% down payment for moving services
+        const remainingBalance = containsMovingServices ? 0 : grandTotal;
         
         // Update the fields
         document.querySelector('input[name="subtotal"]').value = totalAmount.toFixed(2);
@@ -2552,6 +2565,28 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('input[name="grand_total"]').value = grandTotal.toFixed(2);
         document.querySelector('input[name="downpayment"]').value = downPayment.toFixed(2);
         document.querySelector('input[name="remaining_balance"]').value = remainingBalance.toFixed(2);
+
+        // Hide/show entire div sections based on containsMovingServices
+        const fieldsToToggle = [
+            'software_fee',
+            'truck_fee',
+            'downpayment',
+            'remaining_balance'
+        ];
+
+        fieldsToToggle.forEach(fieldName => {
+            const field = document.querySelector(`input[name="${fieldName}"]`);
+            if (field) {
+                const divContainer = field.closest('.mb-3.mt-3');
+                if (divContainer) {
+                    if (containsMovingServices) {
+                        divContainer.style.display = 'none';
+                    } else {
+                        divContainer.style.display = '';
+                    }
+                }
+            }
+        });
     }
 
     // Delete a row from the table
@@ -2596,14 +2631,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // // Create a mapping of services to their corresponding rates
 const serviceRates = {
-    "removal-and-delivery": 75.00,
-    "college-room-move": 325.00,
-    "removal": 125.00,
+    "removal-and-delivery": {{ \App\Models\ServiceRate::where('service_type', 'furniture_removal_additional')->value('rate') ?? 75.00 }},
+    "college-room-move": {{ \App\Models\ServiceRate::where('service_type', 'college_room_move')->value('rate') ?? 325.00 }},
+    "removal": {{ \App\Models\ServiceRate::where('service_type', 'removal')->value('rate') ?? 125.00 }},
     "delivery": 0.00,
-    "hoisting": 350.00,
-    "mattress-removal": 125.00,
-    "re-arranging-service": 150.00,
-    "cleaning-services": 135.00,
+    "hoisting": {{ \App\Models\ServiceRate::where('service_type', 'hoisting')->value('rate') ?? 350.00 }},
+    "mattress-removal": {{ \App\Models\ServiceRate::where('service_type', 'mattress_removal')->value('rate') ?? 125.00 }},
+    "re-arranging-service": {{ \App\Models\ServiceRate::where('service_type', 'rearranging')->value('rate') ?? 150.00 }},
+    "cleaning-services": {{ \App\Models\ServiceRate::where('service_type', 'cleaning')->value('rate') ?? 135.00 }},
     "exterminator-washing-replacing-moving-blankets": 650.00,
     "moving-services": 650.00
 };

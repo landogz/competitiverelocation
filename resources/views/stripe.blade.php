@@ -13,7 +13,7 @@
         </div><!--end col-->
     </div><!--end row-->
     <div class="row">                        
-        <div class="col-md-12 col-lg-6">
+        <div class="col-md-12 col-lg-4">
             <div class="card">
                 <div class="card-header">
                     <div class="row align-items-center">
@@ -89,7 +89,7 @@
                 </div><!--end card-body--> 
             </div><!--end card-->                             
         </div> <!--end col-->   
-        <div class="col-md-12 col-lg-6">
+        <div class="col-md-12 col-lg-8">
             <div class="card">
                 <div class="card-header">
                     <div class="row align-items-center">
@@ -103,19 +103,29 @@
                         <table class="table table-bordered mb-0 table-centered">
                             <thead class="table-light">
                             <tr>
-                                <th>Trans #</th>
-                                <th>Message</th>
-                                <th class="text-center">Date</th>
-                                <th class="text-center" style="width:50px;">Status</th>
+                                <th>Transaction ID</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Payment Method</th>
+                                <th>Date</th>
                             </tr>
                             </thead>
                             <tbody>
+                            @foreach($payments as $payment)
                             <tr>
-                                <td>#124781</td>   
-                                <td>test</td>                                
-                                <td>25/11/2018</td>
-                                <td><span class="badge bg-success">Approved</span></td>
+                                <td>{{ $payment->payment_intent_id }}</td>
+                                <td>{{ $payment->currency }} {{ number_format($payment->amount, 2) }}</td>
+                                <td>
+                                    @php
+                                        $statusClass = $payment->status === 'succeeded' ? 'success' : 
+                                                     ($payment->status === 'failed' ? 'danger' : 'warning');
+                                    @endphp
+                                    <span class="badge bg-{{ $statusClass }}">{{ ucfirst($payment->status) }}</span>
+                                </td>
+                                <td>{{ $payment->payment_method ? 'Credit Card' : 'N/A' }}</td>
+                                <td>{{ $payment->created_at->format('M d, Y H:i A') }}</td>
                             </tr>
+                            @endforeach
                             </tbody>
                         </table><!--end /table-->
                     </div>

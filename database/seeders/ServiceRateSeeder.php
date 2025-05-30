@@ -38,6 +38,16 @@ class ServiceRateSeeder extends Seeder
             ]);
         }
 
+        // Add Delivery Mileage Rate
+        ServiceRate::create([
+            'service_type' => 'delivery_mileage',
+            'title' => 'Delivery Mileage Rate',
+            'rate' => 2.50,
+            'description' => 'Per mile rate for delivery services',
+            'badge_color' => 'secondary',
+            'icon' => 'fas fa-road'
+        ]);
+
         // Furniture Removal
         ServiceRate::create([
             'service_type' => 'furniture_removal',
@@ -123,6 +133,24 @@ class ServiceRateSeeder extends Seeder
                 'description' => 'Exterminator, washing and replacing moving blankets',
                 'badge_color' => 'purple',
                 'icon' => 'fas fa-bug'
+            ],
+            [
+                'service_type' => 'college_room_move',
+                'title' => 'College Room Move',
+                'rate' => 325.00,
+                'unit' => 'flat',
+                'description' => 'Professional college room moving service',
+                'badge_color' => 'primary',
+                'icon' => 'fas fa-graduation-cap'
+            ],
+            [
+                'service_type' => 'removal',
+                'title' => 'Removal Service',
+                'rate' => 125.00,
+                'unit' => 'flat',
+                'description' => 'Professional removal service',
+                'badge_color' => 'success',
+                'icon' => 'fas fa-truck-loading'
             ]
         ];
 

@@ -152,6 +152,124 @@
         border-top: 1px solid #e5e7eb;
         padding: 1.5rem;
     }
+
+    /* DataTables Custom Styling */
+    .dataTables_wrapper {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .dataTables_scroll {
+        flex: 1;
+        overflow: auto;
+    }
+    
+    .dataTables_wrapper .dataTables_scroll { overflow: hidden !important; }
+    .dataTables_wrapper { overflow-x: hidden !important; }
+    .table-responsive { 
+        overflow-x: hidden !important;
+        height: 100%;
+    }
+    table.dataTable { 
+        width: 100% !important; 
+        margin: 0 !important;
+        height: 100%;
+    }
+    
+    /* DataTables Header and Search Spacing */
+    .dataTables_wrapper .row:first-child {
+        margin-bottom: 1.5rem;
+    }
+    
+    .dataTables_filter input {
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        margin-left: 0.5rem;
+    }
+    
+    .dataTables_length select {
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    }
+    
+    table.dataTable thead th {
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    table.dataTable tbody td {
+        font-size: 0.875rem;
+        color: #4b5563;
+        padding: 1rem;
+    }
+
+    /* Pagination Styling */
+    .page-link {
+        border-radius: 0.375rem;
+        margin: 0 0.2rem;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #556ee6;
+        border-color: #556ee6;
+    }
+
+    /* DataTables Processing Indicator */
+    #salesRepsTable_processing {
+        z-index: 99 !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        padding: 1rem !important;
+        margin-top: 1rem !important;
+    }
+
+    /* Loading Overlay */
+    .table-responsive {
+        position: relative;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-overlay.active {
+        display: flex;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
 @section('content')

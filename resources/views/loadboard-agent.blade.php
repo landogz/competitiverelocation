@@ -9,58 +9,75 @@
         <div class="col-12">
             <div class="page-title-box d-flex align-items-center justify-content-between">
                 <h4 class="mb-0">Load Board</h4>
-                <!-- <div class="page-title-right">
-                    <button class="btn btn-primary" id="syncTransactions">
+                 <div class="page-title-right">
+                    <!-- <button class="btn btn-primary" id="syncTransactions">
                         <i class="fas fa-sync-alt me-1"></i> Sync Transactions
-                    </button>
-                </div> -->
+                    </button> -->
+                    
+                    @if(Auth::user()->privilege === 'agent')
+                    <a href="/leads/" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> Add New Customer
+                    </a>
+                    @endif
+                </div> 
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="row g-4 mb-4">                        
-        <div class="col-xl-3 col-md-6">
+    <div class="row g-4 mb-4 justify-content-center">                        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon total">
                     <i class="fas fa-truck"></i>
-                        </div>
+                </div>
                 <div class="stats-content">
                     <span class="stats-label">Total Transactions</span>
-                    <h3 id="totalTransactions" class="stats-value">{{ $transactions->count() }}</h3>
+                    <h3 id="totalTransactions" class="stats-value">{{ $totalTransactions }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon pending">
                     <i class="fas fa-clock"></i>
-                        </div>
+                </div>
                 <div class="stats-content">
                     <span class="stats-label">Pending</span>
-                    <h3 id="pendingTransactions" class="stats-value">{{ $transactions->where('status', 'pending')->count() }}</h3>
+                    <h3 id="pendingTransactions" class="stats-value">{{ $pendingTransactions }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon progress">
                     <i class="fas fa-spinner"></i>
-                        </div>
+                </div>
                 <div class="stats-content">
                     <span class="stats-label">In Progress</span>
-                    <h3 id="inProgressTransactions" class="stats-value">{{ $transactions->where('status', 'in_progress')->count() }}</h3>
+                    <h3 id="inProgressTransactions" class="stats-value">{{ $inProgressTransactions }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon completed">
                     <i class="fas fa-check"></i>
-                        </div>
+                </div>
                 <div class="stats-content">
                     <span class="stats-label">Completed</span>
-                    <h3 id="completedTransactions" class="stats-value">{{ $transactions->where('status', 'completed')->count() }}</h3>
+                    <h3 id="completedTransactions" class="stats-value">{{ $completedTransactions }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #6c757d, #adb5bd);">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Lead Status</span>
+                    <h3 id="leadStatusTransactions" class="stats-value">{{ $leadStatusTransactions }}</h3>
                 </div>
             </div>
         </div>
@@ -1477,7 +1494,6 @@
                     }
                 }
             ],
-            order: [[0, 'desc']],
             scrollX: false,
             autoWidth: false,
             scrollCollapse: false,

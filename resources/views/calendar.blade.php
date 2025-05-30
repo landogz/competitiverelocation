@@ -382,6 +382,9 @@
                 </div>
             </div>
             <div class="modal-footer bg-light border-top-0">
+                <a href="#" id="viewTransactionBtn" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-1"></i> View Transaction
+                </a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i> Close
                 </button>
@@ -511,6 +514,15 @@
         function openTransactionModal(event) {
             const props = event.extendedProps;
             const startDate = new Date(event.start);
+            
+            // Set the view transaction button href
+            const viewTransactionBtn = document.getElementById('viewTransactionBtn');
+            if (props.transaction_id) {
+                viewTransactionBtn.href = `/leads/${props.transaction_id}/edit`;
+            } else {
+                viewTransactionBtn.href = '#';
+                viewTransactionBtn.classList.add('disabled');
+            }
             
             // Format date for display
             const day = startDate.getDate();

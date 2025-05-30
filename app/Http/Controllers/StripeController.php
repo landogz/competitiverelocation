@@ -15,7 +15,13 @@ class StripeController extends Controller
     public function index()
     {
         $settings = StripeSetting::first();
-        return view('stripe', compact('settings'));
+        
+        // Get all payment records ordered by most recent first
+        $payments = \App\Models\TransactionPayment::with('transaction')
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return view('stripe', compact('settings', 'payments'));
     }
 
     public function connect()
@@ -242,34 +248,59 @@ class StripeController extends Controller
             ]);
 
             $transaction = \App\Models\Transaction::findOrFail($request->transaction_id);
+            $transactionpayment = \App\Models\TransactionPayment::where('transaction_id', $transaction->id)->first();
             $settings = StripeSetting::first();
 
             if (!$settings || !$settings->is_active) {
                 throw new \Exception('Payment system is currently unavailable.');
             }
 
-            // Check if job times are completed
-            $jobTime = \App\Models\JobTime::where('transaction_id', $transaction->transaction_id)->first();
-            if (!$jobTime || !$jobTime->end_time || !$jobTime->end_signature) {
-                throw new \Exception('Cannot process payment. Job must be completed with end time and signature first.');
+            // Parse services JSON if it's a string
+            if (is_string($transaction->services)) {
+                $transaction->services = json_decode($transaction->services, true);
             }
 
-            // Calculate the amount based on payment type
+            // Calculate the amount based on service type
             $amount = 0;
+            $hasMovingServices = false;
             
+            if (is_array($transaction->services)) {
+                foreach ($transaction->services as $service) {
+                    if (isset($service['name']) && $service['name'] === 'MOVING SERVICES') {
+                        $hasMovingServices = true;
+                        break;
+                    }
+                }
+            }
+
             // If this is a remaining balance payment
             if ($request->is_remaining_balance) {
                 // Get all successful payments for this transaction
                 $totalPaid = \App\Models\TransactionPayment::where('transaction_id', $transaction->id)
                     ->where('status', 'succeeded')
                     ->sum('amount');
+
+                // Check if job times are completed
+                $jobTime = \App\Models\JobTime::where('transaction_id', $transaction->transaction_id)->first();
+                if (!$jobTime || !$jobTime->end_time || !$jobTime->end_signature) {
+                    throw new \Exception('Cannot process payment. Job must be completed with end time and signature first.');
+                }
                 
                 // Calculate remaining balance
                 $grandTotal = floatval(str_replace(['$', ','], '', $transaction->grand_total));
                 $amount = max($grandTotal - $totalPaid, 0);
             } else {
-                // For initial deposit, use the downpayment amount
-                $amount = floatval(str_replace(['$', ','], '', $transaction->downpayment));
+                // For initial payment, use downpayment if MOVING SERVICES exists and downpayment is set, otherwise use grand_total
+                if ($hasMovingServices && floatval(str_replace(['$', ','], '', $transaction->downpayment)) > 0) {
+                    $amount = floatval(str_replace(['$', ','], '', $transaction->downpayment));
+                } else {
+                    $amount = floatval(str_replace(['$', ','], '', $transaction->grand_total));
+                }
+            }
+
+            // Ensure minimum amount (50 cents for USD)
+            if ($amount < 0.50) {
+                throw new \Exception('Payment amount must be at least $0.50 USD.');
             }
 
             // Set Stripe API key from settings
@@ -291,18 +322,34 @@ class StripeController extends Controller
                 ]);
             }
 
+            // Determine payment type and description
+            $downpaymentValue = isset($transaction->downpayment) ? floatval(str_replace(['$', ','], '', $transaction->downpayment)) : 0;
+            $isFullPayment = $hasMovingServices && !$request->is_remaining_balance && $downpaymentValue <= 0;
+
+            if ($isFullPayment) {
+                $paymentType = 'full_payment';
+                $description = 'Full Payment';
+            } elseif ($request->is_remaining_balance) {
+                $paymentType = 'remaining_balance';
+                $description = 'Remaining Balance Payment';
+            } else {
+                $paymentType = 'initial_payment';
+                $description = 'Initial Payment';
+            }
+
             // Create payment intent
             $paymentIntent = \Stripe\PaymentIntent::create([
-                'amount' => $amount * 100, // Convert to cents
+                'amount' => round($amount * 100), // Convert to cents and ensure whole number
                 'currency' => 'usd',
                 'customer' => $customer->id,
                 'payment_method' => $request->payment_method_id,
-                'description' => $request->is_remaining_balance ? 'Remaining Balance Payment' : 'Initial Deposit Payment',
+                'description' => $description,
                 'payment_method_types' => ['card'],
                 'metadata' => [
                     'transaction_id' => $transaction->id,
                     'customer_name' => $transaction->firstname . ' ' . $transaction->lastname,
-                    'payment_type' => $request->is_remaining_balance ? 'remaining_balance' : 'initial_deposit'
+                    'payment_type' => $paymentType,
+                    'service_type' => $hasMovingServices ? 'moving_services' : 'other_services'
                 ],
                 'setup_future_usage' => 'off_session'
             ]);
@@ -311,7 +358,8 @@ class StripeController extends Controller
                 'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
                 'stripeKey' => $settings->public_key,
-                'amount' => $amount
+                'amount' => $amount,
+                'payment_type' => $paymentType
             ]);
 
         } catch (\Exception $e) {
@@ -342,7 +390,7 @@ class StripeController extends Controller
 
             // Retrieve the payment intent
             $paymentIntent = \Stripe\PaymentIntent::retrieve($request->payment_intent_id);
-
+            
             if ($paymentIntent->status === 'succeeded') {
                 // Check if payment record already exists
                 $existingPayment = TransactionPayment::where('payment_intent_id', $paymentIntent->id)->first();
@@ -366,6 +414,13 @@ class StripeController extends Controller
                     if ($request->payment_type === 'remaining_balance') {
                         $transaction->status = 'completed';
                     }
+                    else if ($request->payment_type === 'initial_payment') {
+                        $transaction->status = 'in_progress';
+                    }
+                    else if ($request->payment_type === 'full_payment') {
+                        $transaction->status = 'in_progress';
+                    }
+                    
                     
                     $transaction->save();
 
