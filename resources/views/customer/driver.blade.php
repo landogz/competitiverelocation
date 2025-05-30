@@ -1248,14 +1248,45 @@
         : 'N/A';
       document.getElementById('customer-phone').textContent = transaction.phone || 'N/A';
 
-      // Move From
-      document.getElementById('pickup-address').textContent = transaction.pickup_location || 'N/A';
+      // Move From (Pick-up Address)
+      const pickupAddress = transaction.pickup_location || 'N/A';
+      const pickupElem = document.getElementById('pickup-address');
+      if (pickupElem) {
+        pickupElem.innerHTML = pickupAddress !== 'N/A'
+          ? `<a href="#" onclick="openMapsToAddress('${pickupAddress}'); return false;" class="text-primary underline"><span class="material-icons" style="vertical-align:middle;">map</span> ${pickupAddress}</a>`
+          : 'N/A';
+      }
 
-      // Move To
-      document.getElementById('delivery-address').textContent = transaction.delivery_location || 'N/A';
+      // Move To (Delivery Address)
+      const deliveryAddress = transaction.delivery_location || 'N/A';
+      const deliveryElem = document.getElementById('delivery-address');
+      if (deliveryElem) {
+        deliveryElem.innerHTML = deliveryAddress !== 'N/A'
+          ? `<a href="#" onclick="openMapsToAddress('${deliveryAddress}'); return false;" class="text-primary underline"><span class="material-icons" style="vertical-align:middle;">map</span> ${deliveryAddress}</a>`
+          : 'N/A';
+      }
 
       // Comments
       document.getElementById('customer-comments').textContent = transaction.comments || 'No Comments';
+    }
+
+    // Helper function to open Google Maps directions from current location to address
+    function openMapsToAddress(destination) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const origin = position.coords.latitude + ',' + position.coords.longitude;
+          const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+          window.open(url, '_blank');
+        }, function(error) {
+          // If user denies or error, fallback to just destination
+          const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+          window.open(url, '_blank');
+        });
+      } else {
+        // Geolocation not supported, fallback
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+        window.open(url, '_blank');
+      }
     }
 
     // Signature Pad functionality
