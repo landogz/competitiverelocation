@@ -25,8 +25,8 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="row g-4 mb-4">                        
-        <div class="col-xl-3 col-md-6">
+    <div class="row g-4 mb-4 justify-content-center">                        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon total">
                     <i class="fas fa-truck"></i>
@@ -37,7 +37,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon pending">
                     <i class="fas fa-clock"></i>
@@ -48,7 +48,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon progress">
                     <i class="fas fa-spinner"></i>
@@ -59,7 +59,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon completed">
                     <i class="fas fa-check"></i>
@@ -67,6 +67,17 @@
                 <div class="stats-content">
                     <span class="stats-label">Completed</span>
                     <h3 id="completedTransactions" class="stats-value">{{ $transactions->where('status', 'completed')->count() }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #6c757d, #adb5bd);">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Lead Status</span>
+                    <h3 id="leadStatusTransactions" class="stats-value">{{ $transactions->where('status', 'lead')->count() }}</h3>
                 </div>
             </div>
         </div>

@@ -15,6 +15,7 @@ class Transaction extends Model
         'lastname',
         'email',
         'phone',
+        'phone2',
         'lead_source',
         'lead_type',
         'assigned_agent',
