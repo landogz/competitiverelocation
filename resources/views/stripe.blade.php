@@ -94,14 +94,23 @@
                 <div class="card-header">
                     <div class="row align-items-center">
                         <div class="col">                      
-                            <h4 class="card-title">Stripe Logs</h4>                      
-                        </div><!--end col-->                                        
+                            <h4 class="card-title mb-0">Stripe Logs</h4>                      
+                        </div><!--end col-->
+                        <div class="col-auto d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="exportStripeTableToCSV()">Export as CSV</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportStripeTableToExcel()">Export as Excel</a></li>
+                            </ul>
+                        </div>
                     </div>  <!--end row-->                                  
                 </div><!--end card-header-->
                 <div class="card-body pt-0">
                     <div class="table-responsive">
-                        <table class="table table-bordered mb-0 table-centered">
-                            <thead class="table-light">
+                        <table id="stripeLogsTable" class="table table-hover mb-0">
+                            <thead>
                             <tr>
                                 <th>Transaction ID</th>
                                 <th>Amount</th>
@@ -111,10 +120,12 @@
                             </tr>
                             </thead>
                             <tbody>
-                            @foreach($payments as $payment)
+                            @forelse($payments as $payment)
                             <tr>
-                                <td>{{ $payment->payment_intent_id }}</td>
-                                <td>{{ $payment->currency }} {{ number_format($payment->amount, 2) }}</td>
+                                <td>
+                                    <span class="text-muted" style="font-size: 0.9em;">{{ substr($payment->payment_intent_id, 0, 8) }}...</span>
+                                </td>
+                                <td><span class="fw-bold">{{ strtoupper($payment->currency) }} {{ number_format($payment->amount, 2) }}</span></td>
                                 <td>
                                     @php
                                         $statusClass = $payment->status === 'succeeded' ? 'success' : 
@@ -122,12 +133,28 @@
                                     @endphp
                                     <span class="badge bg-{{ $statusClass }}">{{ ucfirst($payment->status) }}</span>
                                 </td>
-                                <td>{{ $payment->payment_method ? 'Credit Card' : 'N/A' }}</td>
-                                <td>{{ $payment->created_at->format('M d, Y H:i A') }}</td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ $payment->payment_method ? 'Credit Card' : 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span>{{ $payment->created_at->format('M d, Y') }}</span>
+                                        <small class="text-muted">{{ $payment->created_at->format('H:i A') }}</small>
+                                    </div>
+                                </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                        <span class="text-muted">No Stripe logs found</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                             </tbody>
-                        </table><!--end /table-->
+                        </table>
                     </div>
                 </div><!--end card-body--> 
             </div><!--end card-->                             
@@ -137,68 +164,81 @@
 
 @endsection
 
+@section('scripts')
+<!-- jQuery (only once, before DataTables) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet" type="text/css" />
+<!-- DataTables JS (after jQuery) -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<!-- XLSX for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-$(document).ready(function() {
-    $('#saveSettingsBtn').on('click', function() {
-        var $btn = $(this);
-        var originalText = $btn.html();
-        $btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Saving...').prop('disabled', true);
-        
-        // Get form data
-        var data = {
-            secret_key: $('#secret_key').val(),
-            public_key: $('#public_key').val(),
-            is_active: $('#is_active').is(':checked') ? 1 : 0,
-            _token: '{{ csrf_token() }}'
-        };
-        
-        // Send AJAX request
-        $.ajax({
-            url: '{{ route("stripe.settings.update") }}',
-            type: 'POST',
-            data: data,
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: response.message,
-                        confirmButtonText: 'OK'
-                    });
-                    
-                    // Update connect button visibility
-                    var $connectBtn = $('a[href*="stripe.connect"]');
-                    if ($connectBtn.length) {
-                        $connectBtn.toggle(!response.is_active);
-                    }
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: response.message || 'Failed to save settings',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            },
-            error: function(xhr) {
-                var message = 'Failed to save settings. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: message,
-                    confirmButtonText: 'OK'
-                });
-            },
-            complete: function() {
-                $btn.html(originalText).prop('disabled', false);
-            }
-        });
+// Define showStripeDetails in global scope
+function showStripeDetails(paymentIntentId) {
+    // You can implement an AJAX call here to fetch and show more details if needed
+    Swal.fire({
+        title: 'Stripe Payment Details',
+        html: `<div class='text-center'><code>${paymentIntentId}</code></div>`,
+        width: '600px',
+        showCloseButton: true,
+        showConfirmButton: false
     });
+}
+
+$(document).ready(function() {
+    // Initialize DataTable
+    const stripeLogsTable = $('#stripeLogsTable').DataTable({
+        order: [[4, 'desc']], // Sort by date column
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        language: {
+            search: "",
+            searchPlaceholder: "Search Stripe logs...",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ payments",
+            infoEmpty: "No payments available",
+            infoFiltered: "(filtered from _MAX_ total payments)",
+            paginate: {
+                first: '<i class="fas fa-angle-double-left"></i>',
+                last: '<i class="fas fa-angle-double-right"></i>',
+                next: '<i class="fas fa-angle-right"></i>',
+                previous: '<i class="fas fa-angle-left"></i>'
+            }
+        },
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+        columnDefs: [
+            { targets: [0, 1, 2, 3, 4], orderable: true }
+        ]
+    });
+
+    // Export to CSV
+    window.exportStripeTableToCSV = function() {
+        const table = stripeLogsTable.table().node();
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/,/g, ';');
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(','));
+        }
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'stripe_logs.csv';
+        link.click();
+    }
+
+    // Export to Excel
+    window.exportStripeTableToExcel = function() {
+        const table = stripeLogsTable.table().node();
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Stripe Logs"});
+        XLSX.writeFile(wb, 'stripe_logs.xlsx');
+    }
 });
 </script>

@@ -208,7 +208,7 @@
                         <a class="nav-link dropdown-toggle arrow-none nav-icon" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false" data-bs-offset="0,19">
                             @if(Auth::check())
-                                <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                <img src="{{ 'storage/' . Auth::user()->profile_image }}" alt="{{ Auth::user()->name }}" 
                                     class="thumb-md rounded-circle" 
                                     onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
                             @else
@@ -219,7 +219,7 @@
                             @if(Auth::check())
                                 <div class="d-flex align-items-center dropdown-item py-2 bg-secondary-subtle">
                                     <div class="flex-shrink-0">
-                                        <img src="{{ Auth::user()->profile_image_url }}" alt="{{ Auth::user()->name }}" 
+                                        <img src="{{ 'storage/' . Auth::user()->profile_image }}" alt="{{ Auth::user()->name }}" 
                                             class="thumb-md rounded-circle"
                                             onerror="this.onerror=null; this.src='{{ asset('assets/images/no-profile-image.png') }}';">
                                     </div>

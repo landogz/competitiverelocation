@@ -377,6 +377,8 @@
                   <div id="customer-movedate"></div>
                   <div class="text-surface-onVariant font-medium">Phone:</div>
                   <div id="customer-phone"></div>
+                  <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                  <div id="customer-phone2"></div>
                 </div>
               </div>
             </div>
@@ -474,6 +476,8 @@
                 <div id="bol-from-name">Jon Doe</div>
                 <div class="text-surface-onVariant font-medium">Phone:</div>
                 <div id="bol-from-phone">+1 236 254 4568</div>
+                <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                <div id="bol-from-phone2">+1 236 254 4568</div>
                 <div class="text-surface-onVariant font-medium">Email:</div>
                 <div id="bol-from-email" class="break-all">email@email.com</div>
                 <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
@@ -489,6 +493,8 @@
                 <div id="bol-to-name">Jon Doe</div>
                 <div class="text-surface-onVariant font-medium">Phone:</div>
                 <div id="bol-to-phone">+1 236 254 4568</div>
+                <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                <div id="bol-to-phone2">+1 236 254 4568</div>
                 <div class="text-surface-onVariant font-medium">Email:</div>
                 <div id="bol-to-email" class="break-all">email@email.com</div>
                 <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
@@ -1247,6 +1253,7 @@
         ? new Date(transaction.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
       document.getElementById('customer-phone').textContent = transaction.phone || 'N/A';
+      document.getElementById('customer-phone2').textContent = transaction.phone2 || 'N/A';
 
       // Move From (Pick-up Address)
       const pickupAddress = transaction.pickup_location || 'N/A';
@@ -1783,12 +1790,14 @@
       // Move From
       document.getElementById('bol-from-name').textContent = `${transaction.firstname || ''} ${transaction.lastname || ''}`;
       document.getElementById('bol-from-phone').textContent = transaction.phone || '';
+      document.getElementById('bol-from-phone2').textContent = transaction.phone2 || '';
       document.getElementById('bol-from-email').textContent = transaction.email || '';
       document.getElementById('bol-from-address').textContent = transaction.pickup_location || '';
 
       // Move To
       document.getElementById('bol-to-name').textContent = `${transaction.firstname || ''} ${transaction.lastname || ''}`;
       document.getElementById('bol-to-phone').textContent = transaction.phone || '';
+      document.getElementById('bol-to-phone2').textContent = transaction.phone2 || '';
       document.getElementById('bol-to-email').textContent = transaction.email || '';
       document.getElementById('bol-to-address').textContent = transaction.delivery_location || '';
     }

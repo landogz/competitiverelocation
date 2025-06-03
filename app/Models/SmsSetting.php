@@ -12,6 +12,7 @@ class SmsSetting extends Model
     protected $fillable = [
         'public_key',
         'secret_key',
+        'phone_number',
         'is_active'
     ];
 

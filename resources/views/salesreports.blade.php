@@ -71,7 +71,7 @@
                                 </span>
                             </h4>
                             <div class="text-nowrap">
-                                <span class="badge {{ $stats['totalSales']['isPositive'] ? 'bg-soft-success text-success' : 'bg-soft-danger text-danger' }}">{{ $stats['totalSales']['isPositive'] ? '+' : '-' }}{{ number_format(abs($stats['totalSales']['value'] - ($stats['totalSales']['value'] / (1 + $stats['totalSales']['percentChange']/100))), 2) }}</span>
+                                <span class="badge {{ $stats['totalSales']['isPositive'] ? 'bg-soft-success text-success' : 'bg-soft-danger text-danger' }}">{{ $stats['totalSales']['isPositive'] ? '+' : '-' }}{{ number_format(abs($stats['totalSales']['difference']), 2) }}</span>
                                 <span class="ms-1 text-muted">From last month</span>
                             </div>
                         </div>

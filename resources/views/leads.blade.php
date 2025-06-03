@@ -135,6 +135,10 @@
                         <label class="mb-1">Phone Number <span class="text-danger">*</span></label>
                         <input class="form-control form-control-sm" type="text" name="phone" id="phone" value="{{ $transaction->phone ?? '' }}" required>                               
                     </div>
+                    <div class="col-md-12 mb-2">
+                        <label class="mb-1">Phone Number 2</label>
+                        <input class="form-control form-control-sm" type="text" name="phone2" id="phone2" value="{{ $transaction->phone2 ?? '' }}">                               
+                    </div>
                     <hr>
                     <div class="col-md-12 mb-2">
                         <label class="mb-1">Lead Source <span class="text-danger">*</span></label>
@@ -1081,13 +1085,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add event listeners to the quantity-input fields
     document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('blur', updateInventoryItem);
-        input.addEventListener('change', updateInventoryItem);
+        input.addEventListener('input', updateInventoryItem);
     });
 
     // Add event listeners to lead information and contact info fields
     const leadInfoFields = [
-        'firstname', 'lastname', 'email', 'phone', 'lead_source', 
+        'firstname', 'lastname', 'email', 'phone', 'phone2', 'lead_source', 
         'lead_type', 'assigned_agent', 'service', 'date', 'no_of_items',
         'pickup_location', 'delivery_location', 'sales_name', 'sales_email', 
         'sales_location', 'insurance_number'
@@ -1225,9 +1228,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Clear and repopulate the added items table
                     const addedItemsContainer = document.getElementById('added-inventory-items');
                     if (addedItemsContainer) {
+                        // Clear existing rows
                         addedItemsContainer.innerHTML = '';
                         
-                        data.data.forEach(item => {
+                        // Filter out items with quantity 0
+                        const itemsWithQuantity = data.data.filter(item => item.quantity > 0);
+                        
+                        itemsWithQuantity.forEach(item => {
                             totalVolume += parseFloat(item.total_volume);
                             totalWeight += parseFloat(item.total_volume) * WEIGHT_PER_CUBIC_FOOT;
                             
@@ -1247,15 +1254,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update the total volume and weight inputs
                     document.getElementById('total_volume').value = totalVolume.toFixed(2);
                     document.getElementById('total_weight').value = totalWeight.toFixed(2);
-                    
-                    // Update fees based on new volumes
-                    if (typeof calculateFees === 'function') {
-                        calculateFees();
-                    }
                 }
             })
             .catch(error => {
-                console.error('Error fetching inventory summary:', error);
+                console.error('Error updating inventory summary:', error);
+                showToast('Error updating inventory summary', 'error');
             });
     }
     
@@ -1667,6 +1670,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // For new customers, show a message instead of initializing DataTable
         $('#paymentsTable').html('<div class="alert alert-info m-3">No payments found for this customer.</div>');
     }
+});
+
+// Format phone numbers on blur
+$('#phone, #phone2').on('blur', function() {
+    let phone = $(this).val().replace(/\D/g, '');
+    if (phone.length === 10) {
+        phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    }
+    $(this).val(phone);
 });
 </script>
 
@@ -3238,6 +3250,7 @@ function saveTransactionData() {
     formData.append('lastname', getFormValue('#lastname'));
     formData.append('email', getFormValue('#email'));
     formData.append('phone', getFormValue('#phone'));
+    formData.append('phone2', getFormValue('#phone2'));
     formData.append('lead_source', getFormValue('#lead_source'));
     formData.append('lead_type', getFormValue('#lead_type', 'local'));
     formData.append('assigned_agent', getFormValue('#assigned_agent'));

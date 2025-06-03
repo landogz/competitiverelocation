@@ -33,8 +33,35 @@ class SmsController extends Controller
     public function index()
     {
         $settings = SmsSetting::first();
-        $logs = SmsLog::latest()->get();
-        
+        $logs = collect();
+
+        // Try to get logs from Twilio if configured
+        if ($this->twilioClient) {
+            try {
+                $messages = $this->twilioClient->messages->read([], 50); // Get last 50 messages
+                foreach ($messages as $message) {
+                    $logs->push((object) [
+                        'transaction_id' => $message->sid,
+                        'message' => $message->body,
+                        'recipient' => $message->to,
+                        'from' => $message->from,
+                        'status' => $message->status,
+                        'created_at' => $message->dateCreated,
+                        'direction' => $message->direction,
+                        'price' => $message->price,
+                        'price_unit' => $message->priceUnit,
+                        'error_code' => $message->errorCode,
+                        'error_message' => $message->errorMessage
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // If Twilio fails, fall back to local logs
+                $logs = SmsLog::latest()->get();
+            }
+        } else {
+            $logs = SmsLog::latest()->get();
+        }
+
         return view('sms', compact('settings', 'logs'));
     }
 
@@ -80,11 +107,13 @@ class SmsController extends Controller
     {
         $request->validate([
             'public_key' => 'required|string|min:34|max:34', // Twilio Account SID is always 34 characters
-            'secret_key' => 'required|string|min:32' // Twilio Auth Token is at least 32 characters
+            'secret_key' => 'required|string|min:32', // Twilio Auth Token is at least 32 characters
+            'phone_number' => 'required|string|regex:/^\+1\d{10}$/' // Twilio phone number format
         ], [
             'public_key.min' => 'The Account SID should be exactly 34 characters long.',
             'public_key.max' => 'The Account SID should be exactly 34 characters long.',
-            'secret_key.min' => 'The Auth Token should be at least 32 characters long.'
+            'secret_key.min' => 'The Auth Token should be at least 32 characters long.',
+            'phone_number.regex' => 'The phone number should be in the format: +1XXXXXXXXXX'
         ]);
 
         // Validate Twilio credentials
@@ -109,6 +138,7 @@ class SmsController extends Controller
         $settings = SmsSetting::first() ?? new SmsSetting();
         $settings->public_key = $request->public_key;
         $settings->secret_key = $request->secret_key;
+        $settings->phone_number = $request->phone_number;
         $settings->is_active = true;
         $settings->save();
 
@@ -145,11 +175,20 @@ class SmsController extends Controller
             ], 422);
         }
 
+        // Get the Twilio phone number from settings
+        $settings = SmsSetting::where('is_active', true)->first();
+        if (!$settings || !$settings->phone_number) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Twilio phone number is not configured'
+            ], 422);
+        }
+
         try {
             $message = $this->twilioClient->messages->create(
                 $request->to,
                 [
-                    'from' => config('services.twilio.phone_number'),
+                    'from' => $settings->phone_number,
                     'body' => $request->message
                 ]
             );
@@ -187,8 +226,55 @@ class SmsController extends Controller
 
     public function getLogs()
     {
-        $logs = SmsLog::latest()->get();
-        return response()->json($logs);
+        if (!$this->twilioClient) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SMS service is not configured properly'
+            ], 422);
+        }
+
+        try {
+            // Get messages from Twilio
+            $messages = $this->twilioClient->messages->read([], 50); // Get last 50 messages
+            
+            $logs = [];
+            foreach ($messages as $message) {
+                $logs[] = [
+                    'transaction_id' => $message->sid,
+                    'message' => $message->body,
+                    'recipient' => $message->to,
+                    'from' => $message->from,
+                    'status' => $message->status,
+                    'created_at' => $message->dateCreated->format('Y-m-d H:i:s'),
+                    'direction' => $message->direction,
+                    'price' => $message->price,
+                    'price_unit' => $message->priceUnit,
+                    'error_code' => $message->errorCode,
+                    'error_message' => $message->errorMessage
+                ];
+
+                // Update or create local log
+                SmsLog::updateOrCreate(
+                    ['transaction_id' => $message->sid],
+                    [
+                        'message' => $message->body,
+                        'status' => $message->status,
+                        'recipient' => $message->to,
+                        'response_data' => $message->toArray()
+                    ]
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $logs
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch SMS logs: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function checkStatus($transactionId)

@@ -331,6 +331,8 @@
                   <div id="customer-movedate" class="font-medium">${window.transaction?.date ? new Date(window.transaction.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
                   <div class="text-surface-onVariant font-medium">Phone:</div>
                   <div id="customer-phone" class="font-medium">${window.transaction?.phone || 'N/A'}</div>
+                  <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                  <div id="customer-phone2" class="font-medium">${window.transaction?.phone2 || 'N/A'}</div>
                 </div>
               </div>
             </div>
@@ -417,6 +419,8 @@
                 <div id="bol-from-name">Jon Doe</div>
                 <div class="text-surface-onVariant font-medium">Phone:</div>
                 <div id="bol-from-phone">+1 236 254 4568</div>
+                <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                <div id="bol-from-phone2">+1 236 254 4568</div>
                 <div class="text-surface-onVariant font-medium">Email:</div>
                 <div id="bol-from-email" class="break-all">email@email.com</div>
                 <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
@@ -432,6 +436,8 @@
                 <div id="bol-to-name">Jon Doe</div>
                 <div class="text-surface-onVariant font-medium">Phone:</div>
                 <div id="bol-to-phone">+1 236 254 4568</div>
+                <div class="text-surface-onVariant font-medium">Phone 2:</div>
+                <div id="bol-to-phone2">+1 236 254 4568</div>
                 <div class="text-surface-onVariant font-medium">Email:</div>
                 <div id="bol-to-email" class="break-all">email@email.com</div>
                 <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
@@ -978,6 +984,7 @@
         ? new Date(transaction.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : 'N/A';
       document.getElementById('customer-phone').textContent = transaction.phone || 'N/A';
+      document.getElementById('customer-phone2').textContent = transaction.phone2 || 'N/A';
 
       // Move From
       document.getElementById('pickup-address').textContent = transaction.pickup_location || 'N/A';
@@ -1029,6 +1036,8 @@
               <p class="text-surface-onVariant/70">There are no inventory items recorded for this transaction.</p>
             </div>
           `;
+          // Render uploaded images gallery even if no inventory
+          renderUploadedImagesGallery(window.transaction);
           return;
         }
 
@@ -1128,22 +1137,86 @@
       if (!gallery) return;
       gallery.innerHTML = '';
 
-      if (!transaction || !transaction.uploaded_image) {
-        gallery.innerHTML = '<div class="text-surface-onVariant/70 text-center w-full">No uploaded images.</div>';
-        return;
-      }
+      // Upload form
+      gallery.innerHTML += `
+        <div class="w-full flex flex-col items-center justify-center py-6">
+          <form id="image-upload-form" enctype="multipart/form-data" class="flex flex-col items-center gap-3 w-full max-w-xs bg-surface-variant rounded-lg p-6 shadow elevation-1">
+            <label for="image-upload-input" class="w-full flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-primary rounded-lg p-4 bg-white hover:bg-primary/10 transition">
+              <span class="material-icons text-primary text-4xl mb-2">cloud_upload</span>
+              <span class="text-surface-onVariant font-medium">Click to select images</span>
+              <input type="file" id="image-upload-input" name="uploaded_image[]" accept="image/*" multiple class="hidden" />
+              <span id="selected-files" class="block mt-2 text-xs text-surface-onVariant/80">No file chosen</span>
+            </label>
+            <button type="submit" class="w-full px-6 py-2 bg-primary text-primary-on rounded-lg font-semibold shadow hover:bg-primary/90 transition">Upload Images</button>
+          </form>
+          <div id="image-upload-status" class="mt-3 text-sm text-surface-onVariant"></div>
+        </div>
+      `;
 
-      const images = transaction.uploaded_image.split(',').map(url => url.trim()).filter(Boolean);
-      if (images.length === 0) {
-        gallery.innerHTML = '<div class="text-surface-onVariant/70 text-center w-full">No uploaded images.</div>';
-        return;
-      }
+      // Attach event listeners after DOM update
+      setTimeout(() => {
+        const input = gallery.querySelector('#image-upload-input');
+        const selectedFiles = gallery.querySelector('#selected-files');
+        if (input && selectedFiles) {
+          input.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+              const names = Array.from(this.files).map(f => f.name).join(', ');
+              selectedFiles.textContent = names;
+            } else {
+              selectedFiles.textContent = 'No file chosen';
+            }
+          });
+        }
 
-      gallery.innerHTML = images.map((url, idx) => `
-        <a href="${url}" class="lightbox-image" data-lightbox="uploaded-images" data-title="Uploaded Image ${idx + 1}">
-          <img src="${url}" alt="Uploaded Image ${idx + 1}" class="rounded shadow border" style="height:100px;object-fit:cover;max-width:160px;margin-bottom:8px;">
-        </a>
-      `).join('');
+        const form = gallery.querySelector('#image-upload-form');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('image-upload-input');
+            const status = document.getElementById('image-upload-status');
+            if (!input.files.length) {
+              status.textContent = 'Please select image(s) to upload.';
+              return;
+            }
+            status.textContent = 'Uploading...';
+            const formData = new FormData();
+            for (let i = 0; i < input.files.length; i++) {
+              formData.append('uploaded_image[]', input.files[i]);
+            }
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch(`/customer/upload-image/${window.transaction.id}`, {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': token },
+              body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                status.textContent = 'Upload successful!';
+                window.transaction.uploaded_image = data.uploaded_image;
+                renderUploadedImagesGallery(window.transaction);
+              } else {
+                status.textContent = data.message || 'Upload failed.';
+              }
+            })
+            .catch(error => {
+              status.textContent = 'Upload failed. Please try again.';
+            });
+          });
+        }
+      }, 0);
+
+      // Show gallery if images exist
+      if (transaction && transaction.uploaded_image && transaction.uploaded_image.trim() !== '') {
+        const images = transaction.uploaded_image.split(',').map(url => url.trim()).filter(Boolean);
+        if (images.length > 0) {
+          gallery.innerHTML += images.map((url, idx) => `
+            <a href="${url}" class="lightbox-image" data-lightbox="uploaded-images" data-title="Uploaded Image ${idx + 1}">
+              <img src="${url}" alt="Uploaded Image ${idx + 1}" class="rounded shadow border" style="height:100px;object-fit:cover;max-width:160px;margin-bottom:8px;">
+            </a>
+          `).join('');
+        }
+      }
     }
 
     function populateRates(transaction) {
@@ -1233,12 +1306,14 @@
       // Move From
       document.getElementById('bol-from-name').textContent = `${transaction.firstname || ''} ${transaction.lastname || ''}`;
       document.getElementById('bol-from-phone').textContent = transaction.phone || '';
+      document.getElementById('bol-from-phone2').textContent = transaction.phone2 || '';
       document.getElementById('bol-from-email').textContent = transaction.email || '';
       document.getElementById('bol-from-address').textContent = transaction.pickup_location || '';
 
       // Move To
       document.getElementById('bol-to-name').textContent = `${transaction.firstname || ''} ${transaction.lastname || ''}`;
       document.getElementById('bol-to-phone').textContent = transaction.phone || '';
+      document.getElementById('bol-to-phone2').textContent = transaction.phone2 || '';
       document.getElementById('bol-to-email').textContent = transaction.email || '';
       document.getElementById('bol-to-address').textContent = transaction.delivery_location || '';
     }
@@ -1980,6 +2055,7 @@
       const cityStateZip = window.transaction?.pickup_citystatezip || '';
       const deliveryCityStateZip = window.transaction?.delivery_citystatezip || '';
       const phone = window.transaction?.phone || '';
+      const phone2 = window.transaction?.phone2 || '';
       // Rates
       const subtotal = formatCurrency(window.transaction?.subtotal || 0);
       const downpayment = formatCurrency(window.transaction?.downpayment || 0);
@@ -2102,6 +2178,12 @@
       <td class="bol-small">${phone}</td>
       <td class="bol-small"><b>Phone:</b></td>
       <td class="bol-small">${phone}</td>
+    </tr>
+    <tr>
+      <td class="bol-small"><b>Phone 2:</b></td>
+      <td class="bol-small">${phone2}</td>
+      <td class="bol-small"><b>Phone 2:</b></td>
+      <td class="bol-small">${phone2}</td>
     </tr>
     <tr>
       <td class="bol-small"><b>ADDITIONAL INFORMATION:</b></td>

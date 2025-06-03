@@ -3,6 +3,8 @@
 @section('title', 'Load Board')
 
 @section('content')
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid px-4">
     <!-- Page Title -->
     <div class="row">
@@ -135,14 +137,14 @@
     // Calculate total from services and check if it's moving services
     if (is_array($services) && count($services) > 0) {
         foreach ($services as $service) {
-            $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
-            if (strtoupper($service['name']) === 'MOVING SERVICES') {
+            $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal'] ?? 0));
+            if (strtoupper($service['name'] ?? '') === 'MOVING SERVICES') {
                 $isMovingService = true;
             }
         }
     } else {
         $totalSubtotal = $transaction->subtotal;
-        $isMovingService = strtoupper($transaction->service) === 'MOVING SERVICES';
+        $isMovingService = strtoupper($transaction->service ?? '') === 'MOVING SERVICES';
     }
     
     // Calculate added mile rate
@@ -258,6 +260,19 @@
                                         </a>
                                     </div>
                                 </div>
+                                @if($transaction->phone2)
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Phone 2</span>
+                                        <a href="tel:{{ $transaction->phone2 }}" class="info-value contact-link">
+                                            {{ $transaction->phone2 }}
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -327,19 +342,25 @@
                                             $totalCrew = 0;
                                             $totalSubtotal = 0;
                                         @endphp
-                                        @foreach($services as $service)
-                                            @php
-                                                $totalItems++;
-                                                $totalCrew += intval($service['no_of_crew']);
-                                                $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
-                                            @endphp
+                                        @if(is_array($services) && count($services) > 0)
+                                            @foreach($services as $service)
+                                                @php
+                                                    $totalItems++;
+                                                    $totalCrew += intval($service['no_of_crew'] ?? 0);
+                                                    $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal'] ?? 0));
+                                                @endphp
+                                                <tr>
+                                                    <td>{{ $service['name'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['rate'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['no_of_crew'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['subtotal'] ?? 'N/A' }}</td>
+                                                </tr>
+                                            @endforeach
+                                        @else
                                             <tr>
-                                                <td>{{ $service['name'] }}</td>
-                                                <td class="text-end">{{ $service['rate'] }}</td>
-                                                <td class="text-end">{{ $service['no_of_crew'] }}</td>
-                                                <td class="text-end">{{ $service['subtotal'] }}</td>
+                                                <td colspan="4" class="text-center">No services data available</td>
                                             </tr>
-                                        @endforeach
+                                        @endif
                                     </tbody>
                                     <tfoot>
                                         <tr class="total-row">
@@ -604,6 +625,10 @@
 <!-- Lightbox2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
 <style>
+     /* Hide CKEditor notifications */
+     .cke_notifications_area {
+        display: none !important;
+    }
     .fs-14 { font-size: 14px; }
     .avatar-md { width: 48px; height: 48px; }
     .avatar-sm { width: 32px; height: 32px; }
@@ -1190,6 +1215,12 @@
 <!-- Lightbox2 JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
+
+<!-- CKEditor -->
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
     // Define functions globally
     window.acceptJob = function(transactionId) {
@@ -1477,6 +1508,12 @@
                                 <li><a class="dropdown-item" href="/leads/${data}/edit">
                                     <i class="fas fa-edit me-2 text-primary"></i> Edit
                                 </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="copyCustomerDashboardLink('${row.id}', this); return false;">
+                                    <i class="fas fa-link me-2 text-secondary"></i> Copy Customer Dashboard Link
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="sendEmail('${data}')">
+                                    <i class="fas fa-paper-plane me-2 text-info"></i> Send Email
+                                </a></li>
                             `;
                         } else {
                         html += `
@@ -1627,54 +1664,39 @@
         
     };
 
-    let quoteEditor;
     let currentTransactionId;
 
     // Initialize CKEditor for quote
-    ClassicEditor
-        .create(document.querySelector('#quoteEditor'), {
-            toolbar: [
-                'heading',
-                '|',
-                'bold', 'italic', 'strikethrough', 'underline',
-                '|',
-                'bulletedList', 'numberedList',
-                '|',
-                'alignment',
-                '|',
-                'link', 'blockQuote', 'insertTable', 'sourceEditing', 'htmlEmbed',
-                '|',
-                'undo', 'redo'
-            ],
-            htmlSupport: {
-                allow: [
-                    {
-                        name: /.*/,
-                        attributes: true,
-                        classes: true,
-                        styles: true
-                    }
-                ]
-            }
-        })
-        .then(newEditor => {
-            quoteEditor = newEditor;
-            
-            // Handle placeholder insertion for quote editor
-            document.querySelectorAll('#sendQuoteModal .placeholder-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const placeholder = this.dataset.placeholder;
-                    quoteEditor.model.change(writer => {
-                        const insertPosition = quoteEditor.model.document.selection.getFirstPosition();
-                        quoteEditor.model.insertContent(writer.createText(placeholder), insertPosition);
-                    });
-                });
+    var quoteEditor;
+    setTimeout(function() {
+        if (window.CKEDITOR) {
+            quoteEditor = CKEDITOR.replace('quoteEditor', {
+                height: 250,
+                toolbarGroups: [
+                    { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
+                    { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
+                    { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+                    { name: 'forms', groups: [ 'forms' ] },
+                    '/',
+                    { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+                    { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+                    { name: 'links', groups: [ 'links' ] },
+                    { name: 'insert', groups: [ 'insert' ] },
+                    '/',
+                    { name: 'styles', groups: [ 'styles' ] },
+                    { name: 'colors', groups: [ 'colors' ] },
+                    { name: 'tools', groups: [ 'tools' ] },
+                    { name: 'others', groups: [ 'others' ] }
+                ],
+                extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
+                removeButtons: '',
+                startupMode: 'wysiwyg',
+                notification: {
+                    duration: 0
+                }
             });
-        })
-        .catch(error => {
-            console.error(error);
-        });
+        }
+    }, 300);
 
     // Update sendQuote function
     window.sendQuote = function(transactionId) {
@@ -1907,6 +1929,60 @@
         if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
         this.querySelector('form').reset();
     });
+
+    // Add these JS functions if not present already
+    window.copyCustomerDashboardLink = function(transactionId, el) {
+        const url = `${window.location.origin}/customer/${transactionId}`;
+        navigator.clipboard.writeText(url).then(function() {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success',
+                    title: 'Customer Dashboard link copied!'
+                });
+            } else {
+                alert('Customer Dashboard link copied!');
+            }
+        }, function() {
+            alert('Failed to copy link.');
+        });
+    }
+
+    // Add this before any use of replacePlaceholders
+    window.replacePlaceholders = function(str, data) {
+        if (!str) return '';
+        return str.replace(/\{(\w+)\}/g, function(match, key) {
+            return typeof data[key] !== 'undefined' ? data[key] : match;
+        });
+    };
+
+    // Update sendEmail to fetch transaction data and auto-populate recipient
+    window.sendEmail = function(transactionId) {
+        $.get(`/transactions/${transactionId}`, function(data) {
+            window.currentTransaction = data; // Store for placeholder replacement
+            if (data.email) {
+                $('#emailRecipient').val(data.email);
+            } else {
+                $('#emailRecipient').val('');
+            }
+            $('#emailLoadId').val(transactionId);
+            $('#emailSubject').val('');
+            $('#emailMessage').val('');
+            $('#emailTemplateSelect').val('');
+            // Safely clear CKEditor or textarea
+            if (window.ckeditorEmailEditor && typeof window.ckeditorEmailEditor.setData === 'function') {
+                window.ckeditorEmailEditor.setData('');
+            } else if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances['ckeditorEmailEditor']) {
+                CKEDITOR.instances['ckeditorEmailEditor'].setData('');
+            } else {
+                $('#ckeditorEmailEditor').val('');
+            }
+            $('#sendEmailModal').modal('show');
+        });
+    };
 });
 </script>
 

@@ -89,6 +89,7 @@ class SalesReportController extends Controller
                 'value' => $totalSales,
                 'percentChange' => $salesPercentChange,
                 'isPositive' => $salesPercentChange >= 0,
+                'difference' => $totalSales - $lastMonthSales
             ],
             'totalRevenue' => [
                 'value' => $totalRevenue,

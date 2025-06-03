@@ -98,6 +98,7 @@ Route::get('/customer/inventory/{transactionId}', [CustomerController::class, 'g
 // Add payment activity route
 Route::get('/customer/payments/{transactionId}', [CustomerController::class, 'getPaymentActivity']);
 
+Route::post('/customer/upload-image/{transaction}', [App\Http\Controllers\TransactionController::class, 'uploadCustomerImage']);
 // All other routes should be protected with auth middleware
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
@@ -323,6 +324,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Transaction routes
     Route::post('/transaction/save', [TransactionController::class, 'saveTransaction'])->name('transaction.save');
+
 });
 
 // Add this route at the end of the file
@@ -363,4 +365,12 @@ Route::get('/debug/calendar-agents', function() {
             ];
         })
     ];
+});
+
+Route::get('/api-docs', function () {
+    return view('api-documentation');
+});
+
+Route::get('/api-test', function () {
+    return view('api-test');
 });

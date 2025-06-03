@@ -15,6 +15,11 @@
             <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
                 <h4 class="page-title">Call Center</h4>                             
                 <div class="d-flex gap-2">
+                    @if(Auth::user()->privilege === 'agent')
+                        <a href="/leads/" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> Add New Customer
+                        </a>
+                    @endif
                     <button type="button" class="btn btn-primary" id="syncLeads">
                         <i class="fas fa-sync-alt me-1"></i> Sync Leads
                     </button>
@@ -625,12 +630,8 @@
                         
                         // Build the message text based on what was actually updated
                         let messageText = '';
-                        if (response.new_count > 0 && response.updated_count > 0) {
-                            messageText = `Successfully synchronized ${response.new_count} new leads and ${response.updated_count} existing records`;
-                        } else if (response.new_count > 0) {
+                        if (response.new_count > 0) {
                             messageText = `Successfully synchronized ${response.new_count} new leads`;
-                        } else if (response.updated_count > 0) {
-                            messageText = `Successfully synchronized ${response.updated_count} existing records`;
                         } else {
                             messageText = 'All records are up to date. No changes were required.';
                         }

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Intervention\Image\ImageManager;
 
 class TransactionController extends Controller
 {
@@ -496,7 +497,7 @@ class TransactionController extends Controller
         $field = $request->input('field');
         $value = $request->input('value');
         $allowedFields = [
-            'firstname', 'lastname', 'email', 'phone', 'lead_source', 'lead_type', 'assigned_agent',
+            'firstname', 'lastname', 'email', 'phone', 'phone2', 'lead_source', 'lead_type', 'assigned_agent',
             'sales_name', 'sales_email', 'sales_location', 'date', 'service', 'no_of_items',
             'pickup_location', 'delivery_location', 'miles', 'insurance_number'
         ];
@@ -1163,8 +1164,11 @@ class TransactionController extends Controller
             if ($request->hasFile('uploaded_image')) {
                 foreach ($request->file('uploaded_image') as $image) {
                     $filename = time() . '_' . $image->getClientOriginalName();
-                    $path = $image->storeAs('public/uploads', $filename);
-                    $uploadedImages[] = '/storage/' . str_replace('public/', '', $path);
+                    $path = 'profile-images/' . $filename;
+                    
+                    // Save using Storage facade
+                    Storage::disk('public')->put($path, file_get_contents($image));
+                    $uploadedImages[] = '/storage/app/public/' . $path;
                 }
             } elseif ($request->has('uploaded_image')) {
                 // Handle image URLs
@@ -1217,6 +1221,94 @@ class TransactionController extends Controller
             // Create the transaction
             $transaction = Transaction::create($transactionData);
 
+            // Send About Us Email (template ID 16)
+            try {
+                $aboutUsTemplate = \App\Models\EmailTemplate::find(16);
+                if ($aboutUsTemplate) {
+                    // Process base64 images in the template content
+                    $content = $aboutUsTemplate->content;
+                    
+                    // Find all base64 images in the content
+                    if (preg_match_all('/<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/', $content, $matches)) {
+                        foreach ($matches[1] as $index => $base64Src) {
+                            // Extract the image data
+                            list($type, $data) = explode(';', $base64Src);
+                            list(, $data) = explode(',', $data);
+                            
+                            // Decode the base64 data
+                            $imageData = base64_decode($data);
+                            
+                            // Generate a unique filename
+                            $filename = 'image_' . time() . '_' . $index . '.png';
+                            
+                            // Save the image to storage
+                            $path = 'profile-images/' . $filename;
+                            Storage::disk('public')->put($path, $imageData);
+                            
+                            // Get the URL for the image with full domain
+                            $imageUrl = 'https://competitiverelocationcrm.com/storage/app/public/' . $path;
+                            
+                            // Replace the base64 image with the URL in the content
+                            $content = str_replace($base64Src, $imageUrl, $content);
+                        }
+                    }
+
+                    $sentEmail = \App\Models\SentEmail::create([
+                        'transaction_id' => $transaction->id,
+                        'recipient' => $transaction->email,
+                        'subject' => $aboutUsTemplate->subject,
+                        'message' => $content,
+                        'template_id' => 16,
+                        'user_id' => auth()->id(),
+                        'status' => 'pending'
+                    ]);
+
+                    \Mail::to($transaction->email)
+                        ->send(new \App\Mail\CustomEmail($aboutUsTemplate->subject, $content));
+
+                    $sentEmail->update(['status' => 'sent']);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to send About Us email: ' . $e->getMessage());
+            }
+
+            // Send Call and Confirm Move Email (template ID 35)
+            try {
+                $confirmMoveTemplate = \App\Models\EmailTemplate::find(35);
+                if ($confirmMoveTemplate) {
+                    // Replace placeholders with real data
+                    $content = $confirmMoveTemplate->content;
+                    $replacements = [
+                        '{name}' => $transaction->firstname . ' ' . $transaction->lastname,
+                        '{date}' => $transaction->date ? date('F j, Y', strtotime($transaction->date)) : 'Not specified',
+                        '{pickup_location}' => $transaction->pickup_location ?? 'Not specified',
+                        '{delivery_location}' => $transaction->delivery_location ?? 'Not specified',
+                        '{sales_name}' => $transaction->sales_name ?? 'Not specified',
+                        '{firstname}' => $transaction->firstname,
+                        '{lastname}' => $transaction->lastname
+                    ];
+
+                    $content = str_replace(array_keys($replacements), array_values($replacements), $content);
+
+                    $sentEmail = \App\Models\SentEmail::create([
+                        'transaction_id' => $transaction->id,
+                        'recipient' => $transaction->email,
+                        'subject' => $confirmMoveTemplate->subject,
+                        'message' => $content,
+                        'template_id' => 35,
+                        'user_id' => auth()->id(),
+                        'status' => 'pending'
+                    ]);
+
+                    \Mail::to($transaction->email)
+                        ->send(new \App\Mail\CustomEmail($confirmMoveTemplate->subject, $content));
+
+                    $sentEmail->update(['status' => 'sent']);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to send Call and Confirm Move email: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Transaction saved successfully',
@@ -1230,5 +1322,44 @@ class TransactionController extends Controller
                 'message' => 'Failed to save transaction: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function uploadCustomerImage(Request $request, $transactionId)
+    {
+        // Validate images
+        $request->validate([
+            'uploaded_image.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120' // 5MB max per image
+        ]);
+
+        // Find the transaction
+        $transaction = \App\Models\Transaction::find($transactionId);
+        if (!$transaction) {
+            return response()->json(['success' => false, 'message' => 'Transaction not found.'], 404);
+        }
+
+        $uploadedImages = [];
+        if ($request->hasFile('uploaded_image')) {
+            foreach ($request->file('uploaded_image') as $image) {
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $path = 'profile-images/' . $filename;
+                \Illuminate\Support\Facades\Storage::disk('public')->put($path, file_get_contents($image));
+                $uploadedImages[] = '/storage/app/public/' . $path;
+                
+            }
+        }
+
+        // Merge with existing images if any
+        $existing = $transaction->uploaded_image ? array_filter(array_map('trim', explode(',', $transaction->uploaded_image))) : [];
+        $allImages = array_merge($existing, $uploadedImages);
+
+        // Save back to transaction
+        $transaction->uploaded_image = implode(', ', $allImages);
+        $transaction->save();
+
+        return response()->json([
+            'success' => true,
+            'uploaded_image' => $transaction->uploaded_image,
+            'message' => 'Images uploaded successfully.'
+        ]);
     }
 } 

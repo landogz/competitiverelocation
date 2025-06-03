@@ -74,28 +74,26 @@ class ProfileController extends Controller
                 // Generate unique filename
                 $filename = 'profile-' . $user->id . '-' . time() . '.' . $image->getClientOriginalExtension();
                 
-                // Ensure directory exists
-                $path = storage_path('app/public/profile-images');
-                if (!file_exists($path)) {
-                    mkdir($path, 0755, true);
-                }
+                // Ensure directory exists using Storage facade
+                Storage::disk('public')->makeDirectory('profile-images');
 
                 // Delete old profile picture if exists
-                if ($user->profile_image && Storage::disk('public')->exists('profile-images/' . basename($user->profile_image))) {
-                    Storage::disk('public')->delete('profile-images/' . basename($user->profile_image));
+                if ($user->profile_image && Storage::disk('public')->exists(str_replace('/storage/app/public/', '', $user->profile_image))) {
+                    Storage::disk('public')->delete(str_replace('/storage/app/public/', '', $user->profile_image));
                 }
 
-                // Save new image
-                $resized->save($path . '/' . $filename);
+                // Save new image using Storage facade
+                $path = 'profile-images/' . $filename;
+                Storage::disk('public')->put($path, $resized->encode());
                 
-                // Update user profile image path
-                $user->profile_image = 'profile-images/' . $filename;
+                // Update user profile image path with full storage path
+                $user->profile_image = '/storage/app/public/' . $path;
                 $user->save();
 
                 return response()->json([
                     'success' => true,
                     'message' => 'Profile photo updated successfully',
-                    'photo_url' => asset('storage/' . $user->profile_image)
+                    'photo_url' => asset('storage/app/public/' . $path)
                 ]);
             }
 
@@ -105,6 +103,7 @@ class ProfileController extends Controller
             ], 400);
 
         } catch (\Exception $e) {
+            \Log::error('Profile photo update error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error updating profile photo: ' . $e->getMessage()

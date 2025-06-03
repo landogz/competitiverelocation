@@ -141,18 +141,18 @@
     // Calculate total from services and check if it's moving services
     if (is_array($services) && count($services) > 0) {
         foreach ($services as $service) {
-            $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
-            if (strtoupper($service['name']) === 'MOVING SERVICES') {
+            $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal'] ?? 0));
+            if (strtoupper($service['name'] ?? '') === 'MOVING SERVICES') {
                 $isMovingService = true;
             }
         }
     } else {
         $totalSubtotal = $transaction->subtotal;
-        $isMovingService = strtoupper($transaction->service) === 'MOVING SERVICES';
+        $isMovingService = strtoupper($transaction->service ?? '') === 'MOVING SERVICES';
     }
     
     // Calculate added mile rate
-    $distanceInMiles = floatval($transaction->miles);
+    $distanceInMiles = floatval($transaction->miles ?? 0);
     $addedMiles = 0;
     $addedMileRate = 0;
     
@@ -170,9 +170,9 @@
         $downPayment = $grandTotal * 0.315;
         $remainingBalance = $grandTotal - $downPayment;
     } else {
-        $truckFee = $transaction->truck_fee;
-        $softwareFee = $transaction->software_fee;
-        $grandTotal = $transaction->grand_total;
+        $truckFee = $transaction->truck_fee ?? 0;
+        $softwareFee = $transaction->software_fee ?? 0;
+        $grandTotal = $transaction->grand_total ?? 0;
     }
 @endphp
 <div class="modal fade" id="transactionModal{{ $transaction->id }}" tabindex="-1" aria-labelledby="transactionModalLabel{{ $transaction->id }}" aria-hidden="true">
@@ -264,6 +264,19 @@
                                         </a>
                                     </div>
                                 </div>
+                                @if($transaction->phone2)
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Phone 2</span>
+                                        <a href="tel:{{ $transaction->phone2 }}" class="info-value contact-link">
+                                            {{ $transaction->phone2 }}
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -333,19 +346,25 @@
                                             $totalCrew = 0;
                                             $totalSubtotal = 0;
                                         @endphp
-                                        @foreach($services as $service)
-                                            @php
-                                                $totalItems++;
-                                                $totalCrew += intval($service['no_of_crew']);
-                                                $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal']));
-                                            @endphp
+                                        @if(is_array($services) && count($services) > 0)
+                                            @foreach($services as $service)
+                                                @php
+                                                    $totalItems++;
+                                                    $totalCrew += intval($service['no_of_crew'] ?? 0);
+                                                    $totalSubtotal += floatval(str_replace(['$', ','], '', $service['subtotal'] ?? 0));
+                                                @endphp
+                                                <tr>
+                                                    <td>{{ $service['name'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['rate'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['no_of_crew'] ?? 'N/A' }}</td>
+                                                    <td class="text-end">{{ $service['subtotal'] ?? 'N/A' }}</td>
+                                                </tr>
+                                            @endforeach
+                                        @else
                                             <tr>
-                                                <td>{{ $service['name'] }}</td>
-                                                <td class="text-end">{{ $service['rate'] }}</td>
-                                                <td class="text-end">{{ $service['no_of_crew'] }}</td>
-                                                <td class="text-end">{{ $service['subtotal'] }}</td>
+                                                <td colspan="4" class="text-center">No services data available</td>
                                             </tr>
-                                        @endforeach
+                                        @endif
                                     </tbody>
                                     <tfoot>
                                         <tr class="total-row">
@@ -1433,6 +1452,9 @@
                                     <li><a class="dropdown-item" href="/leads/${data}/edit">
                                         <i class="fas fa-edit me-2 text-primary"></i> Edit
                                     </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="copyCustomerDashboardLink('${row.id}', this); return false;">
+                                        <i class="fas fa-link me-2 text-secondary"></i> Copy Customer Dashboard Link
+                                    </a></li>
                                     <li><a class="dropdown-item" href="#" onclick="sendEmail('${data}')">
                                         <i class="fas fa-paper-plane me-2 text-info"></i> Send Email
                                     </a></li>
@@ -1784,6 +1806,27 @@
             allowClear: true
         });
     });
-    </script>
+
+    function copyCustomerDashboardLink(transactionId, el) {
+        const url = `${window.location.origin}/customer/${transactionId}`;
+        navigator.clipboard.writeText(url).then(function() {
+            // Optionally show a tooltip or alert
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success',
+                    title: 'Customer Dashboard link copied!'
+                });
+            } else {
+                alert('Customer Dashboard link copied!');
+            }
+        }, function() {
+            alert('Failed to copy link.');
+        });
+    }
+</script>
 
 @endsection
