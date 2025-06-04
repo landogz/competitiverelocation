@@ -44,8 +44,9 @@ class CustomerController extends Controller
                 'transaction_id' => $id
             ]);
             
-            return redirect()->route('dashboard')
-                ->with('error', 'Failed to load customer details. Please try again later.');
+            return response()->json([
+                'error' => 'Failed to load customer details. Please try again later.'
+            ], 404);
         }
     }
 

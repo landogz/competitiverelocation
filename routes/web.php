@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\CreditCardAuthorizationController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ConsentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,18 +88,16 @@ Route::post('/payment/process', [StripeController::class, 'processPayment'])->na
 Route::post('/payment/confirm', [StripeController::class, 'confirmPayment'])->name('payment.confirm');
 Route::get('/payment/success', [StripeController::class, 'paymentSuccess'])->name('payment.success');
 
-Route::get('/customer', function () {
-    return view('customer.customer');
-});
+// Customer Routes - These should be outside the auth middleware
+// Route::get('/customer', function () {
+//     return view('customer.customer');
+// });
 
 Route::get('/customer/{id}', [CustomerController::class, 'show'])->name('customer.show');
-    // Customer inventory route
 Route::get('/customer/inventory/{transactionId}', [CustomerController::class, 'getInventory']);
-
-// Add payment activity route
 Route::get('/customer/payments/{transactionId}', [CustomerController::class, 'getPaymentActivity']);
-
 Route::post('/customer/upload-image/{transaction}', [App\Http\Controllers\TransactionController::class, 'uploadCustomerImage']);
+
 // All other routes should be protected with auth middleware
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
@@ -374,3 +373,7 @@ Route::get('/api-docs', function () {
 Route::get('/api-test', function () {
     return view('api-test');
 });
+
+Route::get('/sms-consent', [ConsentController::class, 'show'])->name('consent.show');
+Route::post('/sms-consent', [ConsentController::class, 'store'])->name('consent.store');
+Route::get('/sms-consent/success', [ConsentController::class, 'success'])->name('consent.success');
