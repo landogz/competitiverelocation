@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>API Test Form</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -26,19 +27,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Name</label>
-                                <input type="text" name="name" value="John Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="name" value="Test rolan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                                <input type="email" name="email" value="john.doe@example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="email" name="email" value="test@test.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Phone</label>
-                                <input type="tel" name="phone" value="5551234567" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="tel" name="phone" value="1234567890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Extension</label>
-                                <input type="text" name="ext" value="123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <input type="text" name="ext" value="1234567890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             </div>
                         </div>
                     </div>
@@ -49,19 +50,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Area Code</label>
-                                <input type="text" name="from_areacode" value="212" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="from_areacode" value="Purok 4 Tampo" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">ZIP Code</label>
-                                <input type="text" name="from_zip" value="10001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="from_zip" value="2202" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">State</label>
-                                <input type="text" name="from_state" value="NY" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="from_state" value="Botolan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">City</label>
-                                <input type="text" name="from_city" value="New York" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="from_city" value="Zambales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                         </div>
                     </div>
@@ -72,19 +73,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Area Code</label>
-                                <input type="text" name="to_areacode" value="213" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="to_areacode" value="San Juan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">ZIP Code</label>
-                                <input type="text" name="to_zip" value="90001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="to_zip" value="2202" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">State</label>
-                                <input type="text" name="to_state" value="CA" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="to_state" value="Botolan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">City</label>
-                                <input type="text" name="to_city" value="Los Angeles" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <input type="text" name="to_city" value="Zambales" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                             </div>
                         </div>
                     </div>
@@ -106,7 +107,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex justify-end">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <button type="submit" id="submitButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             Submit
                         </button>
                     </div>
@@ -115,6 +116,12 @@
                 <!-- Response Section -->
                 <div class="mt-8">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Response</h2>
+                    <div id="loadingIndicator" class="hidden">
+                        <div class="flex items-center space-x-2">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                            <span class="text-gray-600">Processing request...</span>
+                        </div>
+                    </div>
                     <pre id="response" class="bg-gray-100 p-4 rounded-md overflow-x-auto"></pre>
                 </div>
             </div>
@@ -123,6 +130,15 @@
 
     <script>
         $(document).ready(function() {
+            // Set up CSRF token for all AJAX requests
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
             $('#apiForm').on('submit', function(e) {
                 e.preventDefault();
                 
@@ -132,17 +148,14 @@
                 });
 
                 // Show loading state
-                $('#response').text('Sending request...');
+                $('#loadingIndicator').removeClass('hidden');
+                $('#submitButton').prop('disabled', true);
+                $('#response').text('');
 
                 $.ajax({
                     url: '{{ url("/api/leads") }}',
                     method: 'POST',
-                    contentType: 'application/json',
                     data: JSON.stringify(formData),
-                    crossDomain: true,
-                    xhrFields: {
-                        withCredentials: false
-                    },
                     success: function(response) {
                         $('#response').text(JSON.stringify(response, null, 2));
                     },
@@ -150,7 +163,15 @@
                         let errorMessage = 'Error occurred while processing your request.\n\n';
                         
                         if (xhr.responseJSON) {
-                            errorMessage += 'Server Response:\n' + JSON.stringify(xhr.responseJSON, null, 2);
+                            if (xhr.responseJSON.errors) {
+                                // Handle validation errors
+                                errorMessage = 'Validation Errors:\n';
+                                Object.keys(xhr.responseJSON.errors).forEach(key => {
+                                    errorMessage += `\n${key}: ${xhr.responseJSON.errors[key].join(', ')}`;
+                                });
+                            } else {
+                                errorMessage += 'Server Response:\n' + JSON.stringify(xhr.responseJSON, null, 2);
+                            }
                         } else {
                             errorMessage += 'Status: ' + status + '\nError: ' + error + '\nResponse: ' + xhr.responseText;
                         }
@@ -161,6 +182,11 @@
                             error: error,
                             response: xhr.responseText
                         });
+                    },
+                    complete: function() {
+                        // Hide loading state
+                        $('#loadingIndicator').addClass('hidden');
+                        $('#submitButton').prop('disabled', false);
                     }
                 });
             });

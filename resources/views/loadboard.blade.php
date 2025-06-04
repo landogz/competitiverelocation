@@ -92,6 +92,7 @@
                         <table id="transactionsTable" class="table table-centered align-middle table-hover mb-0">
                             <thead class="text-muted bg-light">
                                 <tr>
+                                    <th class="border-0 dtr-control"></th>
                                     <th class="border-0">ID</th>
                                     <th class="border-0">Customer</th>
                                     <th class="border-0 date-column">Move Date</th>
@@ -560,11 +561,11 @@
     
     .dataTables_scroll {
         flex: 1;
-        overflow: auto;
+        overflow: visible;
     }
     
-    .dataTables_wrapper .dataTables_scroll { overflow: hidden !important; }
-    .dataTables_wrapper { overflow-x: hidden !important; }
+    .dataTables_wrapper .dataTables_scroll { overflow: visible !important; }
+    .dataTables_wrapper { overflow-x: visible !important; }
     .table-responsive { 
         overflow-x: hidden !important;
         height: 100%;
@@ -844,8 +845,106 @@
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        .info-card {
-            margin-bottom: 1rem;
+        body, .container-fluid.px-4 {
+            background: #f6f8fb !important;
+        }
+        .container-fluid.px-4 {
+            padding-left: 2vw !important;
+            padding-right: 2vw !important;
+        }
+        .page-title-box {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+        .page-title-box h4 {
+            text-align: center !important;
+            width: 100%;
+            font-size: 1.3rem !important;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .page-title-right {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .page-title-right .btn {
+            width: 100%;
+            max-width: 350px;
+        }
+        .row.g-4.mb-4.justify-content-center {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+            gap: 2vw !important;
+            margin-bottom: 1.5rem !important;
+        }
+        .stats-card {
+            width: 48% !important;
+            min-width: 160px;
+            max-width: 210px;
+            margin: 0 0 1rem 0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e9ecef;
+            padding: 1.25rem 1rem !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .stats-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+        }
+        .stats-icon {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px !important;
+        }
+        .stats-icon i {
+            font-size: 1.4rem !important;
+        }
+        .stats-label {
+            font-size: 0.95rem !important;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 0.15rem;
+            text-align: center !important;
+            letter-spacing: 0.5px;
+        }
+        .stats-value {
+            font-size: 1.5rem !important;
+            font-weight: 700;
+            color: #212529;
+            text-align: center !important;
+            margin: 0.15rem 0 0 0;
+        }
+        .col-xl-2, .col-lg-3, .col-md-4, .col-6 {
+            flex: 0 0 48% !important;
+            max-width: 48% !important;
+            min-width: 160px;
+            padding: 0 !important;
+            display: flex;
+            justify-content: center;
+        }
+        .container-fluid.px-4 {
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+        /* Add margin between stats and table */
+        .row.g-4.mb-4.justify-content-center + .row {
+            margin-top: 1.5rem !important;
         }
     }
 
@@ -974,13 +1073,6 @@
         text-decoration: none;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .info-section-card {
-            margin-bottom: 1rem;
-        }
-    }
-
     /* Stats Cards Styling */
     .stats-card {
         background: white;
@@ -1051,74 +1143,9 @@
         line-height: 1.2;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .stats-card {
-            margin-bottom: 1rem;
-        }
-        
-        .stats-icon {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .stats-icon i {
-            font-size: 1.25rem;
-        }
-        
-        .stats-value {
-            font-size: 1.25rem;
-        }
-    }
-
-    
-    .ql-editor p {
-        margin: 0 0 10px 0 !important;
-        line-height: 1.4 !important;
-    }
-    .ql-editor {
-        line-height: 1.4 !important;
-    }
-
-    /* Quill Editor Background Color */
-    .ql-container {
-        background-color: #ffffff !important;
-    }
-
-    .ql-toolbar {
-        background-color: #f8f9fa !important;
-        border-top-left-radius: 8px !important;
-        border-top-right-radius: 8px !important;
-    }
-
-    .ql-editor {
-        background-color: #ffffff !important;
-        min-height: 200px !important;
-        border-bottom-left-radius: 8px !important;
-        border-bottom-right-radius: 8px !important;
-    }
-
-    .ql-container.ql-snow {
-        border: 1px solid #e5e7eb !important;
-        border-radius: 8px !important;
-    }
-    
-    /* Make Quill editor adjustable in height */
-    .ql-container {
-        min-height: 400px;
-        max-height: 600px;
-        resize: vertical;
-        overflow: auto;
-    }
-
-    /* DataTables Processing Indicator */
-    #transactionsTable_processing {
-        z-index: 99 !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        border-radius: 8px !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-        padding: 1rem !important;
-        margin-top: 1rem !important;
+    /* Fix for dropdown menu being cut off in .table-responsive */
+    .table-responsive {
+        overflow: visible !important;
     }
 </style>
 
@@ -1293,6 +1320,13 @@
                 ];
             })) !!},
             columns: [
+                {
+                    className: 'dtr-control',
+                    orderable: false,
+                    searchable: false,
+                    data: null,
+                    defaultContent: '',
+                },
                 { 
                     data: 'transaction_id', 
                     name: 'transaction_id',
@@ -1530,6 +1564,25 @@
                         modal.show();
                     }
                 });
+            },
+            responsive: true,
+            responsive: {
+                details: {
+                    type: 'column',
+                    target: 'tr',
+                    renderer: function(api, rowIdx, columns) {
+                        const data = $.map(columns, function(col, i) {
+                            return col.hidden ?
+                                '<tr data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
+                                    '<td class="fw-bold">' + col.title + ':' + '</td> ' +
+                                    '<td>' + col.data + '</td>' +
+                                '</tr>' : '';
+                        }).join('');
+
+                        return data ?
+                            $('<table class="table table-sm table-borderless mb-0"/>').append(data) : false;
+                    }
+                }
             }
         });
 

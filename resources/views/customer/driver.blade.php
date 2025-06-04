@@ -7,9 +7,11 @@
   <title>CRService</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-  <!-- Add Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Material Design 3 Color System -->
@@ -17,15 +19,18 @@
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
           colors: {
             primary: {
-              DEFAULT: '#1061B1', // Brand blue
+              DEFAULT: '#1061B1',
               container: '#E3F2FD',
               on: '#FFFFFF',
               onContainer: '#001E3C'
             },
             secondary: {
-              DEFAULT: '#FFA71E', // Brand yellow
+              DEFAULT: '#FFA71E',
               container: '#FFF3E0',
               on: '#FFFFFF',
               onContainer: '#3E2723'
@@ -56,31 +61,29 @@
     }
   </script>
   <style>
-    /* Material Design 3 Typography */
+    /* Base styles */
     body {
-      font-family: 'Roboto', sans-serif;
-      letter-spacing: 0.15px;
-    }
-
-    /* Remove scrollbar from SweetAlert2 HTML container */
-    .swal2-html-container {
-      overflow: hidden !important;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* Material Design 3 Elevation */
     .elevation-1 {
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     }
     .elevation-2 {
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     }
     .elevation-3 {
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
     }
 
     /* Material Design 3 State Layers */
     .state-layer {
       position: relative;
+      transition: all 0.2s ease;
     }
     .state-layer::after {
       content: '';
@@ -89,6 +92,7 @@
       background: currentColor;
       opacity: 0;
       transition: opacity 0.2s;
+      border-radius: inherit;
     }
     .state-layer:hover::after {
       opacity: 0.08;
@@ -112,13 +116,14 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.98);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 50;
       opacity: 1;
       transition: opacity 0.5s ease;
+      backdrop-filter: blur(4px);
     }
 
     #preloader.hide {
@@ -127,11 +132,11 @@
     }
 
     .spinner {
-      border: 4px solid rgba(103, 80, 164, 0.3);
-      border-top: 4px solid #6750A4;
+      border: 3px solid rgba(16, 97, 177, 0.2);
+      border-top: 3px solid #1061B1;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       animation: spin 1s linear infinite;
     }
 
@@ -140,40 +145,91 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Footer menu active state */
-    .footer-menu-item.active,
-    .footer-menu-item.active:hover {
-      background: #fff;
-      color: #1061B1 !important;
-      border-radius: 8px 8px 0 0;
-      font-weight: bold;
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    /* Modern form elements */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    textarea,
+    select {
+      @apply bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm transition-all duration-200;
+      @apply focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none;
     }
-    .footer-menu-item.active .material-icons {
-      color: #FFA71E;
+
+    /* Modern buttons */
+    .btn {
+      @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+      @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
     }
-  </style>
-  <link href="https://unpkg.com/lightbox2@2.11.3/dist/css/lightbox.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/lightbox2@2.11.3/dist/js/lightbox-plus-jquery.min.js"></script>
-  <style>
-    @media (max-width: 600px) {
-      .rates-table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+
+    .btn-primary {
+      @apply bg-primary text-primary-on hover:bg-primary/90 focus:ring-primary/50;
+    }
+
+    .btn-secondary {
+      @apply bg-surface-variant text-surface-on hover:bg-surface-variant/80 focus:ring-surface-variant/50;
+    }
+
+    /* Modern cards */
+    .card {
+      @apply bg-surface rounded-lg elevation-1 overflow-hidden;
+    }
+
+    .card-header {
+      @apply bg-surface-variant px-6 py-4 border-b border-surface-variant/50;
+    }
+
+    .card-body {
+      @apply p-6;
+    }
+
+    /* Modern tables */
+    .table-modern {
+      @apply w-full text-sm;
+    }
+
+    .table-modern th {
+      @apply text-left py-3 px-4 font-medium text-surface-onVariant bg-surface-variant/50;
+    }
+
+    .table-modern td {
+      @apply py-3 px-4 border-b border-surface-variant/50;
+    }
+
+    .table-modern tr:hover {
+      @apply bg-surface-variant/30;
+    }
+
+    /* Modern badges */
+    .badge {
+      @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+
+    .badge-success {
+      @apply bg-green-100 text-green-800;
+    }
+
+    .badge-warning {
+      @apply bg-yellow-100 text-yellow-800;
+    }
+
+    .badge-error {
+      @apply bg-red-100 text-red-800;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
-      .rates-table {
-        min-width: 400px;
-        font-size: 0.95rem;
-      }
-      .rates-table th, .rates-table td {
-        padding: 0.5rem 0.75rem;
+      header, footer {
+        display: none !important;
       }
     }
   </style>
 </head>
 
 <body class="bg-background text-surface-on min-h-screen">
-
   <!-- Preloader -->
   <div id="preloader" class="fixed top-0 left-0 w-full h-full bg-background bg-opacity-90 flex justify-center items-center z-50">
     <span class="text-xl font-medium text-primary animate-pulse">Loading...</span>
@@ -1950,22 +2006,86 @@
       if (!gallery) return;
       gallery.innerHTML = '';
 
-      if (!transaction || !transaction.uploaded_image) {
-        gallery.innerHTML = '<div class="text-surface-onVariant/70 text-center w-full">No uploaded images.</div>';
-        return;
-      }
+      // Upload form
+      gallery.innerHTML += `
+        <div class="w-full flex flex-col items-center justify-center py-6">
+          <form id="image-upload-form" enctype="multipart/form-data" class="flex flex-col items-center gap-3 w-full max-w-xs bg-surface-variant rounded-lg p-6 shadow elevation-1">
+            <label for="image-upload-input" class="w-full flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-primary rounded-lg p-4 bg-white hover:bg-primary/10 transition">
+              <span class="material-icons text-primary text-4xl mb-2">cloud_upload</span>
+              <span class="text-surface-onVariant font-medium">Click to select images</span>
+              <input type="file" id="image-upload-input" name="uploaded_image[]" accept="image/*" multiple class="hidden" />
+              <span id="selected-files" class="block mt-2 text-xs text-surface-onVariant/80">No file chosen</span>
+            </label>
+            <button type="submit" class="w-full px-6 py-2 bg-primary text-primary-on rounded-lg font-semibold shadow hover:bg-primary/90 transition">Upload Images</button>
+          </form>
+          <div id="image-upload-status" class="mt-3 text-sm text-surface-onVariant"></div>
+        </div>
+      `;
 
-      const images = transaction.uploaded_image.split(',').map(url => url.trim()).filter(Boolean);
-      if (images.length === 0) {
-        gallery.innerHTML = '<div class="text-surface-onVariant/70 text-center w-full">No uploaded images.</div>';
-        return;
-      }
+      // Attach event listeners after DOM update
+      setTimeout(() => {
+        const input = gallery.querySelector('#image-upload-input');
+        const selectedFiles = gallery.querySelector('#selected-files');
+        if (input && selectedFiles) {
+          input.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+              const names = Array.from(this.files).map(f => f.name).join(', ');
+              selectedFiles.textContent = names;
+            } else {
+              selectedFiles.textContent = 'No file chosen';
+            }
+          });
+        }
 
-      gallery.innerHTML = images.map((url, idx) => `
-        <a href="${url}" class="lightbox-image" data-lightbox="uploaded-images" data-title="Uploaded Image ${idx + 1}">
-          <img src="${url}" alt="Uploaded Image ${idx + 1}" class="rounded shadow border" style="height:100px;object-fit:cover;max-width:160px;margin-bottom:8px;">
-        </a>
-      `).join('');
+        const form = gallery.querySelector('#image-upload-form');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('image-upload-input');
+            const status = document.getElementById('image-upload-status');
+            if (!input.files.length) {
+              status.textContent = 'Please select image(s) to upload.';
+              return;
+            }
+            status.textContent = 'Uploading...';
+            const formData = new FormData();
+            for (let i = 0; i < input.files.length; i++) {
+              formData.append('uploaded_image[]', input.files[i]);
+            }
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            fetch(`/customer/upload-image/${window.currentTransaction.id}`, {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': token },
+              body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                status.textContent = 'Upload successful!';
+                window.currentTransaction.uploaded_image = data.uploaded_image;
+                renderUploadedImagesGallery(window.currentTransaction);
+              } else {
+                status.textContent = data.message || 'Upload failed.';
+              }
+            })
+            .catch(error => {
+              status.textContent = 'Upload failed. Please try again.';
+            });
+          });
+        }
+      }, 0);
+
+      // Show gallery if images exist
+      if (transaction && transaction.uploaded_image && transaction.uploaded_image.trim() !== '') {
+        const images = transaction.uploaded_image.split(',').map(url => url.trim()).filter(Boolean);
+        if (images.length > 0) {
+          gallery.innerHTML += images.map((url, idx) => `
+            <a href="${url}" class="lightbox-image" data-lightbox="uploaded-images" data-title="Uploaded Image ${idx + 1}">
+              <img src="${url}" alt="Uploaded Image ${idx + 1}" class="rounded shadow border" style="height:100px;object-fit:cover;max-width:160px;margin-bottom:8px;">
+            </a>
+          `).join('');
+        }
+      }
     }
 
     // Set active footer menu item

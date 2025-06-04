@@ -8,6 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <!-- Material Design 3 Color System -->
@@ -15,15 +19,18 @@
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
           colors: {
             primary: {
-              DEFAULT: '#1061B1', // Brand blue
+              DEFAULT: '#1061B1',
               container: '#E3F2FD',
               on: '#FFFFFF',
               onContainer: '#001E3C'
             },
             secondary: {
-              DEFAULT: '#FFA71E', // Brand yellow
+              DEFAULT: '#FFA71E',
               container: '#FFF3E0',
               on: '#FFFFFF',
               onContainer: '#3E2723'
@@ -54,26 +61,29 @@
     }
   </script>
   <style>
-    /* Material Design 3 Typography */
+    /* Base styles */
     body {
-      font-family: 'Roboto', sans-serif;
-      letter-spacing: 0.15px;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* Material Design 3 Elevation */
     .elevation-1 {
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     }
     .elevation-2 {
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     }
     .elevation-3 {
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
     }
 
     /* Material Design 3 State Layers */
     .state-layer {
       position: relative;
+      transition: all 0.2s ease;
     }
     .state-layer::after {
       content: '';
@@ -82,6 +92,7 @@
       background: currentColor;
       opacity: 0;
       transition: opacity 0.2s;
+      border-radius: inherit;
     }
     .state-layer:hover::after {
       opacity: 0.08;
@@ -105,13 +116,14 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.98);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 50;
       opacity: 1;
       transition: opacity 0.5s ease;
+      backdrop-filter: blur(4px);
     }
 
     #preloader.hide {
@@ -120,17 +132,89 @@
     }
 
     .spinner {
-      border: 4px solid rgba(16, 97, 177, 0.3);
-      border-top: 4px solid #1061B1;
+      border: 3px solid rgba(16, 97, 177, 0.2);
+      border-top: 3px solid #1061B1;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    /* Modern form elements */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    textarea,
+    select {
+      @apply bg-surface border border-surface-variant rounded-lg px-4 py-3 text-sm transition-all duration-200;
+      @apply focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none;
+    }
+
+    /* Modern buttons */
+    .btn {
+      @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+      @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    }
+
+    .btn-primary {
+      @apply bg-primary text-primary-on hover:bg-primary/90 focus:ring-primary/50;
+    }
+
+    .btn-secondary {
+      @apply bg-surface-variant text-surface-on hover:bg-surface-variant/80 focus:ring-surface-variant/50;
+    }
+
+    /* Modern cards */
+    .card {
+      @apply bg-surface rounded-lg elevation-1 overflow-hidden;
+    }
+
+    .card-header {
+      @apply bg-surface-variant px-6 py-4 border-b border-surface-variant/50;
+    }
+
+    .card-body {
+      @apply p-6;
+    }
+
+    /* Modern tables */
+    .table-modern {
+      @apply w-full text-sm;
+    }
+
+    .table-modern th {
+      @apply text-left py-3 px-4 font-medium text-surface-onVariant bg-surface-variant/50;
+    }
+
+    .table-modern td {
+      @apply py-3 px-4 border-b border-surface-variant/50;
+    }
+
+    .table-modern tr:hover {
+      @apply bg-surface-variant/30;
+    }
+
+    /* Modern badges */
+    .badge {
+      @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+
+    .badge-success {
+      @apply bg-green-100 text-green-800;
+    }
+
+    .badge-warning {
+      @apply bg-yellow-100 text-yellow-800;
+    }
+
+    .badge-error {
+      @apply bg-red-100 text-red-800;
     }
 
     @media print {
@@ -146,55 +230,53 @@
 </head>
 
 <body class="bg-background text-surface-on min-h-screen">
-
   <!-- Preloader -->
   <div id="preloader" class="fixed top-0 left-0 w-full h-full bg-background bg-opacity-90 flex justify-center items-center z-50">
-    <span class="text-xl font-medium text-primary animate-pulse">Loading...</span>
+    <div class="flex flex-col items-center gap-4">
+      <div class="spinner"></div>
+      <span class="text-lg font-medium text-primary animate-pulse">Loading...</span>
+    </div>
   </div>
 
   <!-- Header -->
-  <header class="bg-primary text-primary-on p-4 elevation-2">
+  <header class="bg-primary text-primary-on p-4 elevation-2 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
-    <div class="flex flex-col items-start">
-        <img src="../assets/images/competitive.png" alt="" class="h-12">
-    </div>
-      <div id="moving-top" class="text-sm text-right">
-        <p>MOVING: <span class="font-medium">#001 | Local - Residential</span></p>
-        <p>MOVING LOAD: <span class="font-medium">#001</span></p>
+      <div class="flex flex-col items-start">
+        <img src="../assets/images/competitive.png" alt="CRService Logo" class="h-12 object-contain">
+      </div>
+      <div id="moving-top" class="text-sm text-right bg-primary/10 px-4 py-2 rounded-lg">
+        <p class="font-medium">MOVING: <span class="font-semibold">#001 | Local - Residential</span></p>
+        <p class="font-medium">MOVING LOAD: <span class="font-semibold">#001</span></p>
       </div>
     </div>
   </header>
   
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto p-4">
-    <div id="main-content" class="bg-surface rounded-lg elevation-1 p-4 mb-20">
-    <!-- Placeholder for the selected menu page -->
+    <div id="main-content" class="bg-surface rounded-lg elevation-1 p-6 mb-20">
+      <!-- Placeholder for the selected menu page -->
     </div>
   </main>
 
   <!-- Footer Navigation -->
-  <footer class="fixed bottom-0 left-0 right-0 bg-primary elevation-3">
+  <footer class="fixed bottom-0 left-0 right-0 bg-primary elevation-3 z-40">
     <div class="max-w-7xl mx-auto">
-      <div class="flex justify-around items-center py-2">
-        <a href="#customer-info" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2" onclick="navigate('customer-info')">
+      <div class="flex justify-around items-center py-3">
+        <a href="#customer-info" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2 rounded-lg" onclick="navigate('customer-info')">
           <span class="material-icons text-2xl">person</span>
-          <span class="text-xs mt-1 hidden sm:block">CUSTOMER INFO</span>
+          <span class="text-xs mt-1 hidden sm:block font-medium">CUSTOMER INFO</span>
         </a>
-        <a href="#estimates" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2" onclick="navigate('estimates')">
+        <a href="#estimates" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2 rounded-lg" onclick="navigate('estimates')">
           <span class="material-icons text-2xl">assessment</span>
-          <span class="text-xs mt-1 hidden sm:block">ESTIMATES</span>
+          <span class="text-xs mt-1 hidden sm:block font-medium">ESTIMATES</span>
         </a>
-        <!-- <a href="#services" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2" onclick="navigate('services')">
-          <span class="material-icons text-2xl">build</span>
-          <span class="text-xs mt-1 hidden sm:block">SERVICES</span>
-        </a> -->
-        <a href="#payments" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2" onclick="navigate('payments')">
+        <a href="#payments" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2 rounded-lg" onclick="navigate('payments')">
           <span class="material-icons text-2xl">payments</span>
-          <span class="text-xs mt-1 hidden sm:block">PAYMENTS</span>
+          <span class="text-xs mt-1 hidden sm:block font-medium">PAYMENTS</span>
         </a>
-        <a href="#support" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2" onclick="navigate('support')">
+        <a href="#support" class="flex flex-col items-center text-primary-on hover:text-secondary state-layer p-2 rounded-lg" onclick="navigate('support')">
           <span class="material-icons text-2xl">support</span>
-          <span class="text-xs mt-1 hidden sm:block">CONTACT</span>
+          <span class="text-xs mt-1 hidden sm:block font-medium">CONTACT</span>
         </a>
       </div>
     </div>
@@ -319,20 +401,35 @@
         <div class="max-w-7xl mx-auto">
           <!-- Customer Details -->
           <div class="mb-8">
-            <h2 class="text-2xl font-medium mb-4">Customer Details</h2>
-            <div class="grid grid-cols-1 gap-4">
-              <div class="bg-surface-variant rounded-lg p-4 elevation-1">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div class="text-surface-onVariant font-medium">Full Name:</div>
-                  <div id="customer-fullname" class="font-medium">${window.transaction?.firstname || ''} ${window.transaction?.lastname || ''}</div>
-                  <div class="text-surface-onVariant font-medium">Email:</div>
-                  <div id="customer-email" class="break-all font-medium">${window.transaction?.email || 'N/A'}</div>
-                  <div class="text-surface-onVariant font-medium">Move Date:</div>
-                  <div id="customer-movedate" class="font-medium">${window.transaction?.date ? new Date(window.transaction.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
-                  <div class="text-surface-onVariant font-medium">Phone:</div>
-                  <div id="customer-phone" class="font-medium">${window.transaction?.phone || 'N/A'}</div>
-                  <div class="text-surface-onVariant font-medium">Phone 2:</div>
-                  <div id="customer-phone2" class="font-medium">${window.transaction?.phone2 || 'N/A'}</div>
+            <h2 class="text-2xl font-semibold mb-6 text-surface-on">Customer Details</h2>
+            <div class="grid grid-cols-1 gap-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="text-lg font-medium">Personal Information</h3>
+                </div>
+                <div class="card-body">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="space-y-1">
+                      <div class="text-sm text-surface-onVariant">Full Name</div>
+                      <div id="customer-fullname" class="font-medium text-lg">${window.transaction?.firstname || ''} ${window.transaction?.lastname || ''}</div>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="text-sm text-surface-onVariant">Email</div>
+                      <div id="customer-email" class="font-medium text-lg break-all">${window.transaction?.email || 'N/A'}</div>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="text-sm text-surface-onVariant">Move Date</div>
+                      <div id="customer-movedate" class="font-medium text-lg">${window.transaction?.date ? new Date(window.transaction.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</div>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="text-sm text-surface-onVariant">Phone</div>
+                      <div id="customer-phone" class="font-medium text-lg">${window.transaction?.phone || 'N/A'}</div>
+                    </div>
+                    <div class="space-y-1">
+                      <div class="text-sm text-surface-onVariant">Phone 2</div>
+                      <div id="customer-phone2" class="font-medium text-lg">${window.transaction?.phone2 || 'N/A'}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -341,48 +438,60 @@
           <!-- Move From and Move To -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
             <!-- Move From -->
-            <div class="bg-surface-variant rounded-lg p-4 elevation-1">
-              <h2 class="text-xl font-medium mb-4">Move From</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
-                <div id="pickup-address" class="font-medium">${window.transaction?.pickup_location || 'N/A'}</div>
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">Move From</h3>
+              </div>
+              <div class="card-body">
+                <div class="space-y-1">
+                  <div class="text-sm text-surface-onVariant">Pick-up Address</div>
+                  <div id="pickup-address" class="font-medium text-lg">${window.transaction?.pickup_location || 'N/A'}</div>
+                </div>
               </div>
             </div>
 
             <!-- Move To -->
-            <div class="bg-surface-variant rounded-lg p-4 elevation-1">
-              <h2 class="text-xl font-medium mb-4">Move To</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="text-surface-onVariant font-medium">Pick-up Address:</div>
-                <div id="delivery-address" class="font-medium">${window.transaction?.delivery_location || 'N/A'}</div>
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">Move To</h3>
+              </div>
+              <div class="card-body">
+                <div class="space-y-1">
+                  <div class="text-sm text-surface-onVariant">Delivery Address</div>
+                  <div id="delivery-address" class="font-medium text-lg">${window.transaction?.delivery_location || 'N/A'}</div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Inventory Items -->
-          <div class="mb-8 mt-4">
+          <div class="mb-8">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h2 class="text-2xl font-medium">Inventory Items</h2>
+              <h2 class="text-2xl font-semibold text-surface-on">Inventory Items</h2>
               <div class="flex flex-wrap gap-3 w-full sm:w-auto">
-                <div class="bg-surface-variant rounded-lg px-4 py-2 flex-1 sm:flex-none min-w-[140px] flex flex-col items-start">
-                  <span class="text-sm text-surface-onVariant">Total Items:</span>
-                  <span class="ml-0 mt-1 font-medium text-lg" id="total-items-count">0</span>
+                <div class="card flex-1 sm:flex-none min-w-[140px]">
+                  <div class="card-body py-3">
+                    <span class="text-sm text-surface-onVariant">Total Items</span>
+                    <span class="block mt-1 font-semibold text-xl" id="total-items-count">0</span>
+                  </div>
                 </div>
-                <div class="bg-surface-variant rounded-lg px-4 py-2 flex-1 sm:flex-none min-w-[140px] flex flex-col items-start">
-                  <span class="text-sm text-surface-onVariant">Total Cubic Ft:</span>
-                  <span class="ml-0 mt-1 font-medium text-lg" id="total-cubic-ft">0.00</span>
+                <div class="card flex-1 sm:flex-none min-w-[140px]">
+                  <div class="card-body py-3">
+                    <span class="text-sm text-surface-onVariant">Total Cubic Ft</span>
+                    <span class="block mt-1 font-semibold text-xl" id="total-cubic-ft">0.00</span>
+                  </div>
                 </div>
               </div>
             </div>
             <div id="inventory-items-container">
               <!-- Inventory items will be loaded here -->
-              <div class="text-center py-8">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <div class="text-center py-12">
+                <div class="spinner mx-auto"></div>
                 <p class="mt-4 text-surface-onVariant">Loading inventory items...</p>
               </div>
             </div>
             <!-- Uploaded Images Gallery -->
-            <div id="uploaded-images-gallery" class="flex flex-wrap gap-3 mt-6"></div>
+            <div id="uploaded-images-gallery" class="flex flex-wrap gap-4 mt-8"></div>
           </div>
         </div>
       `,

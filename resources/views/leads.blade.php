@@ -184,7 +184,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0"></h4>
-                    @if(!isset($transaction))
+                    @if(!isset($transaction) || (isset($transaction) && !$transaction->services))
                         <button type="button" id="saveButton" class="btn btn-success btn-xl" onclick="saveTransactionData()">Save Data</button>
                     @endif
                 </div>
@@ -3193,17 +3193,17 @@ function saveTransactionData() {
     }
 
     // Validate number of items is positive
-    const noOfItems = parseInt($('#no_of_items').val());
-    if (isNaN(noOfItems) || noOfItems <= 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Invalid Number of Items',
-            text: 'Please enter a valid number of items (must be greater than 0).',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6'
-        });
-        return;
-    }
+    // const noOfItems = parseInt($('#no_of_items').val());
+    // if (isNaN(noOfItems) || noOfItems <= 0) {
+    //     Swal.fire({
+    //         icon: 'warning',
+    //         title: 'Invalid Number of Items',
+    //         text: 'Please enter a valid number of items (must be greater than 0).',
+    //         confirmButtonText: 'OK',
+    //         confirmButtonColor: '#3085d6'
+    //     });
+    //     return;
+    // }
 
     // If all validations pass, proceed with saving
     // Format services array

@@ -19,4 +19,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/leads', [TransactionController::class, 'store']);
+Route::middleware('api')->group(function () {
+    Route::post('/leads', [TransactionController::class, 'store'])
+        ->middleware('throttle:300,1')
+        ->name('api.leads.store');
+});

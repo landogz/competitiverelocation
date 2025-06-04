@@ -868,8 +868,7 @@
         </div><!-- container -->
 
 
-@endsection
-
-<style>
+@endsection<style>
 /* Style for chart removed */
 </style>
+

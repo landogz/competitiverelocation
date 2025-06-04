@@ -599,7 +599,7 @@ class CallCenterController extends Controller
     private function getCompanyNameForAgent($agentId)
     {
         if (empty($agentId) || $agentId == '0') {
-            return 'Competitve Relocation Services';
+            return 'N/A';
         }
         
         $agent = \App\Models\Agent::where('external_id', $agentId)->first();

@@ -26,13 +26,13 @@ class TransactionRequest extends FormRequest
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
             'ext' => 'nullable|string|max:10',
-            'from_areacode' => 'required|string|max:10',
+            'from_areacode' => 'required|string',
             'from_zip' => 'required|string|max:10',
-            'from_state' => 'required|string|max:2',
+            'from_state' => 'required|string',
             'from_city' => 'required|string|max:255',
-            'to_areacode' => 'required|string|max:10',
+            'to_areacode' => 'required|string',
             'to_zip' => 'required|string|max:10',
-            'to_state' => 'required|string|max:2',
+            'to_state' => 'required|string',
             'to_city' => 'required|string|max:255',
             'distance' => 'required|numeric|min:0',
             'move_date' => 'required|date|after:today',
@@ -66,5 +66,10 @@ class TransactionRequest extends FormRequest
             'move_date.date' => 'Please enter a valid date',
             'move_date.after' => 'Move date must be a future date',
         ];
+    }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        throw new \Illuminate\Validation\ValidationException($validator);
     }
 }
