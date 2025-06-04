@@ -1308,7 +1308,7 @@ class TransactionController extends Controller
                             display: inline-block;
                             padding: 12px 24px;
                             background-color: #4CAF50;
-                            color: white;
+                            color: white !important;
                             text-decoration: none;
                             border-radius: 4px;
                             margin: 20px 0;
@@ -1572,7 +1572,7 @@ class TransactionController extends Controller
                             display: inline-block;
                             padding: 12px 24px;
                             background-color: #4CAF50;
-                            color: white;
+                            color: white !important;
                             text-decoration: none;
                             border-radius: 4px;
                             margin: 20px 0;

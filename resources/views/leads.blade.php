@@ -282,13 +282,13 @@
                                         <div class="col-lg-5">
                                             <div class="mb-3">
                                                 <label class="form-label">Pick-up Address</label>
-                                                <input type="text" class="form-control" name="pickup_location" id="pickup_location" value="{{ $transaction->pickup_location ?? 'Tampo (Pob.), Botolan, Zambales, Philippines' }}" placeholder="Enter Pick-up Address">
+                                                <input type="text" class="form-control" name="pickup_location" id="pickup_location" value="{{ $transaction->pickup_location ?? '' }}" placeholder="Enter Pick-up Address">
                                             </div>                     
                                         </div>
                                         <div class="col-lg-5">   
                                             <div class="mb-3">
                                                 <label class="form-label">Drop Off Address</label>
-                                                <input type="text" class="form-control" name="delivery_location" id="delivery_location" value="{{ $transaction->delivery_location ?? 'San Juan, Botolan, Zambales, Philippines' }}" placeholder="Enter Drop Off Address">
+                                                <input type="text" class="form-control" name="delivery_location" id="delivery_location" value="{{ $transaction->delivery_location ?? '' }}" placeholder="Enter Drop Off Address">
                                             </div>                                          
                                         </div>
                                         <div class="col-lg-2">   
