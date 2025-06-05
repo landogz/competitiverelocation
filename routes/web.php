@@ -112,6 +112,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('loadboard.index')
         ->middleware('not.agent');
 
+    Route::get('/callcenterleads', [TransactionController::class, 'index_leads'])
+    ->name('loadboard-leads.index_leads')
+    ->middleware('agent');
+
     Route::get('/loadboard-agent', [TransactionController::class, 'index_agent'])
         ->name('loadboard-agent.index_agent')
         ->middleware('agent');
@@ -279,6 +283,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/transactions/datatable', [TransactionController::class, 'datatable'])->name('transactions.datatable');
     Route::post('/transactions/agent-datatable', [TransactionController::class, 'agentDatatable'])->name('transactions.agent-datatable');
+    Route::post('/transactions/agent-datatable-leads', [TransactionController::class, 'datatable_leads'])->name('transactions.agent-datatable-leads');
 
     Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
     Route::post('/email-templates', [EmailTemplateController::class, 'store'])->name('email-templates.store');

@@ -186,6 +186,9 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+
+                <div class="row g-4">
+
                 <!-- Lead Info Section -->
                 <div class="lead-info-section mb-4">
                     <div class="row g-3">
@@ -225,7 +228,48 @@
                     </div>
                 </div>
 
-                <div class="row g-4">
+                <div class="row">
+                    <!-- Location Information -->
+                    <div class="col-md-6">
+                        <div class="info-section-card">
+                            <div class="section-header">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <h6>Pickup Location</h6>
+                            </div>
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-map-pin"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Address</span>
+                                        <span class="info-value">{{ $transaction->pickup_location }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-section-card">
+                            <div class="section-header">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <h6>Delivery Location</h6>
+                            </div>
+                            <div class="info-list">
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-map-pin"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Address</span>
+                                        <span class="info-value">{{ $transaction->delivery_location }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Customer Information -->
                     <div class="col-md-6">
                         <div class="info-section-card">
@@ -561,7 +605,7 @@
     
     .dataTables_scroll {
         flex: 1;
-        overflow: visible;
+        overflow: auto;
     }
     
     .dataTables_wrapper .dataTables_scroll { overflow: visible !important; }
@@ -1173,11 +1217,107 @@
         // Configure moment.js
         moment.locale('en');
 
-        // Handle modal backdrop cleanup issue
+        // Handle modal cleanup
         $(document).on('hidden.bs.modal', '.modal', function () {
-            // Remove any lingering backdrop
+            try {
+                // Remove any lingering backdrop
+                $('.modal-backdrop').remove();
+                // Remove modal-open class from body
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+                // Remove show class
+                $(this).removeClass('show');
+                // Reset modal display
+                $(this).css('display', 'none');
+                // Remove any inline styles that might be blocking
+                $(this).removeAttr('style');
+                // Remove any remaining backdrop
+                $('.modal-backdrop').remove();
+            } catch (error) {
+                console.error('Error cleaning up modal:', error);
+            }
+        });
+
+        // Handle modal closing
+        $(document).on('hide.bs.modal', '.modal', function () {
+            try {
+                // Remove any existing backdrops before hiding
+                $('.modal-backdrop').remove();
+                // Remove modal-open class
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+            } catch (error) {
+                console.error('Error preparing modal close:', error);
+            }
+        });
+
+        // Add click handler for close buttons
+        $(document).on('click', '[data-bs-dismiss="modal"]', function() {
+            var modal = $(this).closest('.modal');
+            if (modal.length) {
+                // Remove backdrop immediately
+                $('.modal-backdrop').remove();
+                // Remove modal-open class
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+            }
+        });
+
+        // Handle modal opening
+        $(document).on('show.bs.modal', '.modal', function () {
+            try {
+                // Remove any existing backdrops
+                $('.modal-backdrop').remove();
+                // Remove modal-open class from body
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+                // Add show class
+                $(this).addClass('show');
+            } catch (error) {
+                console.error('Error preparing modal:', error);
+            }
+        });
+
+        // Handle modal shown event
+        $(document).on('shown.bs.modal', '.modal', function () {
+            try {
+                // Ensure modal is visible
+                $(this).css('display', 'block');
+                // Add modal-open class to body
+                $('body').addClass('modal-open');
+            } catch (error) {
+                console.error('Error finalizing modal:', error);
+            }
+        });
+
+        // Ensure all modals are properly initialized
+        $('.modal').each(function() {
+            if (!bootstrap.Modal.getInstance(this)) {
+                new bootstrap.Modal(this, {
+                    backdrop: true,
+                    keyboard: true
+                });
+            }
+        });
+
+        // Add global modal error handler
+        $(document).on('show.bs.modal', '.modal', function (e) {
+            if (!$(this).hasClass('show')) {
+                e.preventDefault();
+                // Try to fix the modal
+                $(this).addClass('show');
+                $(this).css('display', 'block');
+                $('body').addClass('modal-open');
+            }
+        });
+
+        // Add cleanup on page unload
+        $(window).on('beforeunload', function() {
             $('.modal-backdrop').remove();
-            // Ensure body doesn't have the modal-open class
             $('body').removeClass('modal-open');
             $('body').css('padding-right', '');
         });
@@ -1559,9 +1699,39 @@
                     e.preventDefault();
                     var targetModal = $(this).data('bs-target');
                     var modalElement = document.querySelector(targetModal);
-                    if (modalElement) {
-                        var modal = new bootstrap.Modal(modalElement);
-                        modal.show();
+                    
+                    if (!modalElement) {
+                        console.error('Modal element not found:', targetModal);
+                        return;
+                    }
+
+                    try {
+                        // Destroy any existing modal instance
+                        var existingModal = bootstrap.Modal.getInstance(modalElement);
+                        if (existingModal) {
+                            existingModal.dispose();
+                        }
+
+                        // Ensure the modal element is in the DOM
+                        if (!document.body.contains(modalElement)) {
+                            document.body.appendChild(modalElement);
+                        }
+
+                        // Add show class manually before creating modal instance
+                        $(modalElement).addClass('show');
+                        
+                        // Create and show new modal instance
+                        var modal = new bootstrap.Modal(modalElement, {
+                            backdrop: true,
+                            keyboard: true
+                        });
+                        
+                        // Show the modal with a slight delay to ensure proper initialization
+                        setTimeout(function() {
+                            modal.show();
+                        }, 50);
+                    } catch (error) {
+                        console.error('Error showing modal:', error);
                     }
                 });
             },

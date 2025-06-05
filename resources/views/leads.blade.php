@@ -730,7 +730,7 @@ let pickupMarker, dropoffMarker;
 function initMap() {
     // Initialize the map
     map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 14.7011, lng: 120.5135 }, // Center on Botolan area
+        center: { lat: 39.7665, lng: -75.1166 }, // Center on Botolan area
         zoom: 12,
         mapTypeControl: true,
         mapTypeControlOptions: {
@@ -780,11 +780,11 @@ function initMap() {
     // Set up autocomplete for pickup and dropoff addresses
     pickupAutocomplete = new google.maps.places.Autocomplete(
         document.querySelector('input[name="pickup_location"]'),
-        { componentRestrictions: { country: 'ph' } }
+        { componentRestrictions: { country: [] } } // Remove country restriction
     );
     dropoffAutocomplete = new google.maps.places.Autocomplete(
         document.querySelector('input[name="delivery_location"]'),
-        { componentRestrictions: { country: 'ph' } }
+        { componentRestrictions: { country: [] } } // Remove country restriction
     );
 
     // Add listeners for address changes
@@ -800,9 +800,9 @@ function initMap() {
         const place = dropoffAutocomplete.getPlace();
         if (place.geometry) {
             dropoffMarker.setPosition(place.geometry.location);
-            calculateRoute();
-        }
-    });
+                calculateRoute();
+            }
+        });
 
     // If we have initial addresses, calculate the route
     const pickup = document.querySelector('input[name="pickup_location"]').value;
@@ -831,6 +831,42 @@ function calculateRoute() {
                         const distance = route.legs[0].distance.value / 1609.34; // Convert meters to miles
                         const roundTripDistance = distance * 2; // Multiply by 2 for round trip
                         document.querySelector('input[name="miles"]').value = roundTripDistance.toFixed(2); // Show 2 decimal places
+
+                        
+                        // Get transaction ID from URL
+                        const urlParts = window.location.pathname.split('/');
+                        const transactionId = urlParts[urlParts.indexOf('leads') + 1];
+
+                        fetch(`/leads/${transactionId}/update-field`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                field: 'miles',
+                                value: roundTripDistance.toFixed(2)
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                
+                                
+                            } else {
+                                throw new Error(data.message || 'Failed to update field');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showToast(`Error updating ${field.replace('_', ' ')}`, 'error');
+                        });
                         
                         // Update distance info
                         const distanceText = route.legs[0].distance.text;
@@ -1088,12 +1124,17 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('input', updateInventoryItem);
     });
 
+ // Add event listeners to the quantity-input fields
+ document.querySelectorAll('.miles').forEach(input => {
+        input.addEventListener('input', updateInventoryItem);
+    });
+
     // Add event listeners to lead information and contact info fields
     const leadInfoFields = [
         'firstname', 'lastname', 'email', 'phone', 'phone2', 'lead_source', 
         'lead_type', 'assigned_agent', 'service', 'date', 'no_of_items',
         'pickup_location', 'delivery_location', 'sales_name', 'sales_email', 
-        'sales_location', 'insurance_number'
+        'sales_location', 'insurance_number', 'miles'
     ];
     
     leadInfoFields.forEach(fieldName => {
@@ -1141,8 +1182,16 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.success) {
-                // Quietly show success message in toast
-                showToast(`Updated ${field.replace('_', ' ')}`, 'success');
+                
+                // Show success toast
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        icon: 'success',
+                        title: 'Field updated successfully'
+                    });
                 
                 // If field might affect calculations, recalculate fees
                 if (['service', 'no_of_items', 'miles', 'pickup_location', 'delivery_location'].includes(field)) {
@@ -1153,8 +1202,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // If address fields changed, recalculate route
                     if (['pickup_location', 'delivery_location'].includes(field)) {
                         if (typeof calculateRoute === 'function') {
-                            calculateRoute();
-                        }
+                calculateRoute();
+            }
                     }
                 }
             } else {
@@ -1494,9 +1543,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         throw new Error(data.message || 'Server error occurred');
                     } catch (e) {
                         throw new Error(text || 'Server error occurred');
-                    }
-                });
-            }
+        }
+    });
+}
             return response.json();
         })
         .then(data => {

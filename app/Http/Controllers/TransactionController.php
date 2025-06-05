@@ -54,6 +54,48 @@ class TransactionController extends Controller
         return view('loadboard', compact('transactions', 'templates', 'placeholders'));
     }
 
+
+    public function index_leads()
+    {
+        // Join lead_sources and agents tables to fetch titles and company names efficiently
+        $transactions = Transaction::query()
+            ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
+            ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+            ->where('transactions.status', 'lead')
+            ->select(
+                'transactions.*',
+                'lead_sources.title as lead_source_title',
+                'agents.company_name as assigned_agent_company_name'
+            )
+            ->orderByDesc('transactions.id')
+            ->get();
+
+        // Get email templates
+        $templates = \App\Models\EmailTemplate::all();
+
+        // Define placeholders for transaction data
+        $placeholders = [
+            'Transaction' => [
+                'Customer Name' => '{customer_name}',
+                'Customer Email' => '{customer_email}',
+                'Customer Phone' => '{customer_phone}',
+                'Service Type' => '{service_type}',
+                'Pickup Location' => '{pickup_location}',
+                'Delivery Location' => '{delivery_location}',
+                'Move Date' => '{move_date}',
+                'Total Amount' => '{total_amount}',
+                'Down Payment' => '{down_payment}',
+                'Remaining Balance' => '{remaining_balance}',
+                'Miles' => '{miles}',
+                'Assigned Agent' => '{assigned_agent}',
+                'Lead Source' => '{lead_source}',
+                'Transaction ID' => '{transaction_id}'
+            ]
+        ];
+
+        return view('loadboard-leads', compact('transactions', 'templates', 'placeholders'));
+    }
+
     public function index_agent()
     {
         // Get the authenticated agent
@@ -724,6 +766,113 @@ class TransactionController extends Controller
         }
     }
 
+
+    public function datatable_leads(Request $request)
+    {
+        try {
+            $query = Transaction::query()
+                ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
+                ->where('transactions.status', 'lead')
+                ->select(
+                    'transactions.*',
+                    'agents.company_name as assigned_agent_company_name'
+                )
+            ->orderByDesc('transactions.created_at');
+            
+            // Get total records count
+            $totalRecords = Transaction::count();
+            $filteredRecords = $totalRecords;
+            
+            // Apply search
+            if ($request->has('search') && !empty($request->search['value'])) {
+                $search = $request->search['value'];
+                $query->where(function($q) use ($search) {
+                    $q->where('transactions.transaction_id', 'like', "%{$search}%")
+                      ->orWhere('transactions.firstname', 'like', "%{$search}%")
+                      ->orWhere('transactions.lastname', 'like', "%{$search}%")
+                      ->orWhere('transactions.email', 'like', "%{$search}%")
+                      ->orWhere('transactions.pickup_location', 'like', "%{$search}%")
+                      ->orWhere('transactions.delivery_location', 'like', "%{$search}%")
+                      ->orWhere('transactions.services', 'like', "%{$search}%")
+                      ->orWhere('transactions.date', 'like', "%{$search}%")
+                      ->orWhere('transactions.miles', 'like', "%{$search}%")
+                      ->orWhere('transactions.grand_total', 'like', "%{$search}%")
+                      ->orWhere('transactions.status', 'like', "%{$search}%")
+                      ->orWhere('agents.company_name', 'like', "%{$search}%");
+                });
+                
+                // Update filtered count after search
+                $filteredRecords = $query->count();
+            }
+            
+            // Apply ordering
+            if ($request->has('order')) {
+                $columns = [
+                    'transactions.transaction_id',
+                    'transactions.firstname',
+                    'transactions.date',
+                    'transactions.services',
+                    'transactions.pickup_location',
+                    'transactions.delivery_location',
+                    'transactions.miles',
+                    'transactions.grand_total',
+                    'agents.company_name',
+                    'transactions.status'
+                ];
+                
+                $column = $columns[$request->order[0]['column']];
+                $direction = $request->order[0]['dir'];
+                $query->orderBy($column, $direction);
+            } else {
+                $query->orderBy('transactions.transaction_id', 'desc');
+            }
+            
+            // Apply pagination
+            $records = $query->skip($request->start)
+                           ->take($request->length)
+                           ->get();
+            
+            // Format data for DataTables
+            $data = [];
+            foreach ($records as $record) {
+                $data[] = [
+                    'id' => $record->id,
+                    'transaction_id' => $record->transaction_id,
+                    'firstname' => $record->firstname,
+                    'lastname' => $record->lastname,
+                    'email' => $record->email,
+                    'date' => $record->date,
+                    'services' => $record->services,
+                    'pickup_location' => $record->pickup_location,
+                    'delivery_location' => $record->delivery_location,
+                    'miles' => $record->miles,
+                    'grand_total' => $record->grand_total,
+                    'assigned_agent_company_name' => $record->assigned_agent_company_name,
+                    'status' => $record->status
+                ];
+            }
+            
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('DataTable Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'An error occurred while processing your request.'
+            ], 500);
+        }
+    }
+
     public function agentDatatable(Request $request)
     {
         try {
@@ -849,6 +998,7 @@ class TransactionController extends Controller
             ], 500);
         }
     }
+
 
     private function getCoordinatesFromAddress($address, $city = null, $state = null, $zipCode = null, $country = null)
     {

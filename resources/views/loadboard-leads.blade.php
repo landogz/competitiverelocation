@@ -4,6 +4,7 @@
 
 @section('content')
 
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid px-4">
     <!-- Page Title -->
@@ -12,22 +13,19 @@
             <div class="page-title-box d-flex align-items-center justify-content-between">
                 <h4 class="mb-0">Load Board</h4>
                  <div class="page-title-right">
+                    <a href="{{ route('leads.create') }}" class="btn btn-success me-2">
+                        <i class="fas fa-user-plus me-1"></i> Add Customer
+                    </a>
                     <!-- <button class="btn btn-primary" id="syncTransactions">
                         <i class="fas fa-sync-alt me-1"></i> Sync Transactions
                     </button> -->
-                    
-                    @if(Auth::user()->privilege === 'agent')
-                    <a href="/leads/" class="btn btn-success">
-                        <i class="fas fa-plus me-1"></i> Add New Customer
-                    </a>
-                    @endif
                 </div> 
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="row g-4 mb-4 justify-content-center">                        
+    <!-- <div class="row g-4 mb-4 justify-content-center">                        
         <div class="col-xl-2 col-lg-3 col-md-4 col-6">
             <div class="stats-card">
                 <div class="stats-icon total">
@@ -35,7 +33,7 @@
                 </div>
                 <div class="stats-content">
                     <span class="stats-label">Total Transactions</span>
-                    <h3 id="totalTransactions" class="stats-value">{{ $totalTransactions }}</h3>
+                    <h3 id="totalTransactions" class="stats-value">{{ $transactions->count() }}</h3>
                 </div>
             </div>
         </div>
@@ -46,7 +44,7 @@
                 </div>
                 <div class="stats-content">
                     <span class="stats-label">Pending</span>
-                    <h3 id="pendingTransactions" class="stats-value">{{ $pendingTransactions }}</h3>
+                    <h3 id="pendingTransactions" class="stats-value">{{ $transactions->where('status', 'pending')->count() }}</h3>
                 </div>
             </div>
         </div>
@@ -57,7 +55,7 @@
                 </div>
                 <div class="stats-content">
                     <span class="stats-label">In Progress</span>
-                    <h3 id="inProgressTransactions" class="stats-value">{{ $inProgressTransactions }}</h3>
+                    <h3 id="inProgressTransactions" class="stats-value">{{ $transactions->where('status', 'in_progress')->count() }}</h3>
                 </div>
             </div>
         </div>
@@ -68,7 +66,7 @@
                 </div>
                 <div class="stats-content">
                     <span class="stats-label">Completed</span>
-                    <h3 id="completedTransactions" class="stats-value">{{ $completedTransactions }}</h3>
+                    <h3 id="completedTransactions" class="stats-value">{{ $transactions->where('status', 'completed')->count() }}</h3>
                 </div>
             </div>
         </div>
@@ -79,11 +77,11 @@
                 </div>
                 <div class="stats-content">
                     <span class="stats-label">Lead Status</span>
-                    <h3 id="leadStatusTransactions" class="stats-value">{{ $leadStatusTransactions }}</h3>
+                    <h3 id="leadStatusTransactions" class="stats-value">{{ $transactions->where('status', 'lead')->count() }}</h3>
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Transactions Table -->
     <div class="row">
@@ -94,9 +92,16 @@
                         <table id="transactionsTable" class="table table-centered align-middle table-hover mb-0">
                             <thead class="text-muted bg-light">
                                 <tr>
+                                    <th class="border-0 dtr-control"></th>
                                     <th class="border-0">ID</th>
+                                    <th class="border-0">Customer</th>
                                     <th class="border-0 date-column">Move Date</th>
                                     <th class="border-0">Service</th>
+                                    <th class="border-0">Pickup</th>
+                                    <th class="border-0">Delivery</th>
+                                    <th class="border-0">Miles</th>
+                                    <th class="border-0">Total</th>
+                                    <th class="border-0">Assigned Agent</th>
                                     <th class="border-0">Status</th>
                                     <th class="border-0">Actions</th>
                                 </tr>
@@ -148,7 +153,7 @@
     }
     
     // Calculate added mile rate
-    $distanceInMiles = floatval($transaction->miles);
+    $distanceInMiles = floatval($transaction->miles ?? 0);
     $addedMiles = 0;
     $addedMileRate = 0;
     
@@ -166,9 +171,9 @@
         $downPayment = $grandTotal * 0.315;
         $remainingBalance = $grandTotal - $downPayment;
     } else {
-        $truckFee = $transaction->truck_fee;
-        $softwareFee = $transaction->software_fee;
-        $grandTotal = $transaction->grand_total;
+        $truckFee = $transaction->truck_fee ?? 0;
+        $softwareFee = $transaction->software_fee ?? 0;
+        $grandTotal = $transaction->grand_total ?? 0;
     }
 @endphp
 <div class="modal fade" id="transactionModal{{ $transaction->id }}" tabindex="-1" aria-labelledby="transactionModalLabel{{ $transaction->id }}" aria-hidden="true">
@@ -181,8 +186,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row g-4">
-
                 <!-- Lead Info Section -->
                 <div class="lead-info-section mb-4">
                     <div class="row g-3">
@@ -222,7 +225,7 @@
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row g-4">
                     <!-- Location Information -->
                     <div class="col-md-6">
                         <div class="info-section-card">
@@ -263,7 +266,6 @@
                             </div>
                         </div>
                     </div>
-
 
                     <!-- Customer Information -->
                     <div class="col-md-6">
@@ -516,96 +518,6 @@
 </div>
 @endforeach
 
-<!-- Send Quote Modal -->
-<div class="modal fade" id="sendQuoteModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Send Quote</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="sendQuoteForm" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">To</label>
-                                        <input type="email" class="form-control" name="to" id="quoteTo" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Subject</label>
-                                        <input type="text" class="form-control" name="subject" id="quoteSubject" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Content</label>
-                                <textarea id="quoteEditor" name="content"></textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Available Placeholders</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="list-group placeholder-list">
-                                        @foreach($placeholders['Transaction'] as $field => $placeholder)
-                                        <button type="button" class="list-group-item list-group-item-action placeholder-item" data-placeholder="{{ $placeholder }}">
-                                            {{ $field }}
-                                        </button>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Send Quote</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Template Selection Modal -->
-<div class="modal fade" id="templateSelectionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Select Email Template</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Select Template</label>
-                    <select class="form-select" id="templateSelect">
-                        <option value="">Select a template</option>
-                        @foreach($templates as $template)
-                        <option value="{{ $template->id }}" 
-                                data-subject="{{ $template->subject }}"
-                                data-content="{{ $template->content }}">
-                            {{ $template->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="useTemplateBtn">Use Template</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Send Email Modal -->
 <div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -626,6 +538,7 @@
                         </div>
                         <div class="col-md-12">
                             <div class="mb-3">
+                                <label for="emailTemplateSelect" class="form-label">Select Template</label>
                                 <select class="form-select" id="emailTemplateSelect">
                                     <option value="">Select a template</option>
                                     @foreach($templates as $template)
@@ -668,7 +581,10 @@
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <!-- Lightbox2 CSS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<link href="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.css" rel="stylesheet">
+<script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 <style>
+    
      /* Hide CKEditor notifications */
      .cke_notifications_area {
         display: none !important;
@@ -689,8 +605,8 @@
         overflow: auto;
     }
     
-    .dataTables_wrapper .dataTables_scroll { overflow: hidden !important; }
-    /* .dataTables_wrapper { overflow-x: hidden !important; } */
+    .dataTables_wrapper .dataTables_scroll { overflow: visible !important; }
+    .dataTables_wrapper { overflow-x: visible !important; }
     .table-responsive { 
         overflow-x: hidden !important;
         height: 100%;
@@ -970,8 +886,106 @@
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        .info-card {
-            margin-bottom: 1rem;
+        body, .container-fluid.px-4 {
+            background: #f6f8fb !important;
+        }
+        .container-fluid.px-4 {
+            padding-left: 2vw !important;
+            padding-right: 2vw !important;
+        }
+        .page-title-box {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+        .page-title-box h4 {
+            text-align: center !important;
+            width: 100%;
+            font-size: 1.3rem !important;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .page-title-right {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .page-title-right .btn {
+            width: 100%;
+            max-width: 350px;
+        }
+        .row.g-4.mb-4.justify-content-center {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+            gap: 2vw !important;
+            margin-bottom: 1.5rem !important;
+        }
+        .stats-card {
+            width: 48% !important;
+            min-width: 160px;
+            max-width: 210px;
+            margin: 0 0 1rem 0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e9ecef;
+            padding: 1.25rem 1rem !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .stats-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+        }
+        .stats-icon {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px !important;
+        }
+        .stats-icon i {
+            font-size: 1.4rem !important;
+        }
+        .stats-label {
+            font-size: 0.95rem !important;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 0.15rem;
+            text-align: center !important;
+            letter-spacing: 0.5px;
+        }
+        .stats-value {
+            font-size: 1.5rem !important;
+            font-weight: 700;
+            color: #212529;
+            text-align: center !important;
+            margin: 0.15rem 0 0 0;
+        }
+        .col-xl-2, .col-lg-3, .col-md-4, .col-6 {
+            flex: 0 0 48% !important;
+            max-width: 48% !important;
+            min-width: 160px;
+            padding: 0 !important;
+            display: flex;
+            justify-content: center;
+        }
+        .container-fluid.px-4 {
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+        /* Add margin between stats and table */
+        .row.g-4.mb-4.justify-content-center + .row {
+            margin-top: 1.5rem !important;
         }
     }
 
@@ -1100,13 +1114,6 @@
         text-decoration: none;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .info-section-card {
-            margin-bottom: 1rem;
-        }
-    }
-
     /* Stats Cards Styling */
     .stats-card {
         background: white;
@@ -1177,79 +1184,17 @@
         line-height: 1.2;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .stats-card {
-            margin-bottom: 1rem;
-        }
-        
-        .stats-icon {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .stats-icon i {
-            font-size: 1.25rem;
-        }
-        
-        .stats-value {
-            font-size: 1.25rem;
-        }
-    }
-
-    /* --- Custom: Make card 100% height and fix dropdown menu overlap --- */
-    .row,
-    .col-12,
-    .card.border-0.rounded-3.shadow-sm {
-        height: 100%;
-        min-height: 100%;
-    }
-    .card.border-0.rounded-3.shadow-sm {
-        min-height: calc(100vh - 200px); /* Adjust as needed for your layout */
-        display: flex;
-        flex-direction: column;
-    }
-    .card-body.p-4 {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-    }
+    /* Fix for dropdown menu being cut off in .table-responsive */
     .table-responsive {
-        flex: 1 1 auto;
         overflow: visible !important;
-    }
-    .card,
-    .card-body {
-        overflow: visible !important;
-    }
-    /* .dropdown-menu {
-        z-index: 1050;
-        position: absolute !important;
-        top: 100% !important;
-        left: 0 !important;
-        will-change: transform;
-        margin-top: 0.125rem;
-        transform: translate3d(0px, 38px, 0px) !important;
-    }
-    .dropdown {
-        position: relative;
-    } */
-    .table td {
-        position: relative;
-    }
-    .table td .dropdown-menu {
-        min-width: 200px;
-    }
-    .table td .dropdown-menu.show {
-        display: block;
-        opacity: 1;
-        visibility: visible;
-        transform: translate3d(0px, 38px, 0px) !important;
     }
 </style>
 
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
 <!-- DataTables -->
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -1259,131 +1204,121 @@
 <!-- Lightbox2 JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
-
 <!-- CKEditor -->
 <script src="https://cdn.ckeditor.com/4.19.1/standard-all/ckeditor.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    // Define functions globally
-    window.acceptJob = function(transactionId) {
-        Swal.fire({
-            title: 'Accept Job',
-            text: 'Are you sure you want to accept this job?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, accept it',
-            cancelButtonText: 'No, cancel',
-            confirmButtonColor: '#198754',
-            cancelButtonColor: '#dc3545'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Show loading overlay
-                $('.loading-overlay').addClass('active');
-
-                fetch(`/transactions/${transactionId}/accept`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Get the current DataTable instance
-                        const table = $('#transactionsTable').DataTable();
-                        
-                        // Reload the table data
-                        table.ajax.reload(null, false);
-
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Job accepted successfully',
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        throw new Error(data.message || 'Failed to accept job');
-                    }
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.message || 'Something went wrong',
-                        icon: 'error'
-                    });
-                })
-                .finally(() => {
-                    // Remove loading overlay
-                    $('.loading-overlay').removeClass('active');
-                });
-            }
-        });
-    };
-
-    window.declineJob = function(transactionId) {
-        Swal.fire({
-            title: 'Decline Job',
-            text: 'Are you sure you want to decline this job?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, decline it',
-            cancelButtonText: 'No, cancel',
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Show loading overlay
-                $('.loading-overlay').addClass('active');
-
-                fetch(`/transactions/${transactionId}/decline`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Get the current DataTable instance
-                        const table = $('#transactionsTable').DataTable();
-                        
-                        // Reload the table data
-                        table.ajax.reload(null, false);
-
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Job declined successfully',
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        throw new Error(data.message || 'Failed to decline job');
-                    }
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: error.message || 'Something went wrong',
-                        icon: 'error'
-                    });
-                })
-                .finally(() => {
-                    // Remove loading overlay
-                    $('.loading-overlay').removeClass('active');
-                });
-            }
-        });
-    };
-
     $(document).ready(function() {
+        // Configure moment.js
+        moment.locale('en');
+
+        // Handle modal cleanup
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            try {
+                // Remove any lingering backdrop
+                $('.modal-backdrop').remove();
+                // Remove modal-open class from body
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+                // Remove show class
+                $(this).removeClass('show');
+                // Reset modal display
+                $(this).css('display', 'none');
+                // Remove any inline styles that might be blocking
+                $(this).removeAttr('style');
+                // Remove any remaining backdrop
+                $('.modal-backdrop').remove();
+            } catch (error) {
+                console.error('Error cleaning up modal:', error);
+            }
+        });
+
+        // Handle modal closing
+        $(document).on('hide.bs.modal', '.modal', function () {
+            try {
+                // Remove any existing backdrops before hiding
+                $('.modal-backdrop').remove();
+                // Remove modal-open class
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+            } catch (error) {
+                console.error('Error preparing modal close:', error);
+            }
+        });
+
+        // Add click handler for close buttons
+        $(document).on('click', '[data-bs-dismiss="modal"]', function() {
+            var modal = $(this).closest('.modal');
+            if (modal.length) {
+                // Remove backdrop immediately
+                $('.modal-backdrop').remove();
+                // Remove modal-open class
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+            }
+        });
+
+        // Handle modal opening
+        $(document).on('show.bs.modal', '.modal', function () {
+            try {
+                // Remove any existing backdrops
+                $('.modal-backdrop').remove();
+                // Remove modal-open class from body
+                $('body').removeClass('modal-open');
+                // Reset body padding
+                $('body').css('padding-right', '');
+                // Add show class
+                $(this).addClass('show');
+            } catch (error) {
+                console.error('Error preparing modal:', error);
+            }
+        });
+
+        // Handle modal shown event
+        $(document).on('shown.bs.modal', '.modal', function () {
+            try {
+                // Ensure modal is visible
+                $(this).css('display', 'block');
+                // Add modal-open class to body
+                $('body').addClass('modal-open');
+            } catch (error) {
+                console.error('Error finalizing modal:', error);
+            }
+        });
+
+        // Ensure all modals are properly initialized
+        $('.modal').each(function() {
+            if (!bootstrap.Modal.getInstance(this)) {
+                new bootstrap.Modal(this, {
+                    backdrop: true,
+                    keyboard: true
+                });
+            }
+        });
+
+        // Add global modal error handler
+        $(document).on('show.bs.modal', '.modal', function (e) {
+            if (!$(this).hasClass('show')) {
+                e.preventDefault();
+                // Try to fix the modal
+                $(this).addClass('show');
+                $(this).css('display', 'block');
+                $('body').addClass('modal-open');
+            }
+        });
+
+        // Add cleanup on page unload
+        $(window).on('beforeunload', function() {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('padding-right', '');
+        });
+
         // Toast function for silent sync
         function showToast(message) {
             Swal.fire({
@@ -1396,38 +1331,6 @@
                 title: message,
                 customClass: {
                     popup: 'colored-toast'
-                }
-            });
-        }
-
-        // Perform silent sync on page load
-        function silentSync() {
-            $.ajax({
-                url: "{{ route('transactions.sync') }}",
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                data: {
-                    action: 'add_new'
-                },
-                success: function(response) {
-                    if (response.new_count > 0) {
-                        // Reload table data silently if new transactions were added
-                        $('#transactionsTable').DataTable().ajax.reload(null, false);
-                        
-                        // Update the stats boxes with fresh counts using IDs
-                        $('#totalTransactions').text(parseInt($('#totalTransactions').text()) + response.new_count);
-                        $('#pendingTransactions').text(parseInt($('#pendingTransactions').text()) + response.new_count);
-                        $('#inProgressTransactions').text(parseInt($('#inProgressTransactions').text()) + response.new_count);
-                        $('#completedTransactions').text(parseInt($('#completedTransactions').text()) + response.new_count);
-
-                        // Show toast notification
-                        showToast(`${response.new_count} new transaction${response.new_count > 1 ? 's' : ''} added`);
-                    }
-                },
-                error: function(xhr) {
-                    console.log('Silent sync failed:', xhr.responseJSON?.message || 'Unknown error');
                 }
             });
         }
@@ -1454,6 +1357,30 @@
         // Show loading overlay only on first load
         $('.dataTables-loading-overlay').show();
 
+        // Function to initialize event handlers
+        function initializeEventHandlers() {
+            // Remove existing event handlers to prevent duplicates
+            $('[data-bs-toggle="modal"]').off('click');
+            $('.dropdown-item').off('click');
+
+            // Initialize view details buttons
+            $('[data-bs-toggle="modal"]').on('click', function(e) {
+                e.preventDefault();
+                var targetModal = $(this).data('bs-target');
+                var modal = new bootstrap.Modal(document.querySelector(targetModal));
+                modal.show();
+            });
+
+            // Initialize dropdown actions
+            $('.dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                var action = $(this).attr('onclick');
+                if (action) {
+                    eval(action);
+                }
+            });
+        }
+
         // Initialize DataTable
         var table = $('#transactionsTable').DataTable({
             processing: true,
@@ -1461,12 +1388,14 @@
             pageLength: 10,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             ajax: {
-                url: '{{ route("transactions.agent-datatable") }}',
+                url: '{{ route("transactions.agent-datatable-leads") }}',
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 data: function(d) {
+                    // Add a flag to indicate if this is not the first load
+                    d.skip_initial = true;
                     return d;
                 },
                 error: function(xhr, error, thrown) {
@@ -1477,32 +1406,94 @@
                         title: 'Error',
                         text: 'An error occurred while loading the data. Please try again.'
                     });
-                },
-                beforeSend: function() {
-                    $('.loading-overlay').addClass('active');
-                },
-                complete: function() {
-                    setTimeout(function() {
-                        $('.loading-overlay').removeClass('active');
-                    }, 500);
                 }
             },
+            // Add initial data from blade template
+            data: {!! json_encode($transactions->map(function($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'transaction_id' => $transaction->transaction_id,
+                    'firstname' => $transaction->firstname,
+                    'lastname' => $transaction->lastname,
+                    'email' => $transaction->email,
+                    'date' => $transaction->date,
+                    'services' => $transaction->services,
+                    'pickup_location' => $transaction->pickup_location,
+                    'delivery_location' => $transaction->delivery_location,
+                    'miles' => $transaction->miles,
+                    'grand_total' => $transaction->grand_total,
+                    'assigned_agent_company_name' => $transaction->assigned_agent_company_name,
+                    'status' => $transaction->status
+                ];
+            })) !!},
             columns: [
+                {
+                    className: 'dtr-control',
+                    orderable: false,
+                    searchable: false,
+                    data: null,
+                    defaultContent: '',
+                },
                 { 
                     data: 'transaction_id',
-                    name: 'transaction_id'
+                    name: 'transaction_id',
+                    searchable: true
+                },
+                { 
+                    data: 'customer', 
+                    name: 'customer',
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `
+                                <div class="d-flex align-items-center gap-2">
+                                    <div>
+                                        <h6 class="mb-0">${row.firstname} ${row.lastname}</h6>
+                                        <small class="text-muted">${row.email}</small>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        // For searching, return the concatenated name and email
+                        return `${row.firstname} ${row.lastname} ${row.email}`;
+                    }
                 },
                 { 
                     data: 'date',
                     name: 'date',
-                    render: function(data) {
-                        return data ? moment(data).format('MMM D, YYYY') : 'N/A';
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (!data) return 'N/A';
+                        
+                        if (type === 'display') {
+                            return moment(data).format('MMM D, YYYY');
+                        }
+                        
+                        // For searching, return multiple date formats
+                        if (type === 'search') {
+                            const date = moment(data);
+                            return [
+                                date.format('MMM D, YYYY'),  // May 9, 2025
+                                date.format('MMMM D, YYYY'), // May 9, 2025
+                                date.format('MMM D YYYY'),   // May 9 2025
+                                date.format('MM/D/YYYY'),    // 05/9/2025
+                                date.format('YYYY-MM-DD'),   // 2025-05-09
+                                date.format('MMM'),          // May
+                                date.format('D'),            // 9
+                                date.format('YYYY'),         // 2025
+                                data                         // Original date string
+                            ].join(' ');
+                        }
+                        
+                        return data;
                     }
                 },
                 { 
                     data: 'services',
                     name: 'services',
-                    render: function(data) {
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
                         let services = data;
                         if (typeof data === 'string') {
                             try {
@@ -1515,12 +1506,61 @@
                             ? services.map(service => service.name || service).join('\n')
                             : services;
                         return `<span class="badge bg-primary bg-opacity-10 text-primary service-badge">${serviceNames}</span>`;
+                        }
+                        // For searching, return the concatenated service names
+                        let services = data;
+                        if (typeof data === 'string') {
+                            try {
+                                services = JSON.parse(data);
+                            } catch (e) {
+                                services = [{ name: data }];
+                            }
+                        }
+                        return Array.isArray(services) 
+                            ? services.map(service => service.name || service).join(' ')
+                            : services;
+                    }
+                },
+                { 
+                    data: 'pickup_location', 
+                    name: 'pickup_location',
+                    searchable: true
+                },
+                { 
+                    data: 'delivery_location', 
+                    name: 'delivery_location',
+                    searchable: true
+                },
+                { 
+                    data: 'miles', 
+                    name: 'miles',
+                    searchable: true
+                },
+                { 
+                    data: 'grand_total', 
+                    name: 'grand_total',
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            return `<span class="fw-semibold">$${parseFloat(data).toFixed(2)}</span>`;
+                        }
+                        return data;
+                    }
+                },
+                { 
+                    data: 'assigned_agent_company_name', 
+                    name: 'assigned_agent_company_name',
+                    searchable: true,
+                    render: function(data) {
+                        return data || 'N/A';
                     }
                 },
                 { 
                     data: 'status',
                     name: 'status',
-                    render: function(data) {
+                    searchable: true,
+                    render: function(data, type, row) {
+                        if (type === 'display') {
                         const statusClass = {
                             'completed': 'bg-success-subtle text-success',
                             'in_progress': 'bg-info-subtle text-info',
@@ -1530,6 +1570,9 @@
                         return `<span class="badge ${statusClass} rounded-pill px-3 status-badge" data-old-status="${data}">
                             ${data.charAt(0).toUpperCase() + data.slice(1)}
                         </span>`;
+                        }
+                        // For searching, return the raw status value
+                        return data;
                     }
                 },
                 {
@@ -1538,54 +1581,102 @@
                     orderable: false,
                     searchable: false,
                     render: function(data, type, row) {
-                        let html = `<div class="dropdown">
+                        return `
+                            <div class="dropdown">
                             <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 Actions
                             </button>
-                            <ul class="dropdown-menu shadow-sm border-0">`;
-
-                        if (row.assigned_agent) {
-                            html += `
-                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#transactionModal${data}">
+                                <ul class="dropdown-menu shadow-sm border-0">
+                                    <li><a class="dropdown-item view-details" href="#" data-bs-toggle="modal" data-bs-target="#transactionModal${data}">
                                     <i class="fas fa-eye me-2 text-muted"></i> View Details
                                 </a></li>
                                 <li><a class="dropdown-item" href="/leads/${data}/edit">
                                     <i class="fas fa-edit me-2 text-primary"></i> Edit
                                 </a></li>
-                                <li><a class="dropdown-item" href="#" onclick="copyCustomerDashboardLink('${row.id}', this); return false;">
-                                    <i class="fas fa-link me-2 text-secondary"></i> Copy Customer Dashboard Link
-                                </a></li>
                                 <li><a class="dropdown-item" href="#" onclick="sendEmail('${data}')">
                                     <i class="fas fa-paper-plane me-2 text-info"></i> Send Email
                                 </a></li>
-                            `;
-                        } else {
-                        html += `
-                            <li><a class="dropdown-item" href="#" onclick="acceptJob('${data}')">
-                                <i class="fas fa-check-circle me-2 text-success"></i> Accept Job
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="declineJob('${data}')">
-                                <i class="fas fa-times-circle me-2 text-danger"></i> Decline Job
-                            </a></li>
-                            `;
-                        }
-                        
-                        html += `</ul></div>`;
-                        return html;
+                                </ul>
+                            </div>
+                        `;
                     }
                 }
             ],
+            createdRow: function(row, data, dataIndex) {
+                $(row).attr('data-id', data.id);
+            },
+            order: [[0, 'desc']],
             scrollX: false,
             autoWidth: false,
             scrollCollapse: false,
+            deferRender: true,
+            stateSave: true,
+            pagingType: 'simple_numbers',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search all columns...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)",
+                processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                emptyTable: "No transactions found",
+                zeroRecords: "No matching transactions found"
+            },
+            dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
+                 "<'row'<'col-sm-12'tr>>" +
+                 "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            initComplete: function() {
+                // Remove any previous keyup and input events
+                $('.dataTables_filter input').off('keyup input');
+                // Debounced search
+                let debounceTimer;
+                $('.dataTables_filter input').on('input', function() {
+                    clearTimeout(debounceTimer);
+                    const input = this;
+                    debounceTimer = setTimeout(function() {
+                        table.search(input.value).draw();
+                    }, 1000); // 1000ms debounce
+                });
+            },
             drawCallback: function() {
-                // Reinitialize tooltips and other Bootstrap components if needed
-                $('[data-bs-toggle="tooltip"]').tooltip();
+                // Initialize Bootstrap tooltips and popovers
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // Initialize view details click handlers
+                $('.view-details').off('click').on('click', function(e) {
+                    e.preventDefault();
+                    var targetModal = $(this).data('bs-target');
+                    var modalElement = document.querySelector(targetModal);
+                    if (modalElement) {
+                        var modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                    }
+                });
+            },
+            responsive: true,
+            responsive: {
+                details: {
+                    type: 'column',
+                    target: 'tr',
+                    renderer: function(api, rowIdx, columns) {
+                        const data = $.map(columns, function(col, i) {
+                            return col.hidden ?
+                                '<tr data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
+                                    '<td class="fw-bold">' + col.title + ':' + '</td> ' +
+                                    '<td>' + col.data + '</td>' +
+                                '</tr>' : '';
+                        }).join('');
+
+                        return data ?
+                            $('<table class="table table-sm table-borderless mb-0"/>').append(data) : false;
+                    }
+                }
             }
         });
-
-        // Perform silent sync after DataTable initialization
-        // silentSync();
 
         // Optimize window resize handling
         let resizeTimer;
@@ -1612,18 +1703,29 @@
                     action: 'add_new'
                 },
                 success: function(response) {
-                    if (response.new_count > 0) {
+                    if (response.success) {
+                        // Reload table data
                         table.ajax.reload();
+                        
+                        // Only show success message if there are new transactions
+                        if (response.new_count > 0) {
             Swal.fire({
                     icon: 'success',
-                title: 'Success!',
-                    text: `Added ${response.new_count} new transactions`
+                                title: 'Sync Completed!',
+                                text: `Added ${response.new_count} new transactions, skipped ${response.skipped_count} existing transactions`
             });
         } else {
                     Swal.fire({
                         icon: 'info',
-                        title: 'No New Transactions',
-                        text: 'All transactions are up to date'
+                                title: 'Sync Completed',
+                                text: `No new transactions found. Skipped ${response.skipped_count} existing transactions.`
+                            });
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message || 'Failed to sync transactions data'
                     });
                 }
             },
@@ -1708,62 +1810,11 @@
         
     };
 
-    let currentTransactionId;
-
-    // Initialize CKEditor for quote
-    var quoteEditor;
-    setTimeout(function() {
-        if (window.CKEDITOR) {
-            quoteEditor = CKEDITOR.replace('quoteEditor', {
-                height: 250,
-                toolbarGroups: [
-                    { name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
-                    { name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
-                    { name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
-                    { name: 'forms', groups: [ 'forms' ] },
-                    '/',
-                    { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-                    { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
-                    { name: 'links', groups: [ 'links' ] },
-                    { name: 'insert', groups: [ 'insert' ] },
-                    '/',
-                    { name: 'styles', groups: [ 'styles' ] },
-                    { name: 'colors', groups: [ 'colors' ] },
-                    { name: 'tools', groups: [ 'tools' ] },
-                    { name: 'others', groups: [ 'others' ] }
-                ],
-                extraPlugins: 'font,colorbutton,justify,tableresize,tabletools,lineutils,widget',
-                removeButtons: '',
-                startupMode: 'wysiwyg',
-                notification: {
-                    duration: 0
-                }
-            });
-        }
-    }, 300);
-
-    // Update sendQuote function
-    window.sendQuote = function(transactionId) {
-        currentTransactionId = transactionId;
-        
-        // Show loading state
-        Swal.fire({
-            title: 'Loading...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        // Fetch transaction data
-        fetch(`/transactions/${transactionId}`)
-            .then(response => response.json())
-            .then(data => {
-                Swal.close();
-                // Show template selection modal
-                const templateModal = new bootstrap.Modal(document.getElementById('templateSelectionModal'));
-                templateModal.show();
-
+        // Add global sendEmail function
+        var ckeditorEmailEditor;
+        var currentTransaction = {};
+        window.sendEmail = function(transactionId) {
+            $.get(`/transactions/${transactionId}`, function(data) {
                 currentTransaction = data; // Store for placeholder replacement
                 // Format date fields for display in templates
                 if (currentTransaction.date) {
@@ -1772,102 +1823,24 @@
                 if (currentTransaction.created_at) {
                     currentTransaction.created_at_formatted = moment(currentTransaction.created_at).format('MMMM D, YYYY');
                 }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Failed to load transaction data'
-                });
+                $('#emailLoadId').val(transactionId);
+                $('#emailRecipient').val(data.email);
+                $('#emailSubject').val('');
+                $('#emailMessage').val('');
+                $('#emailTemplateSelect').val('');
+                $('#sendEmailModal').modal('show');
             });
     };
 
-    // Handle template selection
-    document.getElementById('useTemplateBtn').addEventListener('click', function() {
-        const selectedOption = document.getElementById('templateSelect').selectedOptions[0];
-        if (!selectedOption.value) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Warning!',
-                text: 'Please select a template'
+        // Helper: Replace placeholders in a string with transaction data
+        function replacePlaceholders(str, data) {
+            if (!str) return '';
+            return str.replace(/\{(\w+)\}/g, function(match, key) {
+                return typeof data[key] !== 'undefined' ? data[key] : match;
             });
-            return;
         }
 
-        // Close template selection modal
-        const templateModal = bootstrap.Modal.getInstance(document.getElementById('templateSelectionModal'));
-        templateModal.hide();
-
-        // Show send quote modal
-        const quoteModal = new bootstrap.Modal(document.getElementById('sendQuoteModal'));
-        quoteModal.show();
-
-        // Populate email and subject
-        document.getElementById('quoteTo').value = '{{ $transaction->email }}';
-        document.getElementById('quoteSubject').value = selectedOption.dataset.subject;
-        quoteEditor.setData(selectedOption.dataset.content);
-    });
-
-    // Handle send quote form submission
-    document.getElementById('sendQuoteForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        formData.append('transaction_id', currentTransactionId);
-        formData.set('content', quoteEditor.getData());
-
-        // Show loading state
-        Swal.fire({
-            title: 'Sending...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        fetch('/transactions/send-quote', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('sendQuoteModal'));
-                modal.hide();
-
-                // Show success message
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: 'Quote sent successfully',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            } else {
-                throw new Error(data.message || 'Failed to send quote');
-            }
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: error.message || 'Something went wrong'
-            });
-        });
-    });
-
-    // Handle modal hidden events
-    document.getElementById('sendQuoteModal').addEventListener('hidden.bs.modal', function () {
-        quoteEditor.setData('');
-        this.querySelector('form').reset();
-    });
-
-    // Initialize CKEditor for email
-    var ckeditorEmailEditor;
+        // Initialize CKEditor for the email message
     setTimeout(function() {
         if (window.CKEDITOR) {
             ckeditorEmailEditor = CKEDITOR.replace('ckeditorEmailEditor', {
@@ -1962,22 +1935,24 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
-                    text: xhr.responseJSON?.message || 'Something went wrong'
+                        text: xhr.responseJSON?.message || 'Something went wrong. Please try again.'
                 });
             }
         });
     });
 
-    // Handle modal hidden event
-    $('#sendEmailModal').on('hidden.bs.modal', function () {
-        if (ckeditorEmailEditor) ckeditorEmailEditor.setData('');
-        this.querySelector('form').reset();
+        $('#emailTemplateSelect').select2({
+            dropdownParent: $('#sendEmailModal'),
+            width: '100%',
+            placeholder: 'Select a template',
+            allowClear: true
+        });
     });
 
-    // Add these JS functions if not present already
-    window.copyCustomerDashboardLink = function(transactionId, el) {
+    function copyCustomerDashboardLink(transactionId, el) {
         const url = `${window.location.origin}/customer/${transactionId}`;
         navigator.clipboard.writeText(url).then(function() {
+            // Optionally show a tooltip or alert
             if (window.Swal) {
                 Swal.fire({
                     toast: true,
@@ -1994,145 +1969,6 @@
             alert('Failed to copy link.');
         });
     }
-
-    // Add this before any use of replacePlaceholders
-    window.replacePlaceholders = function(str, data) {
-        if (!str) return '';
-        return str.replace(/\{(\w+)\}/g, function(match, key) {
-            return typeof data[key] !== 'undefined' ? data[key] : match;
-        });
-    };
-
-    // Update sendEmail to fetch transaction data and auto-populate recipient
-    window.sendEmail = function(transactionId) {
-        $.get(`/transactions/${transactionId}`, function(data) {
-            window.currentTransaction = data; // Store for placeholder replacement
-            if (data.email) {
-                $('#emailRecipient').val(data.email);
-            } else {
-                $('#emailRecipient').val('');
-            }
-            $('#emailLoadId').val(transactionId);
-            $('#emailSubject').val('');
-            $('#emailMessage').val('');
-            $('#emailTemplateSelect').val('');
-            // Safely clear CKEditor or textarea
-            if (window.ckeditorEmailEditor && typeof window.ckeditorEmailEditor.setData === 'function') {
-                window.ckeditorEmailEditor.setData('');
-            } else if (window.CKEDITOR && CKEDITOR.instances && CKEDITOR.instances['ckeditorEmailEditor']) {
-                CKEDITOR.instances['ckeditorEmailEditor'].setData('');
-            } else {
-                $('#ckeditorEmailEditor').val('');
-            }
-            $('#sendEmailModal').modal('show');
-        });
-    };
-
-    // Handle modal cleanup
-    $(document).on('hidden.bs.modal', '.modal', function () {
-        try {
-            // Remove any lingering backdrop
-            $('.modal-backdrop').remove();
-            // Remove modal-open class from body
-            $('body').removeClass('modal-open');
-            // Reset body padding
-            $('body').css('padding-right', '');
-            // Remove show class
-            $(this).removeClass('show');
-            // Reset modal display
-            $(this).css('display', 'none');
-            // Remove any inline styles that might be blocking
-            $(this).removeAttr('style');
-            // Remove any remaining backdrop
-            $('.modal-backdrop').remove();
-        } catch (error) {
-            console.error('Error cleaning up modal:', error);
-        }
-    });
-
-    // Handle modal closing
-    $(document).on('hide.bs.modal', '.modal', function () {
-        try {
-            // Remove any existing backdrops before hiding
-            $('.modal-backdrop').remove();
-            // Remove modal-open class
-            $('body').removeClass('modal-open');
-            // Reset body padding
-            $('body').css('padding-right', '');
-        } catch (error) {
-            console.error('Error preparing modal close:', error);
-        }
-    });
-
-    // Add click handler for close buttons
-    $(document).on('click', '[data-bs-dismiss="modal"]', function() {
-        var modal = $(this).closest('.modal');
-        if (modal.length) {
-            // Remove backdrop immediately
-            $('.modal-backdrop').remove();
-            // Remove modal-open class
-            $('body').removeClass('modal-open');
-            // Reset body padding
-            $('body').css('padding-right', '');
-        }
-    });
-
-    // Handle modal opening
-    $(document).on('show.bs.modal', '.modal', function () {
-        try {
-            // Remove any existing backdrops
-            $('.modal-backdrop').remove();
-            // Remove modal-open class from body
-            $('body').removeClass('modal-open');
-            // Reset body padding
-            $('body').css('padding-right', '');
-            // Add show class
-            $(this).addClass('show');
-        } catch (error) {
-            console.error('Error preparing modal:', error);
-        }
-    });
-
-    // Handle modal shown event
-    $(document).on('shown.bs.modal', '.modal', function () {
-        try {
-            // Ensure modal is visible
-            $(this).css('display', 'block');
-            // Add modal-open class to body
-            $('body').addClass('modal-open');
-        } catch (error) {
-            console.error('Error finalizing modal:', error);
-        }
-    });
-
-    // Ensure all modals are properly initialized
-    $('.modal').each(function() {
-        if (!bootstrap.Modal.getInstance(this)) {
-            new bootstrap.Modal(this, {
-                backdrop: true,
-                keyboard: true
-            });
-        }
-    });
-
-    // Add global modal error handler
-    $(document).on('show.bs.modal', '.modal', function (e) {
-        if (!$(this).hasClass('show')) {
-            e.preventDefault();
-            // Try to fix the modal
-            $(this).addClass('show');
-            $(this).css('display', 'block');
-            $('body').addClass('modal-open');
-        }
-    });
-
-    // Add cleanup on page unload
-    $(window).on('beforeunload', function() {
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open');
-        $('body').css('padding-right', '');
-    });
-});
 </script>
 
 @endsection

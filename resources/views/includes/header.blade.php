@@ -455,7 +455,7 @@
                         @endif
 
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/callcenter') }}">
+                            <a class="nav-link" href="{{ url('/callcenterleads') }}">
                             <i class="fas fa-headphones menu-icon"></i>                                    
                             <span>Call Center</span>
                             </a>
