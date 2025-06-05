@@ -3255,6 +3255,12 @@ function saveTransactionData() {
     formData.append('lead_type', getFormValue('#lead_type', 'local'));
     formData.append('assigned_agent', getFormValue('#assigned_agent'));
     
+    // Add transaction_id if it exists
+    const transactionId = $('meta[name="transaction-id"]').attr('content');
+    if (transactionId) {
+        formData.append('transaction_id', transactionId);
+    }
+    
     // Sales information
     formData.append('sales_name', getFormValue('#sales_name'));
     formData.append('sales_email', getFormValue('#sales_email'));

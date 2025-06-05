@@ -60,8 +60,10 @@
         <div class="col-12">
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <span class="legend-dot bg-success"></span> <span class="me-3">Completed</span>
-                <span class="legend-dot bg-warning"></span> <span class="me-3">Pending</span>
-                <span class="legend-dot bg-danger"></span> <span class="me-3">Canceled</span>
+                <span class="legend-dot bg-warning"></span> <span class="me-3">In Progress</span>
+                <span class="legend-dot bg-danger"></span> <span class="me-3">Cancelled</span>
+                <span class="legend-dot bg-primary"></span> <span class="me-3">Lead</span>
+                <span class="legend-dot" style="background-color: #fd7e14;"></span> <span class="me-3">Pending</span>
                 <span class="legend-dot bg-secondary"></span> <span>Other</span>
             </div>
         </div>
@@ -434,18 +436,26 @@
                 if (info.event.extendedProps.status) {
                     const status = info.event.extendedProps.status.toLowerCase();
                     if (status === 'completed') {
-                        info.el.style.backgroundColor = '#1cc88a';
+                        info.el.style.backgroundColor = '#1cc88a'; // Green
                         info.el.style.borderLeft = '4px solid #169a6c';
                         info.el.style.color = '#fff';
-                    } else if (status === 'pending') {
-                        info.el.style.backgroundColor = '#f6c23e';
+                    } else if (status === 'in_progress') {
+                        info.el.style.backgroundColor = '#f6c23e'; // Yellow
                         info.el.style.borderLeft = '4px solid #dda20a';
                         info.el.style.color = '#fff';
-                    } else if (status === 'canceled') {
-                        info.el.style.backgroundColor = '#e74a3b';
+                    } else if (status === 'cancelled') {
+                        info.el.style.backgroundColor = '#e74a3b'; // Red
                         info.el.style.borderLeft = '4px solid #be2617';
                         info.el.style.color = '#fff';
-            } else {
+                    } else if (status === 'lead') {
+                        info.el.style.backgroundColor = '#4e73df'; // Blue
+                        info.el.style.borderLeft = '4px solid #2e59d9';
+                        info.el.style.color = '#fff';
+                    } else if (status === 'pending') {
+                        info.el.style.backgroundColor = '#fd7e14'; // Orange
+                        info.el.style.borderLeft = '4px solid #d66a0a';
+                        info.el.style.color = '#fff';
+                    } else {
                         info.el.style.backgroundColor = '#858796';
                         info.el.style.borderLeft = '4px solid #6c757d';
                         info.el.style.color = '#fff';
@@ -461,8 +471,10 @@
                 const status = arg.event.extendedProps.status ? arg.event.extendedProps.status.toLowerCase() : 'other';
                 let bg = '#858796', border = '#6c757d', text = '#fff';
                 if (status === 'completed') { bg = '#1cc88a'; border = '#169a6c'; }
-                else if (status === 'pending') { bg = '#f6c23e'; border = '#dda20a'; text = '#fff'; }
-                else if (status === 'canceled') { bg = '#e74a3b'; border = '#be2617'; text = '#fff'; }
+                else if (status === 'in_progress') { bg = '#f6c23e'; border = '#dda20a'; text = '#fff'; }
+                else if (status === 'cancelled') { bg = '#e74a3b'; border = '#be2617'; text = '#fff'; }
+                else if (status === 'lead') { bg = '#4e73df'; border = '#2e59d9'; text = '#fff'; }
+                else if (status === 'pending') { bg = '#fd7e14'; border = '#d66a0a'; text = '#fff'; }
                 
                 // Remove any URL from the event to prevent navigation
                 if (arg.event.url) {
@@ -573,11 +585,15 @@
                 const status = props.status.toLowerCase();
                 if (status === 'completed') {
                     statusElement.classList.add('bg-success');
+                } else if (status === 'in_progress') {
+                    statusElement.classList.add('bg-warning');
+                } else if (status === 'cancelled') {
+                    statusElement.classList.add('bg-danger');
+                } else if (status === 'lead') {
+                    statusElement.classList.add('bg-primary');
                 } else if (status === 'pending') {
                     statusElement.classList.add('bg-warning');
-                } else if (status === 'canceled') {
-                    statusElement.classList.add('bg-danger');
-            } else {
+                } else {
                     statusElement.classList.add('bg-secondary');
                 }
             } else {
@@ -1106,12 +1122,18 @@
     .fc-event-pro-badge-completed {
         background: #169a6c;
     }
-    .fc-event-pro-badge-pending {
+    .fc-event-pro-badge-in_progress {
         background: #dda20a;
         color: #fff;
     }
-    .fc-event-pro-badge-canceled {
+    .fc-event-pro-badge-cancelled {
         background: #be2617;
+    }
+    .fc-event-pro-badge-lead {
+        background: #2e59d9;
+    }
+    .fc-event-pro-badge-pending {
+        background: #d66a0a;
     }
     .fc-event-pro-badge-other {
         background: #6c757d;
