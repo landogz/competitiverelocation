@@ -1,6 +1,6 @@
 @extends('includes.app')
 
-@section('title', 'Load Board')
+@section('title', 'Leads')
 
 @section('content')
 
@@ -11,7 +11,7 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-flex align-items-center justify-content-between">
-                <h4 class="mb-0">Load Board</h4>
+                <h4 class="mb-0">Leads</h4>
                  <div class="page-title-right">
                     <a href="{{ route('leads.create') }}" class="btn btn-success me-2">
                         <i class="fas fa-user-plus me-1"></i> Add Customer
@@ -1408,24 +1408,6 @@
                     });
                 }
             },
-            // Add initial data from blade template
-            data: {!! json_encode($transactions->map(function($transaction) {
-                return [
-                    'id' => $transaction->id,
-                    'transaction_id' => $transaction->transaction_id,
-                    'firstname' => $transaction->firstname,
-                    'lastname' => $transaction->lastname,
-                    'email' => $transaction->email,
-                    'date' => $transaction->date,
-                    'services' => $transaction->services,
-                    'pickup_location' => $transaction->pickup_location,
-                    'delivery_location' => $transaction->delivery_location,
-                    'miles' => $transaction->miles,
-                    'grand_total' => $transaction->grand_total,
-                    'assigned_agent_company_name' => $transaction->assigned_agent_company_name,
-                    'status' => $transaction->status
-                ];
-            })) !!},
             columns: [
                 {
                     className: 'dtr-control',

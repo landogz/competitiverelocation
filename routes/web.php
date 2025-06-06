@@ -113,8 +113,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('not.agent');
 
     Route::get('/callcenterleads', [TransactionController::class, 'index_leads'])
-    ->name('loadboard-leads.index_leads')
-    ->middleware('agent');
+    ->name('loadboard-leads.index_leads');
 
     Route::get('/loadboard-agent', [TransactionController::class, 'index_agent'])
         ->name('loadboard-agent.index_agent')

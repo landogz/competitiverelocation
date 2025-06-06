@@ -62,6 +62,10 @@ class TransactionController extends Controller
             ->leftJoin('lead_sources', 'transactions.lead_source', '=', 'lead_sources.id')
             ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
             ->where('transactions.status', 'lead')
+            ->where(function($query) {
+                $query->whereNull('transactions.assigned_agent')
+                      ->orWhere('transactions.assigned_agent', '!=', '');
+            })
             ->select(
                 'transactions.*',
                 'lead_sources.title as lead_source_title',
@@ -773,14 +777,18 @@ class TransactionController extends Controller
             $query = Transaction::query()
                 ->leftJoin('agents', 'transactions.assigned_agent', '=', 'agents.id')
                 ->where('transactions.status', 'lead')
+                ->where(function($query) {
+                    $query->whereNull('transactions.assigned_agent')
+                          ->orWhere('transactions.assigned_agent', '!=', '');
+                })
                 ->select(
                     'transactions.*',
                     'agents.company_name as assigned_agent_company_name'
                 )
             ->orderByDesc('transactions.created_at');
             
-            // Get total records count
-            $totalRecords = Transaction::count();
+            // Get total records count (before search)
+            $totalRecords = (clone $query)->count();
             $filteredRecords = $totalRecords;
             
             // Apply search
@@ -802,7 +810,7 @@ class TransactionController extends Controller
                 });
                 
                 // Update filtered count after search
-                $filteredRecords = $query->count();
+                $filteredRecords = (clone $query)->count();
             }
             
             // Apply ordering
@@ -956,8 +964,7 @@ class TransactionController extends Controller
                 $search = $request->search['value'];
                 $transactions = $transactions->filter(function ($transaction) use ($search) {
                     return str_contains(strtolower($transaction->transaction_id), strtolower($search)) ||
-                           str_contains(strtolower($transaction->services), strtolower($search)) ||
-                           str_contains(strtolower($transaction->status), strtolower($search));
+                           str_contains(strtolower($transaction->services), strtolower($search));
                 });
             }
 
