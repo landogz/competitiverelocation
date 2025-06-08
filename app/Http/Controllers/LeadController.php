@@ -6,6 +6,7 @@ use App\Models\SentEmail;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
+use App\Models\LeadLog;
 
 class LeadController extends Controller
 {
@@ -220,6 +221,66 @@ class LeadController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch payments: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addNote(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'lead_id' => 'required|exists:transactions,id',
+                'type' => 'required|string',
+                'content' => 'required|string'
+            ]);
+
+            $note = LeadLog::create([
+                'lead_id' => $validated['lead_id'],
+                'type' => $validated['type'],
+                'content' => $validated['content'],
+                'user_id' => auth()->id(),
+                'agent_id' => auth()->user()->agent_id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Note added successfully',
+                'note' => $note
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add note: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getNotes($leadId)
+    {
+        try {
+            $notes = LeadLog::with([
+                'user:id,first_name,last_name',
+                'agent:id,company_name'
+            ])
+                ->where('lead_id', $leadId)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($note) {
+                    return [
+                        'id' => $note->id,
+                        'type' => $note->type,
+                        'content' => $note->content,
+                        'created_at' => $note->created_at,
+                        'user_name' => $note->user ? $note->user->first_name . ' ' . $note->user->last_name : 'System',
+                        'agent_company' => $note->agent ? $note->agent->company_name : null
+                    ];
+                });
+
+            return response()->json($notes);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch notes: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -15,17 +15,34 @@ class LeadLog extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'agent_id',
         'lead_id',
         'type',
         'content',
-        'user_id',
+        'user_id'
     ];
 
     /**
-     * Get the lead that owns the log.
+     * Get the user that owns the log.
      */
-    public function lead()
+    public function user()
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the transaction that owns the log.
+     */
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'lead_id');
+    }
+
+    /**
+     * Get the agent that owns the log.
+     */
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
     }
 }

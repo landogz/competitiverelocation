@@ -577,6 +577,66 @@
     </div>
 </div>
 
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addNoteModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i>Add Note
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addNoteForm">
+                <input type="hidden" id="noteLeadId" name="lead_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="noteType" class="form-label">Note Type</label>
+                        <select class="form-select" id="noteType" name="type" required>
+                            <option value="call">Call</option>
+                            <option value="email">Email</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="noteContent" class="form-label">Note Content</label>
+                        <textarea class="form-control" id="noteContent" name="content" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notes History Modal -->
+<div class="modal fade" id="notesHistoryModal" tabindex="-1" aria-labelledby="notesHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="notesHistoryModalLabel">
+                    <i class="fas fa-history me-2"></i>Notes History
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="notes-timeline">
+                    <div id="notesHistoryContent">
+                        <!-- Notes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css" rel="stylesheet">
 <!-- Lightbox2 CSS -->
@@ -1188,6 +1248,110 @@
     .table-responsive {
         overflow: visible !important;
     }
+
+    /* Note Item Styling */
+    .note-item {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+
+    .note-item:hover {
+        background-color: #e9ecef;
+    }
+
+    .note-meta {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    /* Note Type Badge Colors */
+    /* .badge.bg-primary { background-color: #0d6efd !important; }
+    .badge.bg-info { background-color: #0dcaf0 !important; }
+    .badge.bg-success { background-color: #198754 !important; }
+    .badge.bg-secondary { background-color: #6c757d !important; } */
+
+    /* Notes Timeline Styling */
+    .notes-timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .notes-timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 20px;
+        height: 100%;
+        width: 2px;
+        background: #e9ecef;
+    }
+
+    .note-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        padding-left: 45px;
+    }
+
+    .note-item::before {
+        content: '';
+        position: absolute;
+        left: 12px;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #0d6efd;
+    }
+
+    .note-item .note-content {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .note-item .note-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .note-item .note-type {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .note-item .note-time {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .note-item .note-text {
+        margin: 0;
+        color: #212529;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    .note-item .note-meta {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .note-item .note-user {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .note-item .note-user i {
+        font-size: 0.875rem;
+    }
 </style>
 
 <!-- jQuery -->
@@ -1578,6 +1742,12 @@
                                 <li><a class="dropdown-item" href="#" onclick="sendEmail('${data}')">
                                     <i class="fas fa-paper-plane me-2 text-info"></i> Send Email
                                 </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="addNote('${data}')">
+                                    <i class="fas fa-sticky-note me-2 text-warning"></i> Add Note
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="viewNotesHistory('${data}')">
+                                    <i class="fas fa-history me-2 text-info"></i> View Notes
+                                </a></li>
                                 </ul>
                             </div>
                         `;
@@ -1951,6 +2121,133 @@
             alert('Failed to copy link.');
         });
     }
+
+    // Add Note function
+    window.addNote = function(leadId) {
+        $('#noteLeadId').val(leadId);
+        $('#noteContent').val('');
+        $('#noteType').val('call');
+        $('#addNoteModal').modal('show');
+    };
+
+    // Handle note form submission
+    $('#addNoteForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            lead_id: $('#noteLeadId').val(),
+            type: $('#noteType').val(),
+            content: $('#noteContent').val(),
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        $.ajax({
+            url: '/leads/add-note',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Note added successfully',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    $('#addNoteModal').modal('hide');
+                    // Optionally refresh the notes history if it's open
+                    if ($('#notesHistoryModal').hasClass('show')) {
+                        loadNotesHistory($('#noteLeadId').val());
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.message || 'Failed to add note'
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.message || 'Something went wrong. Please try again.'
+                });
+            }
+        });
+    });
+
+    // Function to load notes history
+    function loadNotesHistory(leadId) {
+        $.get(`/leads/${leadId}/notes`, function(data) {
+            let notesHtml = '';
+            if (data.length > 0) {
+                data.forEach(note => {
+                    const noteTypeClass = getNoteTypeClass(note.type);
+                    const noteTypeIcon = getNoteTypeIcon(note.type);
+                    
+                    notesHtml += `
+                        <div class="note-item">
+                            <div class="note-content">
+                                <div class="note-header">
+                                    <span class="note-type ${noteTypeClass}">
+                                        <i class="${noteTypeIcon} me-1"></i>${note.type}
+                                    </span>
+                                    <span class="note-time">
+                                        ${moment(note.created_at).format('MMM D, YYYY h:mm A')}
+                                    </span>
+                                </div>
+                                <p class="note-text">${note.content}</p>
+                                <div class="note-meta">
+                                    <div class="note-user">
+                                        <i class="fas fa-user"></i>
+                                        <span>Added by: ${note.user_name || 'System'}</span>
+                                        ${note.agent_company ? `<span class="ms-2 text-muted">(${note.agent_company})</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                notesHtml = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle mb-2" style="font-size: 2rem;"></i>
+                        <p>No notes found for this lead</p>
+                    </div>
+                `;
+            }
+            $('#notesHistoryContent').html(notesHtml);
+        });
+    }
+
+    // Helper function to get note type class
+    function getNoteTypeClass(type) {
+        const classes = {
+            'call': 'text-primary',
+            'email': 'text-info',
+            'meeting': 'text-success',
+            'other': 'text-secondary'
+        };
+        return classes[type] || 'text-secondary';
+    }
+
+    // Helper function to get note type icon
+    function getNoteTypeIcon(type) {
+        const icons = {
+            'call': 'fas fa-phone',
+            'email': 'fas fa-envelope',
+            'meeting': 'fas fa-calendar-check',
+            'other': 'fas fa-sticky-note'
+        };
+        return icons[type] || 'fas fa-sticky-note';
+    }
+
+    // Add view notes history function
+    window.viewNotesHistory = function(leadId) {
+        loadNotesHistory(leadId);
+        $('#notesHistoryModal').modal('show');
+    };
 </script>
 
 @endsection
