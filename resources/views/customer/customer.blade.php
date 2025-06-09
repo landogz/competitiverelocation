@@ -1938,8 +1938,33 @@
         return;
       }
       stripe = Stripe(publishableKey);
-      elements = stripe.elements({ clientSecret: paymentData.clientSecret });
-      paymentElement = elements.create('payment');
+      elements = stripe.elements({ 
+        clientSecret: paymentData.clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#1061B1',
+            colorBackground: '#ffffff',
+            colorText: '#1C1B1F',
+            colorDanger: '#B3261E',
+            fontFamily: 'Roboto, system-ui, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '8px'
+          }
+        }
+      });
+      paymentElement = elements.create('payment', {
+        defaultValues: {
+          billingDetails: {
+            name: window.transaction.firstname + ' ' + window.transaction.lastname,
+            email: window.transaction.email,
+            phone: window.transaction.phone
+          }
+        },
+        wallets: {
+          link: 'never'
+        }
+      });
       paymentElement.mount('#stripe-payment-element');
     }
 

@@ -2374,7 +2374,18 @@
         });
 
         // Create and mount the Payment Element
-        paymentElement = elements.create('payment');
+        paymentElement = elements.create('payment', {
+          defaultValues: {
+            billingDetails: {
+              name: window.currentTransaction.firstname + ' ' + window.currentTransaction.lastname,
+              email: window.currentTransaction.email,
+              phone: window.currentTransaction.phone
+            }
+          },
+          wallets: {
+            link: 'never'
+          }
+        });
         paymentElement.mount('#stripe-payment-element');
 
         // Update button text to show remaining balance
