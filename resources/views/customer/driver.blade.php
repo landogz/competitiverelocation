@@ -866,7 +866,9 @@
           </div>
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
               <button id="complete-btn" onclick="handleComplete()" class="bg-primary text-primary-on py-2 px-8 rounded-lg hover:bg-primary/90 transition-colors mb-2 md:mb-0">Save</button>
-             
+              <button onclick="printEstimates()" class="flex items-center gap-2 bg-surface-variant text-surface-onVariant py-2 px-6 rounded-lg hover:bg-surface-variant/80 transition-colors">
+                <span class="material-icons">print</span> Print
+              </button>
             </div>
           </div>
         </div>
@@ -2048,6 +2050,20 @@
               status.textContent = 'Please select image(s) to upload.';
               return;
             }
+
+            // Validate filenames
+            const invalidFiles = Array.from(input.files).filter(file => {
+              const filename = file.name;
+              // Check for special characters and commas
+              return /[<>:"/\\|?*,\s]/.test(filename);
+            });
+
+            if (invalidFiles.length > 0) {
+              status.textContent = 'Error: Filenames cannot contain special characters or commas. Please rename the following files: ' + 
+                invalidFiles.map(f => f.name).join(', ');
+              return;
+            }
+
             status.textContent = 'Uploading...';
             const formData = new FormData();
             for (let i = 0; i < input.files.length; i++) {
@@ -2319,8 +2335,7 @@
             transaction_id: window.currentTransaction.id,
             amount: remainingBalance.toFixed(2),
             payment_type: 'remaining_balance',
-            is_remaining_balance: true, // Add this flag to explicitly indicate this is a remaining balance payment
-            payment_method_id: 'pm_card_visa' // Remove for live, keep for test
+            is_remaining_balance: true // Add this flag to explicitly indicate this is a remaining balance payment
           })
         });
 
@@ -2585,6 +2600,9 @@
         }, 200);
       }
     };
+
+
+    
   </script>
 </body>
 </html>

@@ -8,12 +8,12 @@
                                 <p class="text-muted mb-0">
                                     ©
                                     <script> document.write(new Date().getFullYear()) </script>
-                                    Landogz Web Solutions
-                                    <span
+                                    Competitive Relocation Services
+                                    <!-- <span
                                         class="text-muted d-none d-sm-inline-block float-end">
                                         Design with
                                         <i class="iconoir-heart-solid text-danger align-middle"></i>
-                                        by Landogz</span>
+                                        by Landogz</span> -->
                                 </p>
                             </div>
                         </div>

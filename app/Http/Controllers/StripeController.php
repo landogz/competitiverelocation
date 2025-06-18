@@ -244,7 +244,7 @@ class StripeController extends Controller
         try {
             $request->validate([
                 'transaction_id' => 'required|exists:transactions,id',
-                'payment_method_id' => 'required|string'
+                // 'payment_method_id' => 'required|string' // Remove this line for live mode
             ]);
 
             $transaction = \App\Models\Transaction::findOrFail($request->transaction_id);
@@ -338,11 +338,10 @@ class StripeController extends Controller
             }
 
             // Create payment intent
-            $paymentIntent = \Stripe\PaymentIntent::create([
+            $paymentIntentData = [
                 'amount' => round($amount * 100), // Convert to cents and ensure whole number
                 'currency' => 'usd',
                 'customer' => $customer->id,
-                'payment_method' => $request->payment_method_id,
                 'description' => $description,
                 'payment_method_types' => ['card'],
                 'metadata' => [
@@ -352,7 +351,12 @@ class StripeController extends Controller
                     'service_type' => $hasMovingServices ? 'moving_services' : 'other_services'
                 ],
                 'setup_future_usage' => 'off_session'
-            ]);
+            ];
+            // Only set payment_method if provided (for test mode)
+            if ($request->has('payment_method_id') && $request->payment_method_id) {
+                $paymentIntentData['payment_method'] = $request->payment_method_id;
+            }
+            $paymentIntent = \Stripe\PaymentIntent::create($paymentIntentData);
 
             return response()->json([
                 'success' => true,

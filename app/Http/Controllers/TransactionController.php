@@ -1286,32 +1286,246 @@ class TransactionController extends Controller
         
             // Check if this is an update for an existing transaction without services
             if ($request->has('transaction_id')) {
+                
+
                 $transaction = Transaction::where('id', $request->transaction_id)->first();
 
 
                 if ($transaction && $transaction->status == 'lead') {
 
-                       // Format services array
-                        $services = [];
-                        if ($request->has('services')) {
-                            $services = is_array($request->services) ? $request->services : json_decode($request->services, true);
-                        } else {
-                            // Create default service object if none provided
-                            $services = [[
-                                'id' => null,
-                                'name' => $request->service ?? 'MOVING SERVICES',
-                                'rate' => '$' . number_format($request->service_rate ?? 0, 2),
-                                'subtotal' => '$' . number_format($request->subtotal ?? 0, 2),
-                                'crew_rate' => '$' . number_format($request->crew_rate ?? 0, 2),
-                                'no_of_crew' => $request->no_of_crew ?? '0',
-                                'delivery_cost' => '$' . number_format($request->delivery_rate ?? 0, 2),
-                                'purchased_amount' => ''
-                            ]];
-                        }
+                            // Format services array
+                                $services = [];
+                                if ($request->has('services')) {
+                                    $services = is_array($request->services) ? $request->services : json_decode($request->services, true);
+                                } else {
+                                    // Create default service object if none provided
+                                    $services = [[
+                                        'id' => null,
+                                        'name' => $request->service ?? '',
+                                        'rate' => '$' . number_format($request->service_rate ?? 0, 2),
+                                        'subtotal' => '$' . number_format($request->subtotal ?? 0, 2),
+                                        'crew_rate' => '$' . number_format($request->crew_rate ?? 0, 2),
+                                        'no_of_crew' => $request->no_of_crew ?? '0',
+                                        'delivery_cost' => '$' . number_format($request->delivery_rate ?? 0, 2),
+                                        'purchased_amount' => ''
+                                    ]];
+                                }
 
-                        
-                    // Update only basic transaction data
-                    $transaction->update([
+                                
+                                // Update only basic transaction data
+                                $transaction->update([
+                                    'firstname' => $request->firstname,
+                                    'lastname' => $request->lastname,
+                                    'email' => $request->email,
+                                    'phone' => $request->phone,
+                                    'lead_source' => $request->lead_source,
+                                    'lead_type' => $request->lead_type ?? 'local',
+                                    'assigned_agent' => $request->assigned_agent,
+                                    'sales_name' => $request->sales_name,
+                                    'sales_email' => $request->sales_email,
+                                    'sales_location' => $request->sales_location,
+                                    'date' => $request->date ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s'),
+                                    'pickup_location' => $request->pickup_location,
+                                    'delivery_location' => $request->delivery_location,
+                                    'miles' => $request->miles,
+                                    'add_mile' => $request->add_mile,
+                                    'mile_rate' => $request->mile_rate,
+                                    'service' => $request->service,
+                                    'service_rate' => $request->service_rate,
+                                    'no_of_items' => $request->no_of_items,
+                                    'no_of_crew' => $request->no_of_crew,
+                                    'crew_rate' => $request->crew_rate,
+                                    'delivery_rate' => $request->delivery_rate,
+                                    'subtotal' => $request->subtotal,
+                                    'software_fee' => $request->software_fee,
+                                    'truck_fee' => $request->truck_fee,
+                                    'downpayment' => $request->downpayment,
+                                    'grand_total' => $request->grand_total,
+                                    'coupon_code' => $request->coupon_code,
+                                    'services' => $services,
+                                    'status' => collect($services)->contains(function($service) {
+                                        return $service['name'] === 'MOVING SERVICES';
+                                    }) ? 'pending' : 'in_progress',
+                                    'insurance_number' => $request->insurance_number,
+                                    'last_synced_at' => now(),
+                                ]);
+
+                                // Handle image uploads if present
+                                if ($request->hasFile('uploaded_image')) {
+                                    $uploadedImages = [];
+                                    foreach ($request->file('uploaded_image') as $image) {
+                                        $filename = time() . '_' . $image->getClientOriginalName();
+                                        $path = 'profile-images/' . $filename;
+                                        Storage::disk('public')->put($path, file_get_contents($image));
+                                        $uploadedImages[] = '/storage/app/public/' . $path;
+                                    }
+                                    $transaction->uploaded_image = implode(', ', $uploadedImages);
+                                    $transaction->save();
+                                }
+
+
+
+                                // Send Call and Confirm Move Email (template ID 35)
+                                try {
+                                    $confirmMoveTemplate = \App\Models\EmailTemplate::find(35);
+                                    if ($confirmMoveTemplate) {
+                                        // Replace placeholders with real data
+                                        $content = $confirmMoveTemplate->content;
+                                        $replacements = [
+                                            '{name}' => $transaction->firstname . ' ' . $transaction->lastname,
+                                            '{date}' => $transaction->date ? date('F j, Y', strtotime($transaction->date)) : 'Not specified',
+                                            '{pickup_location}' => $transaction->pickup_location ?? 'Not specified',
+                                            '{delivery_location}' => $transaction->delivery_location ?? 'Not specified',
+                                            '{sales_name}' => $transaction->sales_name ?? 'Not specified',
+                                            '{firstname}' => $transaction->firstname,
+                                            '{lastname}' => $transaction->lastname
+                                        ];
+
+                                        $content = str_replace(array_keys($replacements), array_values($replacements), $content);
+
+                                        $sentEmail = \App\Models\SentEmail::create([
+                                            'transaction_id' => $transaction->id,
+                                            'recipient' => $transaction->email,
+                                            'subject' => $confirmMoveTemplate->subject,
+                                            'message' => $content,
+                                            'template_id' => 35,
+                                            'user_id' => auth()->id(),
+                                            'status' => 'pending'
+                                        ]);
+
+                                        \Mail::to($transaction->email)
+                                            ->send(new \App\Mail\CustomEmail($confirmMoveTemplate->subject, $content));
+
+                                        $sentEmail->update(['status' => 'sent']);
+                                    }
+                                } catch (\Exception $e) {
+                                    \Log::error('Failed to send Call and Confirm Move email: ' . $e->getMessage());
+                                }
+
+                                // Send Photo Upload Request Email
+                                try {
+                                    $content = '<!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <meta charset="utf-8">
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                        <title>Complete Your Info – Upload Photos Today</title>
+                                        <style>
+                                            body {
+                                                font-family: Arial, sans-serif;
+                                                line-height: 1.6;
+                                                color: #333;
+                                                max-width: 600px;
+                                                margin: 0 auto;
+                                                padding: 20px;
+                                            }
+                                            .email-container {
+                                                background-color: #ffffff;
+                                                border-radius: 8px;
+                                                padding: 30px;
+                                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                            }
+                                            .header {
+                                                text-align: center;
+                                                margin-bottom: 30px;
+                                            }
+                                            .content {
+                                                margin-bottom: 30px;
+                                            }
+                                            .button {
+                                                display: inline-block;
+                                                padding: 12px 24px;
+                                                background-color: #4CAF50;
+                                                color: white !important;
+                                                text-decoration: none;
+                                                border-radius: 4px;
+                                                margin: 20px 0;
+                                            }
+                                            .footer {
+                                                text-align: center;
+                                                margin-top: 30px;
+                                                padding-top: 20px;
+                                                border-top: 1px solid #eee;
+                                                color: #666;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <div class="email-container">
+                                            <div class="header">
+                                                <h2>Complete Your Info – Upload Photos Today</h2>
+                                            </div>
+                                            <div class="content">
+                                                <p>Hi ' . $transaction->firstname . ',</p>
+                                                <p>Thank you for choosing our service. To proceed, please upload the requested photos directly to your customer dashboard at your earliest convenience.</p>
+                                                <p><a href="https://competitiverelocationcrm.com/customer/' . $transaction->id . '" class="button">Upload Photos Now</a></p>
+                                                <p>If you have any questions or need assistance, feel free to reach out.</p>
+                                            </div>
+                                            <div class="footer">
+                                                <p>All the best,<br>Competitive Relocation Service</p>
+                                            </div>
+                                        </div>
+                                    </body>
+                                    </html>';
+
+                                    $sentEmail = \App\Models\SentEmail::create([
+                                        'transaction_id' => $transaction->id,
+                                        'recipient' => $transaction->email,
+                                        'subject' => 'Complete Your Info – Upload Photos Today',
+                                        'message' => $content,
+                                        'template_id' => null,
+                                        'user_id' => auth()->id(),
+                                        'status' => 'pending'
+                                    ]);
+
+                                    \Mail::to($transaction->email)
+                                        ->send(new \App\Mail\CustomEmail('Complete Your Info – Upload Photos Today', $content));
+
+                                    $sentEmail->update(['status' => 'sent']);
+                                } catch (\Exception $e) {
+                                    \Log::error('Failed to send Photo Upload Request email: ' . $e->getMessage());
+                                }
+
+                                        return response()->json([
+                                            'success' => true,
+                                            'message' => 'Transaction updated successfully',
+                                            'transaction' => $transaction
+                                        ]);
+                                    }
+            }
+
+                    // Continue with existing validation and new transaction creation logic
+                    // Generate unique transaction ID for new transactions
+                    $lastTransaction = Transaction::orderBy('id', 'desc')->first();
+                    $newTransactionId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+                    $transactionId = str_pad($newTransactionId, 6, '0', STR_PAD_LEFT);
+
+                    // Format services array
+                    $services = [];
+                    if ($request->has('services')) {
+                        $services = is_array($request->services) ? $request->services : json_decode($request->services, true);
+                    }
+
+                    // Handle image uploads
+                    $uploadedImages = [];
+                    if ($request->hasFile('uploaded_image')) {
+                        foreach ($request->file('uploaded_image') as $image) {
+                            $filename = time() . '_' . $image->getClientOriginalName();
+                            $path = 'profile-images/' . $filename;
+                            Storage::disk('public')->put($path, file_get_contents($image));
+                            $uploadedImages[] = '/storage/app/public/' . $path;
+                        }
+                    } elseif ($request->has('uploaded_image')) {
+                        // Handle image URLs
+                        $uploadedImages = array_filter(array_map('trim', explode(',', $request->uploaded_image)));
+                    }
+
+                    // Format date properly
+                    $date = $request->date ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
+                    
+                    // Prepare the data
+                    $transactionData = [
+                        'transaction_id' => $transactionId,
                         'firstname' => $request->firstname,
                         'lastname' => $request->lastname,
                         'email' => $request->email,
@@ -1322,7 +1536,7 @@ class TransactionController extends Controller
                         'sales_name' => $request->sales_name,
                         'sales_email' => $request->sales_email,
                         'sales_location' => $request->sales_location,
-                        'date' => $request->date ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s'),
+                        'date' => $date,
                         'pickup_location' => $request->pickup_location,
                         'delivery_location' => $request->delivery_location,
                         'miles' => $request->miles,
@@ -1340,472 +1554,195 @@ class TransactionController extends Controller
                         'downpayment' => $request->downpayment,
                         'grand_total' => $request->grand_total,
                         'coupon_code' => $request->coupon_code,
+                        'payment_id' => $request->payment_id,
+                        'uploaded_image' => !empty($uploadedImages) ? implode(', ', $uploadedImages) : null,
                         'services' => $services,
-                        'status' => collect($services)->contains(function($service) {
-                            return $service['name'] === 'MOVING SERVICES';
-                        }) ? 'pending' : 'in_progress',
+                        'status' => 'lead',
                         'insurance_number' => $request->insurance_number,
+                        'insurance_document' => $request->insurance_document,
                         'last_synced_at' => now(),
-                    ]);
+                    ];
 
-                    // Handle image uploads if present
-                    if ($request->hasFile('uploaded_image')) {
-                        $uploadedImages = [];
-                        foreach ($request->file('uploaded_image') as $image) {
-                            $filename = time() . '_' . $image->getClientOriginalName();
-                            $path = 'profile-images/' . $filename;
-                            Storage::disk('public')->put($path, file_get_contents($image));
-                            $uploadedImages[] = '/storage/app/public/' . $path;
-                        }
-                        $transaction->uploaded_image = implode(', ', $uploadedImages);
-                        $transaction->save();
-                    }
+                    // Create the transaction
+                    $transaction = Transaction::create($transactionData);
 
-
-                    
-                        // Send About Us Email (template ID 16)
-                        try {
-                            $aboutUsTemplate = \App\Models\EmailTemplate::find(16);
-                            if ($aboutUsTemplate) {
-                                // Process base64 images in the template content
-                                $content = $aboutUsTemplate->content;
-                                
-                                // Find all base64 images in the content
-                                if (preg_match_all('/<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/', $content, $matches)) {
-                                    foreach ($matches[1] as $index => $base64Src) {
-                                        // Extract the image data
-                                        list($type, $data) = explode(';', $base64Src);
-                                        list(, $data) = explode(',', $data);
-                                        
-                                        // Decode the base64 data
-                                        $imageData = base64_decode($data);
-                                        
-                                        // Generate a unique filename
-                                        $filename = 'image_' . time() . '_' . $index . '.png';
-                                        
-                                        // Save the image to storage
-                                        $path = 'profile-images/' . $filename;
-                                        Storage::disk('public')->put($path, $imageData);
-                                        
-                                        // Get the URL for the image with full domain
-                                        $imageUrl = 'https://competitiverelocationcrm.com/storage/app/public/' . $path;
-                                        
-                                        // Replace the base64 image with the URL in the content
-                                        $content = str_replace($base64Src, $imageUrl, $content);
-                                    }
+                    // Send About Us Email (template ID 16)
+                    try {
+                        $aboutUsTemplate = \App\Models\EmailTemplate::find(16);
+                        if ($aboutUsTemplate) {
+                            // Process base64 images in the template content
+                            $content = $aboutUsTemplate->content;
+                            
+                            // Find all base64 images in the content
+                            if (preg_match_all('/<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/', $content, $matches)) {
+                                foreach ($matches[1] as $index => $base64Src) {
+                                    // Extract the image data
+                                    list($type, $data) = explode(';', $base64Src);
+                                    list(, $data) = explode(',', $data);
+                                    
+                                    // Decode the base64 data
+                                    $imageData = base64_decode($data);
+                                    
+                                    // Generate a unique filename
+                                    $filename = 'image_' . time() . '_' . $index . '.png';
+                                    
+                                    // Save the image to storage
+                                    $path = 'profile-images/' . $filename;
+                                    Storage::disk('public')->put($path, $imageData);
+                                    
+                                    // Get the URL for the image with full domain
+                                    $imageUrl = 'https://competitiverelocationcrm.com/storage/app/public/' . $path;
+                                    
+                                    // Replace the base64 image with the URL in the content
+                                    $content = str_replace($base64Src, $imageUrl, $content);
                                 }
-
-                                $sentEmail = \App\Models\SentEmail::create([
-                                    'transaction_id' => $transaction->id,
-                                    'recipient' => $transaction->email,
-                                    'subject' => $aboutUsTemplate->subject,
-                                    'message' => $content,
-                                    'template_id' => 16,
-                                    'user_id' => auth()->id(),
-                                    'status' => 'pending'
-                                ]);
-
-                                \Mail::to($transaction->email)
-                                    ->send(new \App\Mail\CustomEmail($aboutUsTemplate->subject, $content));
-
-                                $sentEmail->update(['status' => 'sent']);
                             }
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send About Us email: ' . $e->getMessage());
-                        }
-
-                        // Send Call and Confirm Move Email (template ID 35)
-                        try {
-                            $confirmMoveTemplate = \App\Models\EmailTemplate::find(35);
-                            if ($confirmMoveTemplate) {
-                                // Replace placeholders with real data
-                                $content = $confirmMoveTemplate->content;
-                                $replacements = [
-                                    '{name}' => $transaction->firstname . ' ' . $transaction->lastname,
-                                    '{date}' => $transaction->date ? date('F j, Y', strtotime($transaction->date)) : 'Not specified',
-                                    '{pickup_location}' => $transaction->pickup_location ?? 'Not specified',
-                                    '{delivery_location}' => $transaction->delivery_location ?? 'Not specified',
-                                    '{sales_name}' => $transaction->sales_name ?? 'Not specified',
-                                    '{firstname}' => $transaction->firstname,
-                                    '{lastname}' => $transaction->lastname
-                                ];
-
-                                $content = str_replace(array_keys($replacements), array_values($replacements), $content);
-
-                                $sentEmail = \App\Models\SentEmail::create([
-                                    'transaction_id' => $transaction->id,
-                                    'recipient' => $transaction->email,
-                                    'subject' => $confirmMoveTemplate->subject,
-                                    'message' => $content,
-                                    'template_id' => 35,
-                                    'user_id' => auth()->id(),
-                                    'status' => 'pending'
-                                ]);
-
-                                \Mail::to($transaction->email)
-                                    ->send(new \App\Mail\CustomEmail($confirmMoveTemplate->subject, $content));
-
-                                $sentEmail->update(['status' => 'sent']);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send Call and Confirm Move email: ' . $e->getMessage());
-                        }
-
-                        // Send Photo Upload Request Email
-                        try {
-                            $content = '<!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta charset="utf-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title>Complete Your Info – Upload Photos Today</title>
-                                <style>
-                                    body {
-                                        font-family: Arial, sans-serif;
-                                        line-height: 1.6;
-                                        color: #333;
-                                        max-width: 600px;
-                                        margin: 0 auto;
-                                        padding: 20px;
-                                    }
-                                    .email-container {
-                                        background-color: #ffffff;
-                                        border-radius: 8px;
-                                        padding: 30px;
-                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                    }
-                                    .header {
-                                        text-align: center;
-                                        margin-bottom: 30px;
-                                    }
-                                    .content {
-                                        margin-bottom: 30px;
-                                    }
-                                    .button {
-                                        display: inline-block;
-                                        padding: 12px 24px;
-                                        background-color: #4CAF50;
-                                        color: white !important;
-                                        text-decoration: none;
-                                        border-radius: 4px;
-                                        margin: 20px 0;
-                                    }
-                                    .footer {
-                                        text-align: center;
-                                        margin-top: 30px;
-                                        padding-top: 20px;
-                                        border-top: 1px solid #eee;
-                                        color: #666;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <div class="email-container">
-                                    <div class="header">
-                                        <h2>Complete Your Info – Upload Photos Today</h2>
-                                    </div>
-                                    <div class="content">
-                                        <p>Hi ' . $transaction->firstname . ',</p>
-                                        <p>Thank you for choosing our service. To proceed, please upload the requested photos directly to your customer dashboard at your earliest convenience.</p>
-                                        <p><a href="https://competitiverelocationcrm.com/customer/' . $transaction->id . '" class="button">Upload Photos Now</a></p>
-                                        <p>If you have any questions or need assistance, feel free to reach out.</p>
-                                    </div>
-                                    <div class="footer">
-                                        <p>All the best,<br>Competitive Relocation Service</p>
-                                    </div>
-                                </div>
-                            </body>
-                            </html>';
 
                             $sentEmail = \App\Models\SentEmail::create([
                                 'transaction_id' => $transaction->id,
                                 'recipient' => $transaction->email,
-                                'subject' => 'Complete Your Info – Upload Photos Today',
+                                'subject' => $aboutUsTemplate->subject,
                                 'message' => $content,
-                                'template_id' => null,
+                                'template_id' => 16,
                                 'user_id' => auth()->id(),
                                 'status' => 'pending'
                             ]);
 
                             \Mail::to($transaction->email)
-                                ->send(new \App\Mail\CustomEmail('Complete Your Info – Upload Photos Today', $content));
+                                ->send(new \App\Mail\CustomEmail($aboutUsTemplate->subject, $content));
 
                             $sentEmail->update(['status' => 'sent']);
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send Photo Upload Request email: ' . $e->getMessage());
                         }
-
-                                return response()->json([
-                                    'success' => true,
-                                    'message' => 'Transaction updated successfully',
-                                    'transaction' => $transaction
-                                ]);
-                            }
-                        }
-
-            // Continue with existing validation and new transaction creation logic
-            // Generate unique transaction ID for new transactions
-            $lastTransaction = Transaction::orderBy('id', 'desc')->first();
-            $newTransactionId = $lastTransaction ? $lastTransaction->id + 1 : 1;
-            $transactionId = str_pad($newTransactionId, 6, '0', STR_PAD_LEFT);
-
-            // Format services array
-            $services = [];
-            if ($request->has('services')) {
-                $services = is_array($request->services) ? $request->services : json_decode($request->services, true);
-            } else {
-                // Create default service object if none provided
-                $services = [[
-                    'id' => null,
-                    'name' => $request->service ?? 'MOVING SERVICES',
-                    'rate' => '$' . number_format($request->service_rate ?? 0, 2),
-                    'subtotal' => '$' . number_format($request->subtotal ?? 0, 2),
-                    'crew_rate' => '$' . number_format($request->crew_rate ?? 0, 2),
-                    'no_of_crew' => $request->no_of_crew ?? '0',
-                    'delivery_cost' => '$' . number_format($request->delivery_rate ?? 0, 2),
-                    'purchased_amount' => ''
-                ]];
-            }
-
-            // Handle image uploads
-            $uploadedImages = [];
-            if ($request->hasFile('uploaded_image')) {
-                foreach ($request->file('uploaded_image') as $image) {
-                    $filename = time() . '_' . $image->getClientOriginalName();
-                    $path = 'profile-images/' . $filename;
-                    Storage::disk('public')->put($path, file_get_contents($image));
-                    $uploadedImages[] = '/storage/app/public/' . $path;
-                }
-            } elseif ($request->has('uploaded_image')) {
-                // Handle image URLs
-                $uploadedImages = array_filter(array_map('trim', explode(',', $request->uploaded_image)));
-            }
-
-            // Format date properly
-            $date = $request->date ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
-            
-            // Prepare the data
-            $transactionData = [
-                'transaction_id' => $transactionId,
-                'firstname' => $request->firstname,
-                'lastname' => $request->lastname,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'lead_source' => $request->lead_source,
-                'lead_type' => $request->lead_type ?? 'local',
-                'assigned_agent' => $request->assigned_agent,
-                'sales_name' => $request->sales_name,
-                'sales_email' => $request->sales_email,
-                'sales_location' => $request->sales_location,
-                'date' => $date,
-                'pickup_location' => $request->pickup_location,
-                'delivery_location' => $request->delivery_location,
-                'miles' => $request->miles,
-                'add_mile' => $request->add_mile,
-                'mile_rate' => $request->mile_rate,
-                'service' => $request->service,
-                'service_rate' => $request->service_rate,
-                'no_of_items' => $request->no_of_items,
-                'no_of_crew' => $request->no_of_crew,
-                'crew_rate' => $request->crew_rate,
-                'delivery_rate' => $request->delivery_rate,
-                'subtotal' => $request->subtotal,
-                'software_fee' => $request->software_fee,
-                'truck_fee' => $request->truck_fee,
-                'downpayment' => $request->downpayment,
-                'grand_total' => $request->grand_total,
-                'coupon_code' => $request->coupon_code,
-                'payment_id' => $request->payment_id,
-                'uploaded_image' => !empty($uploadedImages) ? implode(', ', $uploadedImages) : null,
-                'services' => $services,
-                'status' => collect($services)->contains(function($service) {
-                    return $service['name'] === 'MOVING SERVICES';
-                }) ? 'pending' : 'in_progress',
-                'insurance_number' => $request->insurance_number,
-                'insurance_document' => $request->insurance_document,
-                'last_synced_at' => now(),
-            ];
-
-            // Create the transaction
-            $transaction = Transaction::create($transactionData);
-
-            // Send About Us Email (template ID 16)
-            try {
-                $aboutUsTemplate = \App\Models\EmailTemplate::find(16);
-                if ($aboutUsTemplate) {
-                    // Process base64 images in the template content
-                    $content = $aboutUsTemplate->content;
-                    
-                    // Find all base64 images in the content
-                    if (preg_match_all('/<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"/', $content, $matches)) {
-                        foreach ($matches[1] as $index => $base64Src) {
-                            // Extract the image data
-                            list($type, $data) = explode(';', $base64Src);
-                            list(, $data) = explode(',', $data);
-                            
-                            // Decode the base64 data
-                            $imageData = base64_decode($data);
-                            
-                            // Generate a unique filename
-                            $filename = 'image_' . time() . '_' . $index . '.png';
-                            
-                            // Save the image to storage
-                            $path = 'profile-images/' . $filename;
-                            Storage::disk('public')->put($path, $imageData);
-                            
-                            // Get the URL for the image with full domain
-                            $imageUrl = 'https://competitiverelocationcrm.com/storage/app/public/' . $path;
-                            
-                            // Replace the base64 image with the URL in the content
-                            $content = str_replace($base64Src, $imageUrl, $content);
-                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send About Us email: ' . $e->getMessage());
                     }
 
-                    $sentEmail = \App\Models\SentEmail::create([
-                        'transaction_id' => $transaction->id,
-                        'recipient' => $transaction->email,
-                        'subject' => $aboutUsTemplate->subject,
-                        'message' => $content,
-                        'template_id' => 16,
-                        'user_id' => auth()->id(),
-                        'status' => 'pending'
+                    // // Send Call and Confirm Move Email (template ID 35)
+                    // try {
+                    //     $confirmMoveTemplate = \App\Models\EmailTemplate::find(35);
+                    //     if ($confirmMoveTemplate) {
+                    //         // Replace placeholders with real data
+                    //         $content = $confirmMoveTemplate->content;
+                    //         $replacements = [
+                    //             '{name}' => $transaction->firstname . ' ' . $transaction->lastname,
+                    //             '{date}' => $transaction->date ? date('F j, Y', strtotime($transaction->date)) : 'Not specified',
+                    //             '{pickup_location}' => $transaction->pickup_location ?? 'Not specified',
+                    //             '{delivery_location}' => $transaction->delivery_location ?? 'Not specified',
+                    //             '{sales_name}' => $transaction->sales_name ?? 'Not specified',
+                    //             '{firstname}' => $transaction->firstname,
+                    //             '{lastname}' => $transaction->lastname
+                    //         ];
+
+                    //         $content = str_replace(array_keys($replacements), array_values($replacements), $content);
+
+                    //         $sentEmail = \App\Models\SentEmail::create([
+                    //             'transaction_id' => $transaction->id,
+                    //             'recipient' => $transaction->email,
+                    //             'subject' => $confirmMoveTemplate->subject,
+                    //             'message' => $content,
+                    //             'template_id' => 35,
+                    //             'user_id' => auth()->id(),
+                    //             'status' => 'pending'
+                    //         ]);
+
+                    //         \Mail::to($transaction->email)
+                    //             ->send(new \App\Mail\CustomEmail($confirmMoveTemplate->subject, $content));
+
+                    //         $sentEmail->update(['status' => 'sent']);
+                    //     }
+                    // } catch (\Exception $e) {
+                    //     \Log::error('Failed to send Call and Confirm Move email: ' . $e->getMessage());
+                    // }
+
+                    // Send Photo Upload Request Email
+                    // try {
+                    //     $content = '<!DOCTYPE html>
+                    //     <html>
+                    //     <head>
+                    //         <meta charset="utf-8">
+                    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    //         <title>Complete Your Info – Upload Photos Today</title>
+                    //         <style>
+                    //             body {
+                    //                 font-family: Arial, sans-serif;
+                    //                 line-height: 1.6;
+                    //                 color: #333;
+                    //                 max-width: 600px;
+                    //                 margin: 0 auto;
+                    //                 padding: 20px;
+                    //             }
+                    //             .email-container {
+                    //                 background-color: #ffffff;
+                    //                 border-radius: 8px;
+                    //                 padding: 30px;
+                    //                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    //             }
+                    //             .header {
+                    //                 text-align: center;
+                    //                 margin-bottom: 30px;
+                    //             }
+                    //             .content {
+                    //                 margin-bottom: 30px;
+                    //             }
+                    //             .button {
+                    //                 display: inline-block;
+                    //                 padding: 12px 24px;
+                    //                 background-color: #4CAF50;
+                    //                 color: white !important;
+                    //                 text-decoration: none;
+                    //                 border-radius: 4px;
+                    //                 margin: 20px 0;
+                    //             }
+                    //             .footer {
+                    //                 text-align: center;
+                    //                 margin-top: 30px;
+                    //                 padding-top: 20px;
+                    //                 border-top: 1px solid #eee;
+                    //                 color: #666;
+                    //             }
+                    //         </style>
+                    //     </head>
+                    //     <body>
+                    //         <div class="email-container">
+                    //             <div class="header">
+                    //                 <h2>Complete Your Info – Upload Photos Today</h2>
+                    //             </div>
+                    //             <div class="content">
+                    //                 <p>Hi ' . $transaction->firstname . ',</p>
+                    //                 <p>Thank you for choosing our service. To proceed, please upload the requested photos directly to your customer dashboard at your earliest convenience.</p>
+                    //                 <p><a href="https://competitiverelocationcrm.com/customer/' . $transaction->id . '" class="button">Upload Photos Now</a></p>
+                    //                 <p>If you have any questions or need assistance, feel free to reach out.</p>
+                    //             </div>
+                    //             <div class="footer">
+                    //                 <p>All the best,<br>Competitive Relocation Service</p>
+                    //             </div>
+                    //         </div>
+                    //     </body>
+                    //     </html>';
+
+                    //     $sentEmail = \App\Models\SentEmail::create([
+                    //         'transaction_id' => $transaction->id,
+                    //         'recipient' => $transaction->email,
+                    //         'subject' => 'Complete Your Info – Upload Photos Today',
+                    //         'message' => $content,
+                    //         'template_id' => null,
+                    //         'user_id' => auth()->id(),
+                    //         'status' => 'pending'
+                    //     ]);
+
+                    //     \Mail::to($transaction->email)
+                    //         ->send(new \App\Mail\CustomEmail('Complete Your Info – Upload Photos Today', $content));
+
+                    //     $sentEmail->update(['status' => 'sent']);
+                    // } catch (\Exception $e) {
+                    //     \Log::error('Failed to send Photo Upload Request email: ' . $e->getMessage());
+                    // }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Transaction saved successfully',
+                        'transaction' => $transaction
                     ]);
-
-                    \Mail::to($transaction->email)
-                        ->send(new \App\Mail\CustomEmail($aboutUsTemplate->subject, $content));
-
-                    $sentEmail->update(['status' => 'sent']);
-                }
-            } catch (\Exception $e) {
-                \Log::error('Failed to send About Us email: ' . $e->getMessage());
-            }
-
-            // Send Call and Confirm Move Email (template ID 35)
-            try {
-                $confirmMoveTemplate = \App\Models\EmailTemplate::find(35);
-                if ($confirmMoveTemplate) {
-                    // Replace placeholders with real data
-                    $content = $confirmMoveTemplate->content;
-                    $replacements = [
-                        '{name}' => $transaction->firstname . ' ' . $transaction->lastname,
-                        '{date}' => $transaction->date ? date('F j, Y', strtotime($transaction->date)) : 'Not specified',
-                        '{pickup_location}' => $transaction->pickup_location ?? 'Not specified',
-                        '{delivery_location}' => $transaction->delivery_location ?? 'Not specified',
-                        '{sales_name}' => $transaction->sales_name ?? 'Not specified',
-                        '{firstname}' => $transaction->firstname,
-                        '{lastname}' => $transaction->lastname
-                    ];
-
-                    $content = str_replace(array_keys($replacements), array_values($replacements), $content);
-
-                    $sentEmail = \App\Models\SentEmail::create([
-                        'transaction_id' => $transaction->id,
-                        'recipient' => $transaction->email,
-                        'subject' => $confirmMoveTemplate->subject,
-                        'message' => $content,
-                        'template_id' => 35,
-                        'user_id' => auth()->id(),
-                        'status' => 'pending'
-                    ]);
-
-                    \Mail::to($transaction->email)
-                        ->send(new \App\Mail\CustomEmail($confirmMoveTemplate->subject, $content));
-
-                    $sentEmail->update(['status' => 'sent']);
-                }
-            } catch (\Exception $e) {
-                \Log::error('Failed to send Call and Confirm Move email: ' . $e->getMessage());
-            }
-
-            // Send Photo Upload Request Email
-            try {
-                $content = '<!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Complete Your Info – Upload Photos Today</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 20px;
-                        }
-                        .email-container {
-                            background-color: #ffffff;
-                            border-radius: 8px;
-                            padding: 30px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        }
-                        .header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                        }
-                        .content {
-                            margin-bottom: 30px;
-                        }
-                        .button {
-                            display: inline-block;
-                            padding: 12px 24px;
-                            background-color: #4CAF50;
-                            color: white !important;
-                            text-decoration: none;
-                            border-radius: 4px;
-                            margin: 20px 0;
-                        }
-                        .footer {
-                            text-align: center;
-                            margin-top: 30px;
-                            padding-top: 20px;
-                            border-top: 1px solid #eee;
-                            color: #666;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="email-container">
-                        <div class="header">
-                            <h2>Complete Your Info – Upload Photos Today</h2>
-                        </div>
-                        <div class="content">
-                            <p>Hi ' . $transaction->firstname . ',</p>
-                            <p>Thank you for choosing our service. To proceed, please upload the requested photos directly to your customer dashboard at your earliest convenience.</p>
-                            <p><a href="https://competitiverelocationcrm.com/customer/' . $transaction->id . '" class="button">Upload Photos Now</a></p>
-                            <p>If you have any questions or need assistance, feel free to reach out.</p>
-                        </div>
-                        <div class="footer">
-                            <p>All the best,<br>Competitive Relocation Service</p>
-                        </div>
-                    </div>
-                </body>
-                </html>';
-
-                $sentEmail = \App\Models\SentEmail::create([
-                    'transaction_id' => $transaction->id,
-                    'recipient' => $transaction->email,
-                    'subject' => 'Complete Your Info – Upload Photos Today',
-                    'message' => $content,
-                    'template_id' => null,
-                    'user_id' => auth()->id(),
-                    'status' => 'pending'
-                ]);
-
-                \Mail::to($transaction->email)
-                    ->send(new \App\Mail\CustomEmail('Complete Your Info – Upload Photos Today', $content));
-
-                $sentEmail->update(['status' => 'sent']);
-            } catch (\Exception $e) {
-                \Log::error('Failed to send Photo Upload Request email: ' . $e->getMessage());
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction saved successfully',
-                'transaction' => $transaction
-            ]);
 
         } catch (\Exception $e) {
             \Log::error('Error saving transaction: ' . $e->getMessage());
@@ -1820,7 +1757,17 @@ class TransactionController extends Controller
     {
         // Validate images
         $request->validate([
-            'uploaded_image.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120' // 5MB max per image
+            'uploaded_image.*' => [
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:5120', // 5MB max per image
+                function ($attribute, $value, $fail) {
+                    $filename = $value->getClientOriginalName();
+                    if (preg_match('/[<>:"\/\\|?*,\s]/', $filename)) {
+                        $fail('The filename cannot contain special characters or commas.');
+                    }
+                },
+            ]
         ]);
 
         // Find the transaction

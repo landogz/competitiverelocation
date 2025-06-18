@@ -1532,15 +1532,18 @@
       .then(response => response.json())
       .then(data => {
         if (data.success && data.data) {
+          window.ccAuthData = data.data;
           showEditCard(data.data);
           populateShipperSignatureFromCCAuth(data.data);
         } else {
+          window.ccAuthData = {};
           showForm();
           populateShipperSignatureFromCCAuth({});
         }
       })
       .catch(error => {
         console.error('Error loading credit card authorization:', error);
+        window.ccAuthData = {};
         showForm();
         populateShipperSignatureFromCCAuth({});
       });
@@ -1922,8 +1925,7 @@
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({
-          transaction_id: window.transaction.id,
-          payment_method_id: 'pm_card_visa' // Remove for live, keep for test
+          transaction_id: window.transaction.id
         })
       });
       paymentData = await paymentResponse.json();
@@ -2118,6 +2120,52 @@
     }
 
     async function printEstimates() {
+      // --- ccData initialization block: place this at the very top ---
+      let ccData = {};
+      const ccForm = document.getElementById('credit-card-authorization-form');
+      if (ccForm && ccForm.style.display !== 'none') {
+        // Use form data if form is visible
+        const formData = new FormData(ccForm);
+        ccData = {
+          full_name: formData.get('full_name') || '',
+          name: formData.get('name') || '',
+          title: formData.get('title') || '',
+          card_type: Array.from(ccForm.querySelectorAll('[name="card-type"]')).find(r => r.checked)?.nextElementSibling.textContent.trim() || '',
+          last_8_digits: formData.get('last_8_digits') || '',
+          cvc: formData.get('cvc') || '',
+          expiration_date: formData.get('expiration_date') || '',
+          cardholder_name: formData.get('cardholder_name') || '',
+          phone: formData.get('phone') || '',
+          email: formData.get('email') || '',
+          street_address: formData.get('street_address') || '',
+          city: formData.get('city') || '',
+          state: formData.get('state') || '',
+          zip_code: formData.get('zip_code') || '',
+          signature: document.getElementById('signature-data')?.value || '',
+          date: formData.get('date') || '',
+        };
+      } else if (window.ccAuthData) {
+        // Use saved data if form is hidden
+        ccData = {
+          full_name: window.ccAuthData.full_name || '',
+          name: window.ccAuthData.name || '',
+          title: window.ccAuthData.title || '',
+          card_type: window.ccAuthData.card_type || '',
+          last_8_digits: window.ccAuthData.last_8_digits || '',
+          cvc: window.ccAuthData.cvc || '',
+          expiration_date: window.ccAuthData.expiration_date || '',
+          cardholder_name: window.ccAuthData.cardholder_name || '',
+          phone: window.ccAuthData.phone || '',
+          email: window.ccAuthData.email || '',
+          street_address: window.ccAuthData.street_address || '',
+          city: window.ccAuthData.city || '',
+          state: window.ccAuthData.state || '',
+          zip_code: window.ccAuthData.zip_code || '',
+          signature: window.ccAuthData.signature || '',
+          date: window.ccAuthData.date || '',
+        };
+      }
+      // --- end ccData block ---
       const printWindow = window.open('', '_blank');
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-US');
@@ -2201,7 +2249,7 @@
       // Get the value from the shipper-comments textarea for printing
       const shipperCommentsValue = document.getElementById('shipper-comments')?.value || '';
       // Print content
-      const printContent = `
+      let printContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -2477,6 +2525,139 @@
 </body>
 </html>
       `;
+      // Append new page for VALUATION COVERAGE
+      printContent += `
+<div style="page-break-before: always;"></div>
+<div style="max-width:700px;margin:40px auto 0 auto;padding:32px 32px 24px 32px;font-family:Arial,sans-serif;font-size:13px;color:#222;border:1px solid #ddd;">
+  <h2 style="text-align:center;font-size:18px;font-weight:700;color:#c00;margin-bottom:18px;letter-spacing:1px;text-transform:uppercase;">VALUATIONUS COVERAGE</h2>
+  <div style="text-align:center;margin-bottom:18px;">The following is a description of the options for protecting your belongings during the moving process.</div>
+  <div style="margin-bottom:16px;">
+    <span style="font-weight:700;color:#c00;">Option 1: Released Value-</span><br>
+    <span style="font-weight:600;">$0.60 per pound per article up to a maximum of $2,000.00</span> Service Provider has a maximum liability under State Law for loss or damage to your property while being handled at the time of the job. Any damages not documented while the movers are present will not be the responsibility of the mover or Service Provider.
+  </div>
+  <div style="margin-bottom:16px;">
+    <span style="font-weight:700;color:#c00;">Option 2: Full Replacement Value-</span><br>
+    <span style="font-weight:600;">Additional Charges Apply For This Option</span><br>
+    1.) Repair the article to the extent necessary to restore it to the same condition as when it was received by Service Provider or pay you the cost of such repairs.<br>
+    2.) Replace the article with an article of like kind and quality, or pay you the cost of such a replacement.
+  </div>
+  <div style="margin-bottom:16px;">
+    Any and all claims must be submitted in writing within 15 days of completed move. See Terms & Condition Services for more information.
+  </div>
+  <div style="margin-bottom:10px;font-weight:700;color:#c00;">Exclusions-</div>
+  <ul style="margin-left:18px;margin-bottom:18px;">
+    <li><span style="font-weight:700;">Items of extraordinary value not listed or claimed on the <span style='text-decoration:underline;'>High Value Inventory Form</span></span></li>
+    <li>Lamps, lamp shades, artwork, pictures, mirrors, artificial plants and statues not packed by Service Provider</li>
+    <li>Any marble or glass not crated or boxed by Service Provider</li>
+    <li><span style="font-weight:700;">Items found in boxes not crated, packed or unpacked by Service Provider</span></li>
+    <li>Any items packed and/or unpacked by Service Provider where they (Service Provider) were not the sole transporter</li>
+    <li><span style="font-weight:700;">Any items not put in appropriate boxes or crates, when Service Provider recommended (plasma televisions, grandfather clocks, etc.)</span></li>
+    <li>Mechanical condition of audio/visual or electronic equipment</li>
+    <li>Computers and battery operated items in transit or in storage</li>
+    <li>Missing hardware not disassembled by Service Provider</li>
+    <li>Gold leaf or plaster frames and chandeliers not crated by Service Provider</li>
+    <li><span style="font-weight:700;">Pressboard or particle board furniture</span></li>
+    <li><span style="font-weight:700;">Previously damaged or repaired items</span></li>
+    <li>Previously damaged or loose veneer</li>
+    <li>Furniture where glue has dried out</li>
+    <li>Any small, loose items which are not boxed (keys, remote controls, etc.)</li>
+    <li>If one item in a set is damaged, only that one item is covered by the insurance, not the whole set</li>
+    <li>Plants</li>
+  </ul>
+  <div style="margin-bottom:24px;">Please sign and date after reviewing the terms and conditions of the valuation process</div>
+  <div style="display:flex;align-items:center;gap:32px;margin-bottom:10px;">
+    <span style="display:inline-block;vertical-align:middle;">
+      ${ccData.signature ? `<img src='${ccData.signature}' style='max-height:32px;max-width:160px;vertical-align:middle;' />` : '<span style=\"display:inline-block; border-bottom:1px solid #000; width:180px; height:18px; vertical-align:middle;\"></span>'}
+    </span>
+    <span style="margin-left:8px;">${ccData.date || new Date().toLocaleDateString('en-US')}</span>
+    <span style="margin-left:8px;font-weight:600;">${ccData.cardholder_name || 'Shipper'}</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:32px;">
+    <span style="display:inline-block;border-bottom:1px solid #000;min-width:180px;height:18px;vertical-align:middle;"></span>
+    <span style="margin-left:8px;">${new Date().toLocaleDateString('en-US')}</span>
+    <span style="margin-left:8px;font-weight:600;">Service Provider</span>
+  </div>
+</div>
+`;
+      // Append new page for CREDIT CARD AUTHORIZATION (professional, clean, like image)
+      printContent += `
+<div style="page-break-before: always;"></div>
+<div style="max-width:700px;margin:40px auto 0 auto;padding:32px 32px 24px 32px;font-family:Arial,sans-serif;font-size:13px;color:#222;border:1px solid #ddd;">
+  <h2 style="text-align:center;font-size:18px;font-weight:600;margin-bottom:18px;text-transform:uppercase;letter-spacing:1px;">Credit Card Authorization Form</h2>
+  <div style="margin-bottom:18px;">
+    <b>Customer:</b> <span style="display:inline-block;min-width:320px;border-bottom:1px solid #888;">${ccData.full_name || '&nbsp;'}</span>
+  </div>
+  <div style="margin-bottom:18px;line-height:1.7;">
+    I, <span style="display:inline-block;min-width:120px;border-bottom:1px solid #888;">${ccData.name || '&nbsp;'}</span>
+    (<span style="display:inline-block;min-width:80px;border-bottom:1px solid #888;">${ccData.title || '&nbsp;'}</span>), am the authorized cardholder for the below listed credit card and hereby authorize Competitive Relocation Services to charge the card, the cost for services purchased from Competitive Relocation Services when I am not present in person or cannot make an impression of the card because the numbers are not raised.
+  </div>
+  <div style="margin-bottom:18px;line-height:1.7;">
+    By signing this form, I agree not to initiate a chargeback proceeding with my credit card company for charges by Competitive Relocation Services, on the credit card below, and understand that any chargeback will constitute a breach of contract. I agree to waive any chargeback right. I may have and will contact Competitive Relocation Services to resolve any dispute regarding charges by Competitive Relocation Services on the card.
+  </div>
+  <div style="margin-bottom:18px;">
+    <table style="width:100%;font-size:13px;">
+      <tr>
+        <td style="width:180px;padding:4px 0;"><b>Credit Card Type:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.card_type || '&nbsp;'}</td>
+        <td style="width:40px;"></td>
+        <td style="width:180px;"><b>Credit Card Number Last 8 #:</b></td>
+        <td style="border-bottom:1px solid #888;min-width:80px;">${ccData.last_8_digits || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>CVC Code:</b></td>
+        <td style="border-bottom:1px solid #888;min-width:40px;">${ccData.cvc || '&nbsp;'}</td>
+        <td></td>
+        <td><b>Exp Date:</b></td>
+        <td style="border-bottom:1px solid #888;min-width:60px;">${ccData.expiration_date || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>Cardholder Name:</b></td>
+        <td colspan="4" style="border-bottom:1px solid #888;">${ccData.cardholder_name || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>Phone Number:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.phone || '&nbsp;'}</td>
+        <td></td>
+        <td><b>Email:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.email || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>Billing address as it appears on the credit card statement:</b></td>
+        <td colspan="4" style="border-bottom:1px solid #888;">${ccData.street_address || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>City:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.city || '&nbsp;'}</td>
+        <td></td>
+        <td><b>State:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.state || '&nbsp;'}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 0;"><b>Zip/Postal Code:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.zip_code || '&nbsp;'}</td>
+        <td></td>
+        <td><b>Cardholder:</b></td>
+        <td style="border-bottom:1px solid #888;">${ccData.cardholder_name || '&nbsp;'}</td>
+      </tr>
+    </table>
+  </div>
+  <div style="margin-top:32px;margin-bottom:18px;display:flex;align-items:center;gap:32px;">
+    <div>
+      <b>Signature:</b>
+      <span style="display:inline-block;vertical-align:middle;">
+        ${ccData.signature ? `<img src="${ccData.signature}" style="max-height:32px;max-width:160px;vertical-align:middle;" />` : '<span style="display:inline-block; border-bottom:1px solid #000; width:220px; height:18px; vertical-align:middle;"></span>'}
+      </span>
+    </div>
+    <div>
+      <b>Date:</b> <span style="display:inline-block; border-bottom:1px solid #000; width:120px; height:18px; vertical-align:middle;">${ccData.date || new Date().toLocaleDateString('en-US')}</span>
+    </div>
+  </div>
+  <div style="margin-top:24px;font-size:12px;color:#444;">
+    Please email the completed form to <a href="mailto:jamar@competitiverelocationservices.com" style="color:#1061B1;text-decoration:underline;">jamar@competitiverelocationservices.com</a>.<br>
+    <b>Address: 13 Galaxy Court, Sewell New Jersey 08080</b>
+  </div>
+</div>
+`;
       printWindow.document.write(printContent);
       printWindow.document.close();
       printWindow.onload = function() {
@@ -2488,4 +2669,6 @@
     }
   </script>
 </body>
+</html>
+
 </html>

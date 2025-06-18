@@ -111,48 +111,42 @@
                     <div class="table-responsive">
                         <table id="stripeLogsTable" class="table table-hover mb-0">
                             <thead>
-                            <tr>
-                                <th>Transaction ID</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Payment Method</th>
-                                <th>Date</th>
-                            </tr>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Payment Method</th>
+                                    <th>Date</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            @forelse($payments as $payment)
-                            <tr>
-                                <td>
-                                    <span class="text-muted" style="font-size: 0.9em;">{{ substr($payment->payment_intent_id, 0, 8) }}...</span>
-                                </td>
-                                <td><span class="fw-bold">{{ strtoupper($payment->currency) }} {{ number_format($payment->amount, 2) }}</span></td>
-                                <td>
-                                    @php
-                                        $statusClass = $payment->status === 'succeeded' ? 'success' : 
-                                                     ($payment->status === 'failed' ? 'danger' : 'warning');
-                                    @endphp
-                                    <span class="badge bg-{{ $statusClass }}">{{ ucfirst($payment->status) }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info text-dark">{{ $payment->payment_method ? 'Credit Card' : 'N/A' }}</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex flex-column">
-                                        <span>{{ $payment->created_at->format('M d, Y') }}</span>
-                                        <small class="text-muted">{{ $payment->created_at->format('H:i A') }}</small>
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center py-4">
-                                    <div class="d-flex flex-column align-items-center">
-                                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                        <span class="text-muted">No Stripe logs found</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
+                                @if(count($payments) > 0)
+                                    @foreach($payments as $payment)
+                                    <tr>
+                                        <td>{{ substr($payment->payment_intent_id, 0, 8) }}...</td>
+                                        <td>{{ strtoupper($payment->currency) }} {{ number_format($payment->amount, 2) }}</td>
+                                        <td>
+                                            @php
+                                                $statusClass = $payment->status === 'succeeded' ? 'success' : 
+                                                             ($payment->status === 'failed' ? 'danger' : 'warning');
+                                            @endphp
+                                            <span class="badge bg-{{ $statusClass }}">{{ ucfirst($payment->status) }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">{{ $payment->payment_method ? 'Credit Card' : 'N/A' }}</span>
+                                        </td>
+                                        <td>{{ $payment->created_at->format('M d, Y H:i A') }}</td>
+                                    </tr>
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -191,6 +185,8 @@ function showStripeDetails(paymentIntentId) {
 $(document).ready(function() {
     // Initialize DataTable
     const stripeLogsTable = $('#stripeLogsTable').DataTable({
+        processing: true,
+        serverSide: false,
         order: [[4, 'desc']], // Sort by date column
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
@@ -201,6 +197,7 @@ $(document).ready(function() {
             info: "Showing _START_ to _END_ of _TOTAL_ payments",
             infoEmpty: "No payments available",
             infoFiltered: "(filtered from _MAX_ total payments)",
+            emptyTable: '<div class="text-center py-4"><i class="fas fa-inbox fa-2x text-muted mb-2"></i><br><span class="text-muted">No Stripe logs found</span></div>',
             paginate: {
                 first: '<i class="fas fa-angle-double-left"></i>',
                 last: '<i class="fas fa-angle-double-right"></i>',
@@ -212,6 +209,49 @@ $(document).ready(function() {
         columnDefs: [
             { targets: [0, 1, 2, 3, 4], orderable: true }
         ]
+    });
+
+    // Handle save settings button click
+    $('#saveSettingsBtn').on('click', function() {
+        const formData = {
+            secret_key: $('#secret_key').val(),
+            public_key: $('#public_key').val(),
+            is_active: $('#is_active').is(':checked') ? 1 : 0,
+            _token: $('input[name="_token"]').val()
+        };
+
+        $.ajax({
+            url: '{{ route("stripe.settings.update") }}',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Settings saved successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message || 'Failed to save settings',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: xhr.responseJSON?.message || 'An error occurred while saving settings',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
     });
 
     // Export to CSV

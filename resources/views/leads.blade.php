@@ -92,6 +92,10 @@
     #paymentsTable, #sentEmailsTable {
         width: 100% !important;
     }
+
+    #setinventory.modal {
+        z-index: 1080 !important;
+    }
 </style>
 @section('content')
 <meta name="transaction-id" content="{{ $transaction->id ?? '' }}">
@@ -154,8 +158,8 @@
                         <select id="lead_type" name="lead_type" class="form-select" required>
                             <option value="">Select Type</option>
                             <option value="local" {{ (isset($transaction) && $transaction->lead_type == 'local') ? 'selected' : '' }}>Local</option>
-                            <option value="long_distance" {{ (isset($transaction) && $transaction->lead_type == 'long_distance') ? 'selected' : '' }}>Long Distance</option>
-                            <option value="international" {{ (isset($transaction) && $transaction->lead_type == 'international') ? 'selected' : '' }}>International</option>
+                            <!-- <option value="long_distance" {{ (isset($transaction) && $transaction->lead_type == 'long_distance') ? 'selected' : '' }}>Long Distance</option>
+                            <option value="international" {{ (isset($transaction) && $transaction->lead_type == 'international') ? 'selected' : '' }}>International</option> -->
                         </select>                                    
                     </div>
                     <div class="col-md-12 mb-2">
@@ -1277,26 +1281,46 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Clear and repopulate the added items table
                     const addedItemsContainer = document.getElementById('added-inventory-items');
                     if (addedItemsContainer) {
+                        // If DataTable exists, destroy it first
+                        if ($.fn.DataTable.isDataTable('#added-inventory-table')) {
+                            $('#added-inventory-table').DataTable().destroy();
+                        }
+                        
                         // Clear existing rows
                         addedItemsContainer.innerHTML = '';
                         
                         // Filter out items with quantity 0
                         const itemsWithQuantity = data.data.filter(item => item.quantity > 0);
                         
-                        itemsWithQuantity.forEach(item => {
+                        // Create table body content
+                        const tableContent = itemsWithQuantity.map(item => {
                             totalVolume += parseFloat(item.total_volume);
                             totalWeight += parseFloat(item.total_volume) * WEIGHT_PER_CUBIC_FOOT;
                             
-                            // Add row to the table
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${item.name}</td>
-                                <td>${item.category}</td>
-                                <td>${parseFloat(item.cubic_ft).toFixed(2)}</td>
-                                <td>${item.quantity}</td>
-                                <td>${parseFloat(item.total_volume).toFixed(2)}</td>
+                            return `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.category}</td>
+                                    <td>${parseFloat(item.cubic_ft).toFixed(2)}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${parseFloat(item.total_volume).toFixed(2)}</td>
+                                </tr>
                             `;
-                            addedItemsContainer.appendChild(row);
+                        }).join('');
+                        
+                        // Set the table content
+                        addedItemsContainer.innerHTML = tableContent;
+                        
+                        // Initialize DataTable
+                        $('#added-inventory-table').DataTable({
+                            pageLength: 10,
+                            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                            order: [[0, 'asc']], // Sort by item name
+                            language: {
+                                emptyTable: "No inventory items added",
+                                processing: '<i class="fas fa-spinner fa-spin"></i> Loading...'
+                            },
+                            destroy: true // Allow reinitialization
                         });
                     }
                     
@@ -1348,6 +1372,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize inventory summary on page load
     if (transactionId) {
         updateInventorySummary();
+        
+        // Initialize DataTable for inventory items
+        $('#added-inventory-table').DataTable({
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            order: [[0, 'asc']], // Sort by item name
+            language: {
+                emptyTable: "No inventory items added",
+                processing: '<i class="fas fa-spinner fa-spin"></i> Loading...'
+            }
+        });
     }
 
     // Initialize DataTable for sent emails
@@ -2326,8 +2361,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 return; // Stop execution if validation fails
             }
+
+            @if(!isset($transaction))
+                // Show message to save first for new transactions
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Save Required',
+                    text: 'Please save the transaction first before selecting services.',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            @endif
             
-            // All required fields are filled, manually show the modal
+            // For existing transactions, show the service modal
             const modal = new bootstrap.Modal(serviceModal);
             modal.show();
         });
@@ -3096,10 +3142,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (this.id === 'add-moving-services') {
-                resetMovingServicesModal();
-                movingServicesModal.show();
+            // Check if this is a delivery or moving service
+            if (this.id === 'add-delivery' || this.id === 'add-moving-services') {
+                // Get transaction ID
+                const transactionId = document.querySelector('meta[name="transaction-id"]')?.content;
+                
+                // Function to show inventory modal on top
+                function showInventoryModalOnTop() {
+                    // Hide the Select Service modal if open
+                    const serviceModalEl = document.getElementById('serviceModal');
+                    const serviceModalInstance = bootstrap.Modal.getInstance(serviceModalEl);
+                    if (serviceModalInstance) {
+                        serviceModalInstance.hide();
+                    }
+                    // Show the Inventory Tool Form modal
+                    const inventoryModal = new bootstrap.Modal(document.getElementById('setinventory'));
+                    inventoryModal.show();
+                }
+
+                if (transactionId) {
+                    // Check for inventory records
+                    fetch(`/leads/${transactionId}/added-inventory-items`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Filter out items with quantity 0
+                                const itemsWithQuantity = data.data.filter(item => item.quantity > 0);
+                                
+                                if (itemsWithQuantity.length === 0) {
+                                    // No inventory items found, show inventory tool form
+                                    showInventoryModalOnTop();
+                                } else {
+                                    // Has inventory items, proceed with service selection
+                                    if (this.id === 'add-moving-services') {
+                                        resetMovingServicesModal();
+                                        movingServicesModal.show();
+                                    } else {
+                                        const serviceValue = this.id.replace("add-", "");
+                                        serviceSelect.value = serviceValue;
+                                        serviceSelect.dispatchEvent(new Event("change"));
+                                        addServiceButton.click();
+                                    }
+                                }
+                            } else {
+                                // Error fetching inventory, show inventory tool form
+                                showInventoryModalOnTop();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error checking inventory:', error);
+                            // On error, show inventory tool form
+                            showInventoryModalOnTop();
+                        });
+                } else {
+                    // No transaction ID, show inventory tool form
+                    showInventoryModalOnTop();
+                }
             } else {
+                // For other services, proceed normally
                 const serviceValue = this.id.replace("add-", "");
                 serviceSelect.value = serviceValue;
                 serviceSelect.dispatchEvent(new Event("change"));
@@ -3182,10 +3282,10 @@ function saveTransactionData() {
     }
 
     // Check if any services are added in the table
-    const servicesTable = $('#services-table tbody');
-    if (!servicesTable || servicesTable.find('tr').length === 0) {
-        missingFields.push('Service (Please add at least one service)');
-    }
+    // const servicesTable = $('#services-table tbody');
+    // if (!servicesTable || servicesTable.find('tr').length === 0) {
+    //     missingFields.push('Service (Please add at least one service)');
+    // }
 
     // If there are missing fields, show error and return
     if (missingFields.length > 0) {

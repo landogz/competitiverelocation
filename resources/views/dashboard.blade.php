@@ -766,7 +766,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">155</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">0</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -796,7 +796,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$0.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">0</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
@@ -828,7 +828,7 @@
                             </div><!--end media-->
                             <div class="row d-flex justify-content-center">
                                 <div class="col">                                        
-                                    <h3 class="mt-2 mb-0 fw-bold">$0.00</h3>
+                                    <h3 class="mt-2 mb-0 fw-bold">0</h3>
                                 </div>
                                 <!--end col-->
                                 <div class="col align-self-center">
